@@ -1,0 +1,203 @@
+//Setup for Omega3P setup files
+fileID = SolverSetupTemplate
+
+// Metainformation about solver setup
+fileFormat      = Lua
+fileNameDefault = setup.o3p
+type            = omega3P //For concistency check
+
+//Definition of legal options + metainfo
+// Each option is a dict. These dicts must contain:
+// - type                      : is it a dict, integer, float etc?
+// - must                      : Is this strictly necceary to include
+// - single                    : Is this the only instance (at this level)
+// Type-specific stuff:
+// - type == dict:
+//   + children : Container with more options
+// - type != dict
+//   + default  : Default value of field
+//   + type == bool
+//     * boolType: int (value may be 0/1), onoff (value may be on/off)
+// Reserved keys:
+// - enabled : Used in the setup metafile
+// - value   : Used in the setup metafile
+options {
+	CheckPoint {
+		type = dict
+		must = True
+		single = True
+		children {
+			Directory {
+				type = fnameNoEx
+				must = True
+				default = vector
+			}
+			Act {
+				type = string
+				must = True
+				default = save
+			}
+		}
+	}
+	
+	ModelInfo {
+		type = dict
+		must = True
+		single = True
+		children {
+			File {
+				type = fnameEx
+				must = True
+				single = True
+				default = ./cell.ncdf
+		      	}
+			BoundaryCondition {
+				type = dict
+				must = True
+				single = True
+				children {
+					HFormulation {
+						type = bool
+						must = False
+						single = True
+						boolType = int
+						default = 0
+					}
+					Magnetic {
+						type = intList
+						must = False
+						single = False //??
+						default = {}
+					}
+					Exterior {
+						type = intList
+						must = False
+						single = False //??
+						default = {}
+					}
+					Periodic_M {
+						type = int
+						must = False
+						single = True
+						default = {}
+					}
+					Periodic_S {
+						type = int
+						must = False
+						single = True
+						default = {}
+					}
+					Theta {
+						type = float
+						must = False
+						single = True
+						default = 120
+					}
+				}
+			}//END BoundaryCondition
+			SurfaceMaterial {
+				type = dict
+				must = False
+				children {
+					ReferenceNumber {
+						type = int
+						must = True
+						single = True
+						default = {}
+					}
+					Sigma {
+						type = float
+						must = True
+						single = True
+						default = 5.8e7 //Copper
+					}
+				}	
+			}//END SurfaceMaterial
+		}
+	}//END ModelInfo
+	FiniteElement {
+		type = dict
+		must = True
+		single = True
+		children {
+			Order {
+				type = int
+				must = True
+				single = True
+				default = 2
+			}
+			CurvedSurfaces {
+				type = bool
+				must = True
+				single = True
+				boolType = onoff
+				default = on
+			}
+		}
+	}//END FiniteElement
+	EigenSolver {
+		type = dict
+		must = True
+		single = True
+		children {
+			NumEigenValues {
+				type = int
+				must = True
+				single = True
+				default = 1
+			}
+			FrequencyShift {
+				type = float
+				must = True
+				single = True
+				default = 11.5e9
+			}
+			Tolerance {
+				type = float
+				must = False
+				single = True
+				default = 1e-8
+			}
+			Preconditioner {
+				type = string
+				must = False
+				single = True
+				default = MP
+			}
+		}
+	}//END EigenSolver
+	PostProcess {
+		type = dict
+		must = True
+		single = True
+		children {
+			Toggle {
+				type = bool
+				must = True
+				single = True
+				boolType = onoff
+				default = on
+			}
+			Compute Total Energy {
+				type = bool
+				must = True
+				single = True
+				boolType = int
+				default = 1
+			}
+			ModeFile {
+				type = string
+				must = True
+				single = True
+				default = mode
+			}
+			SymmetryFactor {
+				type = int
+				must = True
+				single = True
+				default = 1
+			}
+		}
+	}//END PostProcess
+}//END options
+

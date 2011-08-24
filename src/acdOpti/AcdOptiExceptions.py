@@ -92,5 +92,7 @@ class AcdOptiException_optiRunner_loadFail(AcdOptiException):
 #AcdOptiSolverSetup
 class AcdOptiException_solverSetup_createFail(AcdOptiException):
     pass
+class AcdOptiException_solverSetup_createFail_nameTaken(AcdOptiException):
+    pass
 class AcdOptiException_solverSetup_loadFail(AcdOptiException):
     pass

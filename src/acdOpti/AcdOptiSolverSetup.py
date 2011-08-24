@@ -1,10 +1,13 @@
+from acdOpti.AcdOptiExceptions import AcdOptiException_solverSetup_loadFail,\
+                                      AcdOptiException_solverSetup_createFail,\
+    AcdOptiException_solverSetup_createFail_nameTaken
+
 from AcdOptiFileParser import DataDict,\
                               AcdOptiFileParser_simple,\
                               AcdOptiFileParser_Lua,\
                               AcdOptiFileParser_KVC
 
 import os
-from acdOpti.AcdOptiExceptions import AcdOptiException_solverSetup_loadFail
 solverSetupResourcesPath = os.path.join(os.path.split(__file__)[0],"resources","solverSetup")
 
 
@@ -41,7 +44,7 @@ class AcdOptiSolverSetup:
     __metaSetupFile = None  # AcdOptiFileParser_simple object with metadata and current settings
     metaSetup       = None  # DataDict object pointing to metaSetupFile.dataDict["options"] (shortcut pointer)   
     setupFileFormat = None  # Pointer to correct AcdOptiFileParser_* class 
-    
+    lockdown        = None  # Is the solverSetup currently not writable? (not enforced)
      
     
     def __init__(self, name, runConfig):
@@ -73,10 +76,20 @@ class AcdOptiSolverSetup:
         
         self.type = self.__metaSetupFile.dataDict["type"]
         
+        self.refreshLockdown()
+        
         self.metaSetup = self.__metaSetupFile.dataDict.getValSingle("options")
         
         self.fileName = os.path.join(self.folder, self.name)
-        
+    
+    def refreshLockdown(self):
+        """
+        Checks the status of the runConfig and uses that to determine the lockdown setting.
+        """
+        if self.runConfig.status == "not_initialized" or self.runConfig.status == "initialized":
+            self.lockdown = False
+        else:
+            self.lockdown = True
         
     def stage(self):
         """
@@ -156,6 +169,10 @@ class AcdOptiSolverSetup:
         
         #Generate the metaFile
         metaFileName = name + ".meta"
+
+        #First: check that the name is not in use
+        if os.path.isfile(os.path.join(folder,metaFileName)):
+            raise AcdOptiException_solverSetup_createFail_nameTaken("Name already in use, couldn't create metaFile", name)
         metaFile = AcdOptiFileParser_simple(os.path.join(folder,metaFileName), 'w')
         #Setup the basic structure of the metaFile
         metaFile.dataDict.pushBack("fileID", "SolverSetup")

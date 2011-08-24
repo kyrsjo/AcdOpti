@@ -149,7 +149,8 @@ class GeometryInstance(InfoFrameComponent):
             self.__clearLockdownButton.set_sensitive(False)
         
         self.__tableWidget.show_all()
-    
+        self.frameManager.mainWindow.updateProjectExplorer()
+        
     def updateGeomInstance(self):
         """
         Copies information from the on-screen form into the geomInstance.

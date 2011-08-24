@@ -52,7 +52,7 @@ class MeshInstance(InfoFrameComponent):
         self.__clearLockdownButton = gtk.Button(label="Clear lockdown")
         self.__clearLockdownButton.connect("clicked", self.event_button_clearLockdown, None)
         
-        self.__runConfigButton = gtk.Button(label="Attach a runConfig") #Overwritten by self.updateTable()
+        self.__runConfigButton = gtk.Button(label="Attach a runconfig...")
         self.__runConfigButton.connect("clicked", self.event_button_runConfig, None)
         
         self.__exportButton = gtk.Button(label="Export CUBIT journal to file...")
@@ -152,11 +152,8 @@ class MeshInstance(InfoFrameComponent):
             self.__clearLockdownButton.set_sensitive(True)
         else:
             self.__clearLockdownButton.set_sensitive(False)
-        #Update the runConfig button
-        if "rcHopper" in self.meshInstance.runConfigs:
-            self.__runConfigButton.set_label("Edit runConfig...")
-        else:
-            self.__runConfigButton.set_label("Attach a runConfig")
+
+        self.frameManager.mainWindow.updateProjectExplorer()
     
     def updateMeshInstance(self):
         """
@@ -305,22 +302,64 @@ class MeshInstance(InfoFrameComponent):
             #Unchecked
             self.meshInstance.templateOverrides_insert(data, self.meshInstance.meshTemplate.paramDefaults[data])
             self.__entryCollection[data].set_sensitive(True)
-    
+        
     def event_button_clearLockdown(self, widget, data=None):
         print "MeshInstance::event_button_clearLockdown()"
         
         self.meshInstance.clearLockdown()
         self.updateTable()
+        self.frameManager.mainWindow.updateProjectExplorer()
         
     def event_button_runConfig(self, widget,data=None):
         print "MeshInstance::event_button_runConfig()"
         
-        if not "rcHopper" in self.meshInstance.runConfigs:
-            try:
-                self.meshInstance.addRunConfig("rcHopper", "Hopper", "omega3P")
-            except AcdOptiException_runConfig_createFail:
-                raise 
-        else:
-            self.frameManager.push(RunConfig(self.frameManager,self.meshInstance.runConfigs["rcHopper"]))
+        name = ""
+        
+        while True:
+            dia = gtk.Dialog("Please enter name of new runconfig:", self.getBaseWindow(),
+                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                             (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                              gtk.STOCK_OK, gtk.RESPONSE_OK))
+            dia.set_default_response(gtk.RESPONSE_OK)
+            nameBox = gtk.Entry()
+            nameBox.set_text(name)
+            nameBox.show()
+            dia.vbox.pack_start(nameBox)
+            dia.show_all()
+    
+            response = dia.run()
+            name = nameBox.get_text()
+    
+            dia.destroy()
+            
+            if response == gtk.RESPONSE_OK:
+                #Check for whitespace
+                print "got: \"" + name + "\""
+                if " " in name:
+                    mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                             gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                             "Name cannot contain whitespace")
+                    mDia.run()
+                    mDia.destroy()
+                #OK, try to add it...
+                else:
+                    if name in self.meshInstance.runConfigs:
+                        mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                                 gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                                 "Name already in use")
+                        mDia.run()
+                        mDia.destroy()
+                        continue
+                    else:
+                        self.meshInstance.addRunConfig(name, "Hopper", "omega3P")
+                        break #Done!
+            #Response cancel or close
+            else:
+                break
+            # END if response...
+        # END while True
         self.updateTable()
+        self.frameManager.mainWindow.updateProjectExplorer()
             

@@ -135,6 +135,8 @@ class GeometryCollection(InfoFrameComponent):
         
         self.__tableWidget.show_all()
 
+        self.frameManager.mainWindow.updateProjectExplorer()
+
     def checkData(self):
         """
         Checks that the data stored in the text boxes are valid,
@@ -280,6 +282,7 @@ class GeometryCollection(InfoFrameComponent):
         print "GeometryCollection::event_button_clearLockdown()"
         self.geomCollection.clearLockdown()
         self.updateTable()
+        
 
     def event_delete(self):
         print "GeometryCollection::event_delete()"

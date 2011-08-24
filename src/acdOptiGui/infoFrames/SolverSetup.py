@@ -86,6 +86,11 @@ class SolverSetup(InfoFrameComponent):
         self.baseWidget.pack_start(self.__closeButton,  expand=False)
         
         self.updateDynamicTable()
+        if self.solverSetup.lockdown:
+            self.__copyButton.set_sensitive(False)
+            self.__delButton.set_sensitive(False)
+            self.__dynamicTable.set_sensitive(False)
+        
         self.baseWidget.show_all()
     
     def updateSolverSetup(self):

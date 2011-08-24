@@ -29,8 +29,8 @@ class AcdOptiRunConfig:
     
     status = "not_initialized"
     
-    stageName = None #status > staged, name of tar.gz file with staged data
-    stageFolder = None #Path to the staging directory
+    stageName = None   #status > staged, name of tar.gz file with staged data (else None)
+    stageFolder = None #Path to the staging directory (if status>staged, else None)
     
     statuses= ["not_initialized", # Before object is fully created
                "initialized",     # Has one or more runners and a meshInstance
@@ -108,6 +108,9 @@ class AcdOptiRunConfig:
         
         self.status = status
         
+        for solver in self.solverSetups:
+            solver.refreshLockdown()
+        
     def stage(self):
         """
         Stages all the files needed for running the job
@@ -153,6 +156,8 @@ class AcdOptiRunConfig:
         
         #Set status flag
         self.status = "staged"
+        for solver in self.solverSetups:
+            solver.refreshLockdown()
     
     def clearLockdown(self):
         """
@@ -177,6 +182,8 @@ class AcdOptiRunConfig:
         self.stageFolder = None
         self.status = "initialized"
         self.write()
+        for solver in self.solverSetups:
+            solver.refreshLockdown()
     
     def write(self):
         """
@@ -232,7 +239,7 @@ class AcdOptiRunConfig:
         #Create the SolverSetups:
         solverSetups = []
         if solverTypes == None:
-            pass
+            pass #To simplify the "else" at the end...
         elif type(solverTypes) == str:
             solverSetups.append(AcdOptiSolverSetup.createNew(solverTypes, folder))
         elif type(solverTypes) == list:

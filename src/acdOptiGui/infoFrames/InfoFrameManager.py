@@ -13,8 +13,8 @@ class InfoFrameManager:
     the topmost component.
     """
 
-    mainWindow  = None
-    container   = None
+    mainWindow  = None #The MainWindow class
+    container   = None #Container on which to add stuff
     
     frame       = None        
     childStack  = None

@@ -149,6 +149,8 @@ class MeshTemplate(InfoFrameComponent):
         
         self.__tableWidget.show_all()
 
+        self.frameManager.mainWindow.updateProjectExplorer()
+
     def checkData(self):
         """
         Checks that the data stored in the text boxes are valid,

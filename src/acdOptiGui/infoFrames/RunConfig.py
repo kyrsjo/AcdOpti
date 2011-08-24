@@ -5,7 +5,10 @@ import gtk
 from InfoFrameComponent import InfoFrameComponent
 from SolverSetup import SolverSetup
 
+from acdOpti.AcdOptiSolverSetup import AcdOptiSolverSetup
 from acdOpti.AcdOptiRunConfig import AcdOptiRunConfig
+from acdOpti.AcdOptiExceptions import AcdOptiException_solverSetup_createFail,\
+                                      AcdOptiException_solverSetup_createFail_nameTaken
 
 class RunConfig(InfoFrameComponent):
     
@@ -19,7 +22,9 @@ class RunConfig(InfoFrameComponent):
     __solverSetupColumnNameRender = None
     __solverSetupColumnType = None
     __solverSetupColumnTypeRender = None
+    __solverSetupAddDelBox = None
     __solverSetupAddButton = None
+    __solverSetupDelButton = None
     
     __jobSetupLabel = None
     __jobSetupEditButton = None
@@ -62,11 +67,17 @@ class RunConfig(InfoFrameComponent):
         self.__solverSetupColumnType.add_attribute(self.__solverSetupColumnTypeRender, 'text', 1)
         self.baseWidget.pack_start(self.__solverSetupTreeView, expand=True)
         self.__solverSetupTreeView.connect("row-activated", self.event_solverSetupTreeView_rowActivated, None)
-        self.__solversTreeReference = {}
-        
+
+        self.__solverSetupAddDelBox = gtk.HBox()        
         self.__solverSetupAddButton = gtk.Button(label="Add solver setup...")
-        self.baseWidget.pack_start(self.__solverSetupAddButton, expand=False)
         self.__solverSetupAddButton.connect("clicked", self.event_button_solverSetupAdd, None)
+        self.__solverSetupAddDelBox.pack_start(self.__solverSetupAddButton)
+        self.__solverSetupDelButton = gtk.Button(label="Delete solver setup")
+        self.__solverSetupDelButton.connect("clicked", self.event_button_solverSetupDel, None)
+        self.__solverSetupAddDelBox.pack_start(self.__solverSetupDelButton)
+        self.baseWidget.pack_start(self.__solverSetupAddDelBox, expand=False)
+        
+
 
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
 
@@ -182,13 +193,75 @@ class RunConfig(InfoFrameComponent):
         else:
             assert not status in AcdOptiRunConfig.statuses 
             raise NotImplementedError
-    
+        self.frameManager.mainWindow.updateProjectExplorer()
+        
     def event_delete(self):
         print "RunConfig::event_delete()"
         self.runConfig.write()
             
     def event_button_solverSetupAdd(self, widget, data=None):
         print "RunConfig::event_button_solverSetupAdd()"
+        
+        dia = gtk.Dialog("Select solver type", self.getBaseWindow(),
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                          gtk.STOCK_OK, gtk.RESPONSE_OK))
+        dia.set_default_response(gtk.RESPONSE_OK)
+
+        #Setup the listModel        
+        diaListModel = gtk.ListStore(str)
+        for type in AcdOptiSolverSetup.getTypes():
+            diaListModel.append([type,])
+        
+        diaTreeView = gtk.TreeView(diaListModel)
+        diaCellRender = gtk.CellRendererText()
+        diaTreeViewCol = gtk.TreeViewColumn("Solver types", diaCellRender,text=0)
+        diaTreeView.append_column(diaTreeViewCol)
+        #diaTreeView.set_headers_visible(True)
+        dia.vbox.pack_start(diaTreeView, padding = 5)
+        
+        dia.vbox.pack_start(gtk.HSeparator(), padding=10)
+        
+        diaEntry = gtk.Entry()
+        diaEntry.set_text("Name...")
+        diaCheck = gtk.CheckButton(label="Use default name")
+        diaCheck.connect("toggled", lambda widget,data=None: diaEntry.set_sensitive(not widget.get_active()), None)
+        diaCheck.set_active(True)
+        dia.vbox.pack_start(diaCheck)
+        dia.vbox.pack_start(diaEntry)
+        
+        dia.show_all()
+        response = dia.run()
+        
+        #Get the answers
+        (path,column) = diaTreeView.get_cursor()
+        type = diaListModel[path][0]
+        defaultName = diaCheck.get_active()
+        name = None
+        if not defaultName:
+            name = diaEntry.get_text() 
+        
+        #Delete the dialog
+        dia.destroy()
+        
+        if response == gtk.RESPONSE_OK:
+            try:
+                newSS_name = AcdOptiSolverSetup.createNew(type, self.runConfig.folder, name)
+            except AcdOptiException_solverSetup_createFail_nameTaken as e:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name '" + e.args[1] + "' already in use")
+                mDia.run()
+                mDia.destroy()
+                return
+            self.runConfig.solverSetups.append(AcdOptiSolverSetup(newSS_name,self.runConfig))
+            self.updateDisplay()
+                
+        
+    def event_button_solverSetupDel(self, widget, data=None):
+        print "RunConfig::event_button_solverSetupDel()"
+        
     def event_button_jobSetupEdit(self, widget, data=None):
         print "RunConfig::event_button_jobSetupEdit()"
     def event_button_jobSetupChange(self, widget, data=None):

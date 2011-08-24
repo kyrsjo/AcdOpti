@@ -1,21 +1,26 @@
 import pygtk
+from acdOpti.AcdOptiMeshTemplateCollection import AcdOptiMeshTemplateCollection
 pygtk.require('2.0')
 import gtk
 
-import acdOpti.AcdOptiProject as AcdOptiProject
+from acdOpti.AcdOptiProject import AcdOptiProject
+from acdOpti.AcdOptiGeometryCollection import AcdOptiGeometryCollection
+from acdOpti.AcdOptiGeometryInstance import AcdOptiGeometryInstance
+from acdOpti.AcdOptiMeshInstance import AcdOptiMeshInstance
+from acdOpti.AcdOptiRunConfig import AcdOptiRunConfig
+from acdOpti.AcdOptiMeshTemplate import AcdOptiMeshTemplate
+
 from acdOpti.AcdOptiExceptions import *
 from AcdOptiGuiExceptions import *
 import exceptions, errno
-from acdOpti.AcdOptiGeometryCollection import AcdOptiGeometryCollection
-from acdOpti.AcdOptiGeometryInstance import AcdOptiGeometryInstance
-from acdOpti.AcdOptiMeshTemplate import AcdOptiMeshTemplate
 
 from infoFrames.InfoFrameManager import InfoFrameManager
 from infoFrames.ProjectInfo import ProjectInfo
 from infoFrames.GeometryCollection import GeometryCollection
 from infoFrames.GeometryInstance import GeometryInstance
-from infoFrames.MeshTemplate import MeshTemplate
 from infoFrames.MeshInstance import MeshInstance
+from infoFrames.RunConfig import RunConfig
+from infoFrames.MeshTemplate import MeshTemplate
 
 import os
 
@@ -43,18 +48,22 @@ class MainWindow():
     __treeView        = None
     __treeViewColumn  = None
     __cellRender      = None
+    __cellRenderIcon  = None
 
-    #Fields: Info frame
-    activeProject_info = None
+    __meshIcon = None
+    __geomIcon = None
 
     #Fields: Logic
     activeProject = None
-    __activeProject_treeReference = None
-    __geomsTop_treeReference = None
-    __geoms_treeReference = None
-    __geoms_meshInstances_treeReference = None
-    __meshesTop_treeReference = None
-    __meshes_treeReference = None
+    
+    #References for the treeView
+#    __activeProject_treeReference = None
+#    __geomsTop_treeReference = None
+#    __geoms_treeReference = None
+#    __geoms_meshInstances_treeReference = None
+#    __geoms_meshInstances_runConfigs_treeReference = None
+#    __meshesTop_treeReference = None
+#    __meshes_treeReference = None
 
     #Methods
     def __init__(self):
@@ -105,14 +114,22 @@ class MainWindow():
         self.__VBox1.pack_start(self.__HBox2)
         
         #Tree view in left part of screen
-        self.__treeModel      = gtk.TreeStore(str)
+        self.__meshIcon       = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "24x24", "mesh.png"))
+        self.__geomIcon       = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "24x24", "geom.png"))
+        
+        # tree store stores object name, icon, background color, and the object itself
+        self.__treeModel      = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, object)
         self.__treeView       = gtk.TreeView(self.__treeModel)
         self.__treeViewColumn = gtk.TreeViewColumn('Project explorer')
         self.__cellRender     = gtk.CellRendererText()
+        self.__cellRenderIcon = gtk.CellRendererPixbuf()
         
         self.__treeView.append_column(self.__treeViewColumn)
-        self.__treeViewColumn.pack_start(self.__cellRender)
+        self.__treeViewColumn.pack_start(self.__cellRenderIcon)
+        self.__treeViewColumn.add_attribute(self.__cellRenderIcon, 'pixbuf', 1)
+        self.__treeViewColumn.pack_start(self.__cellRender, True)
         self.__treeViewColumn.add_attribute(self.__cellRender, 'text', 0)
+        self.__treeViewColumn.add_attribute(self.__cellRender, 'cell-background', 2)
 
         self.__treeView.connect("row-activated", self.event_treeView_rowActivated, None)
 
@@ -165,7 +182,7 @@ class MainWindow():
                             # This is not wanted, as the optiProject also does this.
 
             try:
-                AcdOptiProject.AcdOptiProject.createNew(fname)
+                AcdOptiProject.createNew(fname)
             except exceptions.OSError as e:
                 if e.errno == errno.EEXIST:
                     md = gtk.MessageDialog(self.window, 
@@ -329,40 +346,31 @@ class MainWindow():
             #Returned True - some widget was not ready.
             return
         
-        #Was it the top-level project?
-        if path == self.__activeProject_treeReference.get_path():
+        #Get the row
+        row = self.__treeModel[path]
+        if isinstance(row[-1], AcdOptiProject):
             print "MainWindow::event_treeView_rowActivated() : project"
-            self.__infoFrame.push(self.activeProject_info)
-        #Top-level "Geometries" item?
-        elif path == self.__geomsTop_treeReference.get_path():
-            print "MainWindow::event_treeView_rowActivated() : geoms"
+            self.__infoFrame.push(ProjectInfo(self.__infoFrame, self.activeProject))
+        elif isinstance(row[-1], AcdOptiGeometryCollection):
+            print "MainWindow::event_treeView_rowActivated() : GeometryCollection"
             self.__infoFrame.push(GeometryCollection(self.__infoFrame,self.activeProject.geomCollection))
-        #Top-level "Meshes" item?
-        elif path == self.__meshesTop_treeReference.get_path():
-            print "MainWindow::event_treeView_rowActivated() : meshes"
-        
-        #Geometry instance?
-        elif path in [p.get_path() for p in self.__geoms_treeReference.values()]:
-            value = self.__treeModel.get_value(self.__treeModel.get_iter(path), 0)
-            print "MainWindow::event_treeView_rowActivated() : geom instance \"" + str(path) + "\", name = \"" + value + "\""
-            self.__infoFrame.push(GeometryInstance(self.__infoFrame, self.activeProject.geomCollection.geomInstances[value]))
-        
-        #Mesh instance?
-        elif path[:-1] in [p.get_path() for p in self.__geoms_treeReference.values()]:
-            geomName = self.__treeModel.get_value(self.__treeModel.get_iter(path[:-1]), 0)
-            meshName = self.__treeModel.get_value(self.__treeModel.get_iter(path), 0)
-            print "MainWindow::event_treeView_rowActivated() : "\
-                + "mesh instance \"" + str(path) + "\", geomName = \"" + geomName + "\""\
-                + ", meshName = \"" + meshName + "\""
-            meshInstance = self.activeProject.geomCollection.geomInstances[geomName].meshInsts[meshName]
-            self.__infoFrame.push(MeshInstance(self.__infoFrame, meshInstance))
-
-        #Mesh template?
-        elif path in [p.get_path() for p in self.__meshes_treeReference.values()]:
-            value = self.__treeModel.get_value(self.__treeModel.get_iter(path), 0)
-            print "MainWindow::event_treeView_rowActivated() :"\
-                + "mesh template \"" + str(path) + "\", name = \"" + value + "\""
-            self.__infoFrame.push(MeshTemplate(self.__infoFrame, self.activeProject.meshTemplateCollection.meshTemplates[value]))
+        elif isinstance(row[-1], AcdOptiGeometryInstance):
+            print "MainWindow::event_treeView_rowActivated() : geom instance, name='" + row[0] + "'"
+            self.__infoFrame.push(GeometryInstance(self.__infoFrame, row[-1]))
+        elif isinstance(row[-1], AcdOptiMeshInstance):
+            print "MainWindow::event_treeView_rowActivated() : mesh instance, name='" + row[0] + "'"
+            self.__infoFrame.push(MeshInstance(self.__infoFrame, row[-1]))
+        elif isinstance(row[-1], AcdOptiRunConfig):
+            print "MainWindow::event_treeView_rowActivated() : run config, name='" + row[0] + "'"
+            self.__infoFrame.push(RunConfig(self.__infoFrame,row[-1]))
+        elif isinstance(row[-1], AcdOptiMeshTemplateCollection):
+            print "MainWindow::event_treeView_rowActivated() : mesh template collection"
+        elif isinstance(row[-1], AcdOptiMeshTemplate):
+            print "MainWindow::event_treeView_rowActivated() : mesh template, name='" + row[0] + "'"
+            self.__infoFrame.push(MeshTemplate(self.__infoFrame, row[-1]))
+        else:
+            raise NotImplementedError("Unknown class coming down in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
+            
             
     def loadProject(self, fname):
         """
@@ -371,14 +379,13 @@ class MainWindow():
         print "MainWindow::loadProject()"
         
         #Load the project
-        self.activeProject = AcdOptiProject.AcdOptiProject(fname)
+        self.activeProject = AcdOptiProject(fname)
         
         #Setup the explorer
         self.updateProjectExplorer()
 
         #Ready the infoFrame
-        self.activeProject_info = ProjectInfo(self.__infoFrame, self.activeProject)
-        self.__infoFrame.push(self.activeProject_info)
+        self.__infoFrame.push(ProjectInfo(self.__infoFrame, self.activeProject))
 
         #We have now loaded a project: Disable new and load buttons,
         # and enable other buttons
@@ -392,39 +399,65 @@ class MainWindow():
         Clears and repopulates the project explorer by scanning the project
         """
         self.__treeModel.clear()
+        color = "white"
         
         #Main project
-        projIter = self.__treeModel.append(None, [self.activeProject.projectName_name,])
-        self.__activeProject_treeReference = gtk.TreeRowReference(self.__treeModel,
-                                                                  self.__treeModel.get_path(projIter))
+        projIter = self.__treeModel.append(None, [self.activeProject.projectName_name,\
+                                                  self.__treeView.render_icon(gtk.STOCK_OPEN, gtk.ICON_SIZE_MENU),\
+                                                  "white", self.activeProject])
         
         # GeomCollection
-        gcIter = self.__treeModel.append(projIter, ["Geometries",])
-        self.__geomsTop_treeReference = gtk.TreeRowReference(self.__treeModel,
-                                                             self.__treeModel.get_path(gcIter))
-        # GeomInstances
-        self.__geoms_treeReference = {}
-        self.__geoms_meshInstances_treeReference = {}
-        for gi in self.activeProject.geomCollection.geomInstances:
-            giIter = self.__treeModel.append(gcIter, [gi,])
-            self.__geoms_treeReference[gi] = gtk.TreeRowReference(self.__treeModel,
-                                                                  self.__treeModel.get_path(giIter))
-            #  MeshInstances:
-            self.__geoms_meshInstances_treeReference[gi] = {}
-            for mii in self.activeProject.geomCollection.geomInstances[gi].meshInsts:
-                miiIter = self.__treeModel.append(giIter,[mii,])
-                self.__geoms_meshInstances_treeReference[gi][mii] = \
-                    gtk.TreeRowReference(self.__treeModel, self.__treeModel.get_path(miiIter))
+        if self.activeProject.geomCollection.lockdown:
+            color = "green"
+        else:
+            color = "yellow"
+        gcIter = self.__treeModel.append(projIter, ["Geometries", self.__geomIcon, color, self.activeProject.geomCollection])
         
+        # GeomInstances
+        for (giName, gi) in self.activeProject.geomCollection.geomInstances.iteritems():
+            if gi.lockdown:
+                color = "green"
+            else:
+                color = "yellow"
+            giIter = self.__treeModel.append(gcIter, [giName, self.__geomIcon, color, gi])
 
-        mcIter = self.__treeModel.append(projIter, ["Mesh templates",])
-        self.__meshesTop_treeReference = gtk.TreeRowReference(self.__treeModel,
-                                                              self.__treeModel.get_path(mcIter))
-        self.__meshes_treeReference = {}
-        for mi in self.activeProject.meshTemplateCollection.meshTemplates:
-            miIter = self.__treeModel.append(mcIter, [mi,])
-            self.__meshes_treeReference[mi] = gtk.TreeRowReference(self.__treeModel,
-                                                                   self.__treeModel.get_path(miIter))
+            #  MeshInstances:
+            for (miName, mi) in gi.meshInsts.iteritems():
+                if mi.lockdown:
+                    color = "green"
+                else:
+                    color = "yellow"
+                miIter = self.__treeModel.append(giIter,[miName, self.__meshIcon, color, mi])
+
+                # RunCollections
+                for (rcName, rc) in mi.runConfigs.iteritems():
+                    if rc.status == "not_initialized":
+                        color = "red"
+                    elif rc.status == "initialized":
+                        color =  "yellow"
+                    elif rc.status == "staged":
+                        color = "blue"
+                    elif rc.status.beginswith("remote::") or rc.status.beginswith("local::"):
+                        color =  "cyan"
+                    elif rc.status == "finished":
+                        color = "green"
+                    rcIter = self.__treeModel.append(miIter, [rcName, self.__treeView.render_icon(gtk.STOCK_PROPERTIES, gtk.ICON_SIZE_MENU), color, rc])
+
+        #Mesh template collection
+#        if self.activeProject.meshTemplateCollection.lockdown:
+#            color = "green"
+#        else:
+#            color = "yellow"
+        mcIter = self.__treeModel.append(projIter, ["Mesh templates", self.__meshIcon, "white", self.activeProject.meshTemplateCollection])
+        
+        #Mesh templates
+        for (mtName,mt) in self.activeProject.meshTemplateCollection.meshTemplates.iteritems():
+            if mt.lockdown:
+                color = "green"
+            else:
+                color = "yellow"
+            mtIter = self.__treeModel.append(mcIter, [mtName, self.__meshIcon, color, mt])
+
         self.__treeView.expand_all()
 
     def addGeom(self, name):
@@ -448,11 +481,6 @@ class MainWindow():
             AcdOptiGeometryInstance(folder,self.activeProject.geomCollection)
         
         #Add it to the treeView
-        #gcIter = self.__treeModel.get_iter(self.__geomsTop_treeReference.get_path())
-        #giIter = self.__treeModel.append(gcIter, [name,])
-        #self.__geoms_treeReference[name] = gtk.TreeRowReference(self.__treeModel,
-        #                                                        self.__treeModel.get_path(giIter))
-        #self.__geoms_meshInstances_treeReference[name] = {}
         self.updateProjectExplorer()
     
     def addMesh(self,name):
@@ -476,22 +504,4 @@ class MainWindow():
             AcdOptiMeshTemplate(folder)
         
         #Add it to the treeView
-        #mcIter = self.__treeModel.get_iter(self.__meshesTop_treeReference.get_path())
-        #mtIter = self.__treeModel.append(mcIter,[name,])
-        #self.__meshes_treeReference[name] = gtk.TreeRowReference(self.__treeModel,
-        #                                                         self.__treeModel.get_path(mtIter))
         self.updateProjectExplorer()
-    
-    #def addMeshInstanceToGUI(self, geomInstanceName,meshInstanceName):
-    #    """
-    #    Given the name of an already created meshInstance and
-    #    the geomInstance it belongs to, add it to the GUI.
-    #    """
-    #    print "MainWindow::addMeshInstanceToGUI()"
-    #    
-    #    #  MeshInstances:
-    #    giIter = self.__treeModel.get_iter(self.__geoms_treeReference[geomInstanceName].get_path())
-    #    miiIter = self.__treeModel.append(giIter,[meshInstanceName,])
-    #    self.__geoms_meshInstances_treeReference[geomInstanceName][meshInstanceName] = \
-    #        gtk.TreeRowReference(self.__treeModel, self.__treeModel.get_path(miiIter))
-            

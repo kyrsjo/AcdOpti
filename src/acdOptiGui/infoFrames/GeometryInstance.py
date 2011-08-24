@@ -369,7 +369,8 @@ class GeometryInstance(InfoFrameComponent):
                 else:
                     try:
                         self.geomInstance.addMeshInstance(meshTemplateName, meshInstanceName)
-                        self.frameManager.mainWindow.addMeshInstanceToGUI(self.geomInstance.instName, meshInstanceName)
+                        #self.frameManager.mainWindow.addMeshInstanceToGUI(self.geomInstance.instName, meshInstanceName)
+                        self.frameManager.mainWindow.updateProjectExplorer()
                     except AcdOptiException_geomInstance_nameError:
                         #Nope
                         mDia = gtk.MessageDialog(self.getBaseWindow(),

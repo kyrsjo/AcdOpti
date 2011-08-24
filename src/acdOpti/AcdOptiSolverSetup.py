@@ -39,7 +39,7 @@ class AcdOptiSolverSetup:
     folder          = None  # Folder where this file is located
     fileName        = None  # Full path of the setup file
     __metaSetupFile = None  # AcdOptiFileParser_simple object with metadata and current settings
-    metaSetup       = None  # DataDict object pointing to __metaSetup (shortcut pointer)   
+    metaSetup       = None  # DataDict object pointing to metaSetupFile.dataDict["options"] (shortcut pointer)   
     setupFileFormat = None  # Pointer to correct AcdOptiFileParser_* class 
     
      
@@ -73,7 +73,7 @@ class AcdOptiSolverSetup:
         
         self.type = self.__metaSetupFile.dataDict["type"]
         
-        self.metaSetup = self.__metaSetupFile.dataDict
+        self.metaSetup = self.__metaSetupFile.dataDict.getValSingle("options")
         
         self.fileName = os.path.join(self.folder, self.name)
         
@@ -94,7 +94,8 @@ class AcdOptiSolverSetup:
         "Generates a setupFile from the current contents of metaSetup, which is written."
         print "AcdOptiSolverSetup::__generateSetup()"
         setupFile = self.setupFileFormat(self.fileName, 'w')
-        metaSetupDict = AcdOptiSolverSetup.__generateSetup_recursiveHelper(self.__metaSetupFile.dataDict.getValSingle("options"))
+        print self.metaSetup
+        metaSetupDict = AcdOptiSolverSetup.__generateSetup_recursiveHelper(self.metaSetup)
         setupFile.importDataDict(metaSetupDict)
         setupFile.write()  
     @staticmethod
@@ -102,7 +103,7 @@ class AcdOptiSolverSetup:
         print "AcdOptiSolverSetup::__generateSetup_recursiveHelper()"#, setupDict=", setupDict
         ret = DataDict()
         for item in setupDict:
-            if not DataDict.boolconv(item[1]["must"]):
+            if not DataDict.boolconv(item[1]["enabled"]):
                 continue
             if item[1]["type"] == "dict":
                 ret.pushBack(item[0], AcdOptiSolverSetup.__generateSetup_recursiveHelper(item[1]["children"]))
@@ -193,3 +194,23 @@ class AcdOptiSolverSetup:
             else:
                 thisItem.pushBack("enabled", "False")        
         return ret
+
+    @staticmethod
+    def isInputInvalid(itemDict, newValue=None):
+        """
+        Check whether newValue is a valid value of the itemDict
+        by the rules encoded in the itemDict.
+        If newValue=None, check the current value instead.
+        
+        If it is invalid, return an error message as a string,
+        else return None.
+        """
+        
+        if not itemDict["type"] in AcdOptiSolverSetup.dataTypes:
+            return "Invalid type '" + itemDict["type"] + "'" 
+        
+        #TODO: implement!
+        if itemDict["type"] == "dict":
+            return
+        else:
+            return

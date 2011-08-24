@@ -127,7 +127,7 @@ class MainWindow():
         self.window.show_all()
 
         #Lazy me
-        #self.loadProject("../test")
+        self.loadProject("../test")
     #END __init__()
 
     def event_delete(self, widget, event, data=None):
@@ -372,8 +372,28 @@ class MainWindow():
         
         #Load the project
         self.activeProject = AcdOptiProject.AcdOptiProject(fname)
+        
+        #Setup the explorer
+        self.updateProjectExplorer()
 
-        #Populate the project explorer
+        #Ready the infoFrame
+        self.activeProject_info = ProjectInfo(self.__infoFrame, self.activeProject)
+        self.__infoFrame.push(self.activeProject_info)
+
+        #We have now loaded a project: Disable new and load buttons,
+        # and enable other buttons
+        self.__newButton.set_sensitive(False)
+        self.__openButton.set_sensitive(False)
+        self.__geomInstanceNewButton.set_sensitive(True)
+        self.__meshTemplateNewButton.set_sensitive(True)
+
+    def updateProjectExplorer(self):
+        """
+        Clears and repopulates the project explorer by scanning the project
+        """
+        self.__treeModel.clear()
+        
+        #Main project
         projIter = self.__treeModel.append(None, [self.activeProject.projectName_name,])
         self.__activeProject_treeReference = gtk.TreeRowReference(self.__treeModel,
                                                                   self.__treeModel.get_path(projIter))
@@ -407,17 +427,6 @@ class MainWindow():
                                                                    self.__treeModel.get_path(miIter))
         self.__treeView.expand_all()
 
-        #Ready the infoFrame
-        self.activeProject_info = ProjectInfo(self.__infoFrame, self.activeProject)
-        self.__infoFrame.push(self.activeProject_info)
-
-        #We have now loaded a project: Disable new and load buttons,
-        # enable other buttons
-        self.__newButton.set_sensitive(False)
-        self.__openButton.set_sensitive(False)
-        self.__geomInstanceNewButton.set_sensitive(True)
-        self.__meshTemplateNewButton.set_sensitive(True)
-
     def addGeom(self, name):
         """
         Adding a geom to the project's geomCollection,
@@ -438,12 +447,13 @@ class MainWindow():
         self.activeProject.geomCollection.geomInstances[name] =\
             AcdOptiGeometryInstance(folder,self.activeProject.geomCollection)
         
-        #Add it to thetreeView
-        gcIter = self.__treeModel.get_iter(self.__geomsTop_treeReference.get_path())
-        giIter = self.__treeModel.append(gcIter, [name,])
-        self.__geoms_treeReference[name] = gtk.TreeRowReference(self.__treeModel,
-                                                                self.__treeModel.get_path(giIter))
-        self.__geoms_meshInstances_treeReference[name] = {}
+        #Add it to the treeView
+        #gcIter = self.__treeModel.get_iter(self.__geomsTop_treeReference.get_path())
+        #giIter = self.__treeModel.append(gcIter, [name,])
+        #self.__geoms_treeReference[name] = gtk.TreeRowReference(self.__treeModel,
+        #                                                        self.__treeModel.get_path(giIter))
+        #self.__geoms_meshInstances_treeReference[name] = {}
+        self.updateProjectExplorer()
     
     def addMesh(self,name):
         """
@@ -466,21 +476,22 @@ class MainWindow():
             AcdOptiMeshTemplate(folder)
         
         #Add it to the treeView
-        mcIter = self.__treeModel.get_iter(self.__meshesTop_treeReference.get_path())
-        mtIter = self.__treeModel.append(mcIter,[name,])
-        self.__meshes_treeReference[name] = gtk.TreeRowReference(self.__treeModel,
-                                                                 self.__treeModel.get_path(mtIter))
+        #mcIter = self.__treeModel.get_iter(self.__meshesTop_treeReference.get_path())
+        #mtIter = self.__treeModel.append(mcIter,[name,])
+        #self.__meshes_treeReference[name] = gtk.TreeRowReference(self.__treeModel,
+        #                                                         self.__treeModel.get_path(mtIter))
+        self.updateProjectExplorer()
     
-    def addMeshInstanceToGUI(self, geomInstanceName,meshInstanceName):
-        """
-        Given the name of an already created meshInstance and
-        the geomInstance it belongs to, add it to the GUI.
-        """
-        print "MainWindow::addMeshInstanceToGUI()"
-        
-        #  MeshInstances:
-        giIter = self.__treeModel.get_iter(self.__geoms_treeReference[geomInstanceName].get_path())
-        miiIter = self.__treeModel.append(giIter,[meshInstanceName,])
-        self.__geoms_meshInstances_treeReference[geomInstanceName][meshInstanceName] = \
-            gtk.TreeRowReference(self.__treeModel, self.__treeModel.get_path(miiIter))
+    #def addMeshInstanceToGUI(self, geomInstanceName,meshInstanceName):
+    #    """
+    #    Given the name of an already created meshInstance and
+    #    the geomInstance it belongs to, add it to the GUI.
+    #    """
+    #    print "MainWindow::addMeshInstanceToGUI()"
+    #    
+    #    #  MeshInstances:
+    #    giIter = self.__treeModel.get_iter(self.__geoms_treeReference[geomInstanceName].get_path())
+    #    miiIter = self.__treeModel.append(giIter,[meshInstanceName,])
+    #    self.__geoms_meshInstances_treeReference[geomInstanceName][meshInstanceName] = \
+    #        gtk.TreeRowReference(self.__treeModel, self.__treeModel.get_path(miiIter))
             

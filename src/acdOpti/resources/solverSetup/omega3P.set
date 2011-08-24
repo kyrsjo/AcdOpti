@@ -30,11 +30,13 @@ options {
 			Directory {
 				type = fnameNoEx
 				must = True
+				single = True
 				default = vector
 			}
 			Act {
 				type = string
 				must = True
+				single = True
 				default = save
 			}
 		}
@@ -98,6 +100,7 @@ options {
 			SurfaceMaterial {
 				type = dict
 				must = False
+				single = False
 				children {
 					ReferenceNumber {
 						type = int

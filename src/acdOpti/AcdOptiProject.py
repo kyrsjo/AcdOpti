@@ -2,7 +2,7 @@ import AcdOptiGeometryCollection, AcdOptiGeometryInstance
 import AcdOptiMeshTemplateCollection
 import AcdOptiFileParser
 from AcdOptiExceptions import *
-from AcdOptiCubitTemplateFile import AcdOptiCubitTemplateFile
+
 import os
 
 class AcdOptiProject():
@@ -17,9 +17,6 @@ class AcdOptiProject():
     projectName_name        = None #Name of project
     
     projectDescription_file = None
-    geomTemplateFile        = None
-    geomTemplateFile_name   = "geomTemplateFile.jou.template"
-    geomTemplateFile_path   = None
     
     geomCollection          = None
     meshTemplateCollection  = None
@@ -58,13 +55,13 @@ class AcdOptiProject():
         self.geomCollection = AcdOptiGeometryCollection.AcdOptiGeometryCollection(\
             os.path.join(self.projectFolder_name, "geomInstances"), self)
 
-        #Try to load the geomTemplateFile
-        self.geomTemplateFile_path = os.path.join(self.projectFolder_name, self.geomTemplateFile_name)
-        try:
-            self.geomTemplateFile = AcdOptiCubitTemplateFile(self.geomTemplateFile_path)
-        except IOError:
-            #File not found
-            self.geomTemplateFile = None
+#        #Try to load the geomTemplateFile
+#        self.geomTemplateFile_path = os.path.join(self.projectFolder_name, self.geomTemplateFile_name)
+#        try:
+#            self.geomTemplateFile = AcdOptiCubitTemplateFile(self.geomTemplateFile_path)
+#        except IOError:
+#            #File not found
+#            self.geomTemplateFile = None
 
     #END __init__()
         
@@ -84,12 +81,9 @@ class AcdOptiProject():
         #File project.set
         projectDescription_file = AcdOptiFileParser.AcdOptiFileParser_simple(\
             os.path.join(folder, "project.set"), "w")
-        
         projectName = os.path.split(folder)[1]
         projectDescription_file.dataDict.pushBack("fileID", "projectDescription")
-
         projectDescription_file.dataDict.pushBack("projectName", projectName)
-
         projectDescription_file.write()
         
         #Mesh template folder

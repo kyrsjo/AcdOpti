@@ -1,10 +1,15 @@
 from AcdOptiFileParser import AcdOptiFileParser_simple,\
                               DataDict
+from AcdOptiCubitTemplateFile import AcdOptiCubitTemplateFile
+
 from AcdOptiGeometryInstance import AcdOptiGeometryInstance
+
 from AcdOptiExceptions import AcdOptiException_geomCollection_loadFail,\
                               AcdOptiException_geomCollection_lockdownError,\
                               AcdOptiException_geomInstance_loadFail,\
                               AcdOptiException_dataDict_getValsSingle
+
+
 import os
 
 class AcdOptiGeometryCollection:
@@ -19,6 +24,9 @@ class AcdOptiGeometryCollection:
     
     __paramDefaults = None #Default value of the parameters
     __paramFile     = None #File holding these
+
+    geomTemplateFile        = None
+    geomTemplateFile_name   = "geomTemplateFile.jou.template"
 
     lockdown = False
 
@@ -73,6 +81,9 @@ class AcdOptiGeometryCollection:
                 raise AcdOptiException_geomCollection_loadFail\
                     ("Double occurence of key \"" + k + "\" in paramFile")
             self.__paramDefaults[k] = v
+
+        #Load the template file
+        self.geomTemplateFile = AcdOptiCubitTemplateFile(os.path.join(folder,self.geomTemplateFile_name))
 
         #Find subfolders and check if they are geometry instances
         self.geomInstances = {}
@@ -184,4 +195,6 @@ class AcdOptiGeometryCollection:
         paramFile.dataDict.pushBack("paramDefaults",DataDict())
         paramFile.write()
 
+        #Default empty template file
+        AcdOptiCubitTemplateFile.createEmpty(os.path.join(folder,AcdOptiGeometryCollection.geomTemplateFile_name))
     

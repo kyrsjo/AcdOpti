@@ -10,6 +10,7 @@ class CubitTemplateEditor(InfoFrameComponent):
     """
 
     templateFile = None #AcdOptiCubitTemplateFile instance
+    readOnly = None
 
     __toolbar = None
     saveButton = None
@@ -20,11 +21,12 @@ class CubitTemplateEditor(InfoFrameComponent):
     textView = None
     buff     = None
 
-    def __init__(self, frameManager, templateFile):
+    def __init__(self, frameManager, templateFile, readOnly=False):
         InfoFrameComponent.__init__(self, frameManager)
         
         self.templateFile = templateFile
-
+        self.readOnly = readOnly
+         
         self.baseWidget = gtk.VBox(False,5)
 
         #Toolbar
@@ -50,6 +52,8 @@ class CubitTemplateEditor(InfoFrameComponent):
         #Text editor
         self.scrolledWindow = gtk.ScrolledWindow()
         self.textView = gtk.TextView()
+        if self.readOnly:
+            self.textView.set_editable(False)
         self.scrolledWindow.add(self.textView)
         self.scrolledWindow.set_policy(\
             gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)

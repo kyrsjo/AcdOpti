@@ -77,8 +77,6 @@ class RunConfig(InfoFrameComponent):
         self.__solverSetupAddDelBox.pack_start(self.__solverSetupDelButton)
         self.baseWidget.pack_start(self.__solverSetupAddDelBox, expand=False)
         
-
-
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
 
         self.__jobSetupLabel = gtk.Label("Current job setup type: " + self.runConfig.runner.type) #Refreshed by updateDisplay()

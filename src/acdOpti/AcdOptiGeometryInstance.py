@@ -111,7 +111,7 @@ class AcdOptiGeometryInstance():
         """
         Generate substitution dict
         """
-        params =  self.template.paramDefaults_copy()
+        params = self.template.paramDefaults_copy()
         for k in self.__templateOverrides:
             assert k in params
             params[k] = self.__templateOverrides[k] 
@@ -126,7 +126,7 @@ class AcdOptiGeometryInstance():
         params = self.generatePattern()
         
         #Get the CUBIT template file object
-        templateFile = self.template.project.geomTemplateFile
+        templateFile = self.template.geomTemplateFile
         
         return templateFile.subsString(params)
     
@@ -144,7 +144,7 @@ class AcdOptiGeometryInstance():
         """ 
         #Preparation
         params = self.generatePattern()
-        templateFile = self.template.project.geomTemplateFile
+        templateFile = self.template.geomTemplateFile
         
         #Make the journal for later reference
         refJouFileName = os.path.join(self.folder, "geom.jou")
@@ -175,10 +175,10 @@ class AcdOptiGeometryInstance():
             raise AcdOptiException_geomInstance_nameError("Mesh instance name already in use")
         
         #Find the meshTemplate
-        try:
-            meshTemplate = self.template.project.meshTemplateCollection.meshTemplates[meshTemplateName]
-        except KeyError:
-            raise AcdOptiException_geomInstance_nameError("meshTemplateName not found")
+#        try: #TODO: reomove this block?!?
+#            meshTemplate = self.template.project.meshTemplateCollection.meshTemplates[meshTemplateName]
+#        except KeyError:
+#            raise AcdOptiException_geomInstance_nameError("meshTemplateName not found")
         
         folder = os.path.join(self.folder,self.meshInstanceFolderName,meshInstanceName)
     

@@ -59,7 +59,7 @@ class MeshTemplate(InfoFrameComponent):
         self.__clearLockdownButton = gtk.Button(label="Clear lockdown")
         self.__clearLockdownButton.connect("clicked", self.event_button_clearLockdown, None)
 
-        self.__editJouButton = gtk.Button(label="Edit mesh template journal...")
+        self.__editJouButton = gtk.Button(label="Edit mesh template journal...") #Label changed by updateTable according to current lockdown setting
         self.__editJouButton.connect("clicked", self.event_button_edit, None)
 
         self.updateTable()
@@ -139,11 +139,11 @@ class MeshTemplate(InfoFrameComponent):
         #Update fixed buttons to cope with lockdown
         if lockdown: 
             self.__addButton.set_sensitive(False)
-            self.__editJouButton.set_sensitive(False)
+            self.__editJouButton.set_label("View mesh template journal...")
             self.__clearLockdownButton.set_sensitive(True)
         else:
             self.__addButton.set_sensitive(True)
-            self.__editJouButton.set_sensitive(True)
+            self.__editJouButton.set_label("Edit mesh template journal...")
             self.__clearLockdownButton.set_sensitive(False)
         
         
@@ -297,8 +297,7 @@ class MeshTemplate(InfoFrameComponent):
     
     def event_button_edit(self, widget, data=None):
         print "MeshTemplate::event_button_edit()"
-        editor = CubitTemplateEditor\
-            (self.frameManager, self.meshTemplate.meshTemplateFile)
+        editor = CubitTemplateEditor(self.frameManager, self.meshTemplate.meshTemplateFile, self.meshTemplate.lockdown)
         self.frameManager.push(editor)
 
     def event_delete(self):

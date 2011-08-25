@@ -4,8 +4,10 @@ import gtk
 
 #import exception
 
-from InfoFrameExceptions import *
-from InfoFrameComponent import *
+from InfoFrameExceptions import InfoFrameException_geometryCollection_dontDelete
+from InfoFrameComponent import InfoFrameComponent
+from CubitTemplateEditor import CubitTemplateEditor
+
 from acdOpti.AcdOptiGeometryInstance import AcdOptiGeometryInstance #For checking with isinstance()
 
 #TODO: Persistent ordering of keys
@@ -26,9 +28,10 @@ class GeometryCollection(InfoFrameComponent):
     __labelCollection   = None
     __entryCollection   = None
     __delButtCollection = None
+    __scrolledWindow =  None
 
     __clearLockdownButton = None
-    __scrolledWindow =  None
+    __editJournalButton = None
 
     def __init__(self,frameManager,geomCollection):
         InfoFrameComponent.__init__(self, frameManager)
@@ -52,6 +55,9 @@ class GeometryCollection(InfoFrameComponent):
         self.__clearLockdownButton = gtk.Button(label="Clear lockdown")
         self.__clearLockdownButton.connect("clicked", self.event_button_clearLockdown, None)
 
+        self.__editJournalButton =  gtk.Button(label="Edit geometry template journal...") #Text changed by updateTable according to current lockdown setting
+        self.__editJournalButton.connect("clicked", self.event_button_editJournal, None)
+
         self.updateTable()
 
         self.__scrolledWindow = gtk.ScrolledWindow()
@@ -62,6 +68,7 @@ class GeometryCollection(InfoFrameComponent):
         self.baseWidget = gtk.VBox()
         self.baseWidget.pack_start(self.__scrolledWindow,      expand=True)
         self.baseWidget.pack_start(self.__clearLockdownButton, expand=False)
+        self.baseWidget.pack_start(self.__editJournalButton,   expand=False)
 
         self.baseWidget.show_all()
         
@@ -129,9 +136,11 @@ class GeometryCollection(InfoFrameComponent):
         if lockdown: 
             self.__addButton.set_sensitive(False)
             self.__clearLockdownButton.set_sensitive(True)
+            self.__editJournalButton.set_label("View geometry template journal...")
         else:
             self.__addButton.set_sensitive(True)
             self.__clearLockdownButton.set_sensitive(False)
+            self.__editJournalButton.set_label("Edit geometry template journal...")
         
         self.__tableWidget.show_all()
 
@@ -282,7 +291,11 @@ class GeometryCollection(InfoFrameComponent):
         print "GeometryCollection::event_button_clearLockdown()"
         self.geomCollection.clearLockdown()
         self.updateTable()
-        
+    
+    def event_button_editJournal(self, widget, data=None):
+        print "GeometryCollection::event_button_editJournal()"
+        editor = CubitTemplateEditor(self.frameManager, self.geomCollection.geomTemplateFile, self.geomCollection.lockdown)
+        self.frameManager.push(editor)
 
     def event_delete(self):
         print "GeometryCollection::event_delete()"

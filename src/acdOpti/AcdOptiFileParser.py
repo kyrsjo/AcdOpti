@@ -76,8 +76,9 @@ class DataDict():
     
     def getVals(self, key):
         """
-        Returns all values associated with a given key,
-        in the order they where pushBack'ed
+        Returns a list with all values associated with a given key,
+        in the order they where pushBack'ed.
+        If there are no values, an empty list is returned. 
         """
         retBuf = []
         for i in xrange(len(self.keys)):
@@ -140,7 +141,7 @@ class DataDict():
         ret = self.vals[ii]
         self.vals[ii] = val
         return ret
-        
+    
     def clear(self):
         """
         Deletes all keys/values stored

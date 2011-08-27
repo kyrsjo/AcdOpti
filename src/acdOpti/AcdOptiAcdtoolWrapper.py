@@ -4,9 +4,11 @@ user-friendly matter - exposing acdtools major functions in a nice way
 and returning "pre-processed" output.
 """
 
+from AcdOptiSettings import AcdOptiSettings
+
 import subprocess
 
-acdtoolpath = "/opt/acdtool/acdtool" 
+acdtoolpath = AcdOptiSettings().getSetting("acdtoolpath") #"/opt/acdtool/acdtool" 
 
 def convertGenNcdf(genFileName, ncdfFileName):
     """

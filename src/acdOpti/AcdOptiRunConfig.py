@@ -2,12 +2,13 @@ from AcdOptiFileParser import AcdOptiFileParser_simple
 from AcdOptiExceptions import AcdOptiException_runConfig_createFail,\
                               AcdOptiException_runConfig_loadFail,\
                               AcdOptiException_runConfig_stageError,\
-                              AcdOptiException_runConfig_updateStateError
+                              AcdOptiException_runConfig_updateStateError,\
+                              AcdOptiException_optiRunner_stageError
 
 from AcdOptiSolverSetup import AcdOptiSolverSetup
 from AcdOptiRunner import AcdOptiRunner
 
-import os, shutil
+import os, shutil, tarfile
 from datetime import datetime
 
 class AcdOptiRunConfig:
@@ -29,8 +30,9 @@ class AcdOptiRunConfig:
     
     status = "not_initialized"
     
-    stageName = None   #status > staged, name of tar.gz file with staged data (else None)
+    stageName   = None #status > staged, name of folder or tar.gz file (without ending) with staged data (else None)
     stageFolder = None #Path to the staging directory (if status>staged, else None)
+    stageFile   = None #Full path to the tar.gz file with the staged data (if status>staged, else None)
     
     statuses= ["not_initialized", # Before object is fully created
                "initialized",     # Has one or more runners and a meshInstance
@@ -79,6 +81,9 @@ class AcdOptiRunConfig:
         self.stageFolder = self.__paramFile.dataDict.getValSingle("stageFolder")
         if self.stageFolder == "":
             self.stageFolder = None
+        self.stageFile = self.__paramFile.dataDict.getValSingle("stageFile")
+        if self.stageFile == "":
+            self.stageFile = None
         #TODO: Sanity check on stageFolder
         
         #Load the solverSetups
@@ -110,6 +115,7 @@ class AcdOptiRunConfig:
         
         for solver in self.solverSetups:
             solver.refreshLockdown()
+        self.runner.refreshLockdown()
         
     def stage(self):
         """
@@ -129,61 +135,120 @@ class AcdOptiRunConfig:
         for solver in self.solverSetups:
             solverString += solver.name + "::+::"
         solverString = solverString[:-5]
-        self.stageName = "AcdOpti-stage::" + project.projectName_name + "::"\
-                 + geomInstance.instName + "::+::" + meshTemplate.instName + "::"\
-                 + meshInstance.instName + "::"\
-                 + self.instName + "::+::" + self.runner.type + "::+::" + solverString + "::"\
+        self.stageName = "AcdOpti-stage--" + project.projectName_name + "-"\
+                 + geomInstance.instName + "-" + meshTemplate.instName + "--"\
+                 + meshInstance.instName + "--"\
+                 + self.instName + "-" + self.runner.type + "-" + solverString + "--"\
                  +  datetime.now().isoformat()
+        #self.stageName = "test"
         self.stageFolder = os.path.join(self.folder,"stage",self.stageName)
         os.mkdir(self.stageFolder)
+        
         
         #Get the mesh file, generate if necessary
         if not self.meshInstance.lockdown:
             self.meshInstance.generateMesh()
-        shutil.copy(os.path.join(self.meshInstance.folder, "mesh.ncdf"),\
-                    self.stageFolder)
+        shutil.copy(os.path.join(self.meshInstance.folder, "mesh.ncdf"), self.stageFolder)
+        shutil.copy(os.path.join(self.meshInstance.folder, "mesh.jou"), self.stageFolder)
+        
+        #Get the geometry journal file (for reference)
+        shutil.copy(os.path.join(self.meshInstance.geometryInstance.folder, "geom.jou"), self.stageFolder)
         
         #Prepare SolverSetups
         for solv in self.solverSetups:
             solv.stage()
         
         #Prepare runner
-        self.runner.stage()
+        try:
+            self.runner.stage()
+        except AcdOptiException_optiRunner_stageError as e:
+            #Something went wrong when staging the runner
+            # cleanup and raise exception
+            self.clearLockdown(forced=True)
+            raise AcdOptiException_runConfig_stageError("Error when staging runner", e.args[0])
+            
         
-        #Zip the folder to make it ready for upload       
-        shutil.make_archive(os.path.join(self.folder, "stage", self.stageName), "gztar",\
-                            root_dir=os.path.join(self.folder, "stage"), base_dir=self.stageFolder)
+        #Zip the folder to make it ready for upload
+        self.stageFile = os.path.join(self.folder, "stage", self.stageName) + ".tar.gz"
+        stageFileObject = tarfile.open(self.stageFile, mode="w:gz")
+        stageFileObject.add(self.stageFolder, arcname=self.stageName)
+        stageFileObject.close()
         
         #Set status flag
         self.status = "staged"
         for solver in self.solverSetups:
             solver.refreshLockdown()
+        self.runner.refreshLockdown()
     
-    def clearLockdown(self):
+        self.write()
+    
+    def upload(self):
+        """
+        Given that everything is staged, and we have a "remote" runner,
+        upload the data to the HPC 
+        """
+        assert self.status=="staged"
+        assert self.runner.isRemote()
+        self.runner.upload()
+        self.status = "remote::uploaded"
+    
+    def run(self):
+        """
+        Given that the runConfig etc. is ready to run, starts the run.
+        """
+        print "AcdOptiRunConfig::run()"
+        if self.runner.isRemote():
+            assert self.status == "remote::uploaded"
+        self.runner.run()
+    def cancel(self):
+        """
+        Given that there is a run in progress, cancel it.
+        """
+        print "AcdOptiRunConfig::cancel()"
+        if self.runner.isRemote():
+            assert self.status == "remote::running"
+        self.runner.cancelRun()
+    def remoteCleanup(self):
+        print "AcdOptiRunConfig::remoteCleanup()"
+        assert self.runner.isRemote()
+        assert self.status == "remote::uploaded" or self.status == "remote::finished"
+        self.runner.remoteCleanup()
+        self.status = "staged"
+        
+    def clearLockdown(self,forced=False):
         """
         Clears the staged data and any solutions/analysis
         results that might exist, bringing status back to 'initialized'"
+        
+        Set forced=True if the clearLockdown() happens because of a crash in stage,
+        and is intended to bring the runConfig back to a defined state
         """
         print "AcdOptiRunConfig::clearLockdown()"
-        if self.status == "initialized":
+        if self.status == "initialized" and not forced:
             return
         
         #Clear staged data folder and tarball
-        for d in os.listdir(self.stageFolder):
-            dAbs = os.path.abspath(os.path.join(self.stageFolder,d))
-            os.remove(dAbs)
-        os.rmdir(self.stageFolder)
-        os.remove(os.path.join(self.folder, "stage" ,self.stageName)+".tar.gz")
+        if self.stageFolder and os.path.isdir(self.stageFolder):
+            for d in os.listdir(self.stageFolder):
+                dAbs = os.path.abspath(os.path.join(self.stageFolder,d))
+                os.remove(dAbs)
+            os.rmdir(self.stageFolder)
+        if self.stageFile and os.path.isfile(self.stageFile):
+            os.remove(self.stageFile)
         
         #Clear finished data
         # TODO:
         
-        self.stageName = None
+        self.stageName   = None
         self.stageFolder = None
+        self.stageFile   = None
+        
         self.status = "initialized"
-        self.write()
         for solver in self.solverSetups:
             solver.refreshLockdown()
+        self.runner.refreshLockdown()
+
+        self.write()
     
     def write(self):
         """
@@ -192,12 +257,15 @@ class AcdOptiRunConfig:
         print "AcdOptiRunConfig::write()"
         self.__paramFile.dataDict.setValSingle("status",self.status)
         
+        print self.stageName, self.stageFolder, self.stageFile
         if self.stageName:
             self.__paramFile.dataDict.setValSingle("stageName", self.stageName)
             self.__paramFile.dataDict.setValSingle("stageFolder", self.stageFolder)
+            self.__paramFile.dataDict.setValSingle("stageFile", self.stageFile)
         else:
             self.__paramFile.dataDict.setValSingle("stageName", "")
             self.__paramFile.dataDict.setValSingle("stageFolder", "")
+            self.__paramFile.dataDict.setValSingle("stageFile", "")
         
         #Solver setups
         self.__paramFile.dataDict.delItem("solverSetup")
@@ -262,6 +330,7 @@ class AcdOptiRunConfig:
             paramFile.dataDict.pushBack("status", "not_initialized")
         paramFile.dataDict.pushBack("stageName", "")
         paramFile.dataDict.pushBack("stageFolder", "")
+        paramFile.dataDict.pushBack("stageFile", "")
         #Pushback all solverSetups under the same key
         for ssName in solverSetups:
             paramFile.dataDict.pushBack("solverSetup", ssName)

@@ -437,7 +437,7 @@ class MainWindow():
                         color =  "yellow"
                     elif rc.status == "staged":
                         color = "blue"
-                    elif rc.status.beginswith("remote::") or rc.status.beginswith("local::"):
+                    elif rc.status.startswith("remote::") or rc.status.beginswith("local::"):
                         color =  "cyan"
                     elif rc.status == "finished":
                         color = "green"

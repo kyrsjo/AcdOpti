@@ -1,4 +1,5 @@
 import exceptions
+import acdOpti
 
 class AcdOptiException(Exception):
     pass
@@ -11,6 +12,10 @@ class AcdOptiException(Exception):
 # class AcdOptiException_project_folderNameMismatch(AcdOptiException):
 #     pass
 class AcdOptiException_project_loadFail(AcdOptiException):
+    pass
+
+#Settings exception
+class AcdOptiException_settings_notFound(AcdOptiException):
     pass
 
 #GeomCollection
@@ -83,11 +88,17 @@ class AcdOptiException_runConfig_stageError(AcdOptiException):
     pass
 class AcdOptiException_runConfig_updateStateError(AcdOptiException):
     pass
+class AcdOptiException_runConfig_stageError(AcdOptiException):
+    pass
 
 #AcdOptiRunner
 class AcdOptiException_optiRunner_createFail(AcdOptiException):
     pass
 class AcdOptiException_optiRunner_loadFail(AcdOptiException):
+    pass
+class AcdOptiException_optiRunner_remoteProblem(AcdOptiException):
+    pass
+class AcdOptiException_optiRunner_stageError(AcdOptiException):
     pass
 #AcdOptiSolverSetup
 class AcdOptiException_solverSetup_createFail(AcdOptiException):

@@ -4,11 +4,13 @@ import gtk
 
 from InfoFrameComponent import InfoFrameComponent
 from SolverSetup import SolverSetup
+from RunnerSetup import getRunnerSetup, RunnerSetup_Hopper
 
 from acdOpti.AcdOptiSolverSetup import AcdOptiSolverSetup
 from acdOpti.AcdOptiRunConfig import AcdOptiRunConfig
 from acdOpti.AcdOptiExceptions import AcdOptiException_solverSetup_createFail,\
-                                      AcdOptiException_solverSetup_createFail_nameTaken
+                                      AcdOptiException_solverSetup_createFail_nameTaken,\
+    AcdOptiException_runConfig_stageError
 
 class RunConfig(InfoFrameComponent):
     
@@ -50,6 +52,7 @@ class RunConfig(InfoFrameComponent):
         #Information
         self.__configNameLabel = gtk.Label("Name of runConfig: \"" + self.runConfig.instName + "\"")
         self.baseWidget.pack_start(self.__configNameLabel, expand=False, padding=10)
+        
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
         #Solver and job setup
@@ -67,6 +70,9 @@ class RunConfig(InfoFrameComponent):
         self.__solverSetupColumnType.add_attribute(self.__solverSetupColumnTypeRender, 'text', 1)
         self.baseWidget.pack_start(self.__solverSetupTreeView, expand=True)
         self.__solverSetupTreeView.connect("row-activated", self.event_solverSetupTreeView_rowActivated, None)
+        self.__solverSetupTreeView.connect("cursor-changed",self.event_solverSetupTreeView_cursorChanged,None)
+        self.baseWidget.pack_start(gtk.Label("Double-click a solver setup to edit..."), expand=False, padding=5)
+
 
         self.__solverSetupAddDelBox = gtk.HBox()        
         self.__solverSetupAddButton = gtk.Button(label="Add solver setup...")
@@ -74,6 +80,7 @@ class RunConfig(InfoFrameComponent):
         self.__solverSetupAddDelBox.pack_start(self.__solverSetupAddButton)
         self.__solverSetupDelButton = gtk.Button(label="Delete solver setup")
         self.__solverSetupDelButton.connect("clicked", self.event_button_solverSetupDel, None)
+        self.__solverSetupDelButton.set_sensitive(False)
         self.__solverSetupAddDelBox.pack_start(self.__solverSetupDelButton)
         self.baseWidget.pack_start(self.__solverSetupAddDelBox, expand=False)
         
@@ -162,22 +169,22 @@ class RunConfig(InfoFrameComponent):
         elif status.startswith("remote::"):
             self.__statusButton.set_sensitive(True)
             if status == "remote::uploaded":
-                self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging")
-                self.__stageOrLockdownButton.set_sensitive(False)
+                self.__stageOrLockdownButton.set_label("Delete remote data")
+                self.__stageOrLockdownButton.set_sensitive(True)
                 self.__uploadDownloadButton.set_label("Download data")
                 self.__uploadDownloadButton.set_sensitive(False)
                 self.__runCancelButton.set_label("Run")
                 self.__runCancelButton.set_sensitive(True)
             elif status == "remote::queued" or status == "remote::running":
-                self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging")
+                self.__stageOrLockdownButton.set_label("Delete remote data")
                 self.__stageOrLockdownButton.set_sensitive(False)
                 self.__uploadDownloadButton.set_label("Download data")
                 self.__uploadDownloadButton.set_sensitive(False)
                 self.__runCancelButton.set_label("Cancel")
                 self.__runCancelButton.set_sensitive(True)
             elif status == "remote::finished":
-                self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging")
-                self.__stageOrLockdownButton.set_sensitive(False)
+                self.__stageOrLockdownButton.set_label("Delete remote data")
+                self.__stageOrLockdownButton.set_sensitive(True)
                 self.__uploadDownloadButton.set_label("Download data")
                 self.__uploadDownloadButton.set_sensitive(True)
                 self.__runCancelButton.set_label("Cancel")
@@ -188,6 +195,8 @@ class RunConfig(InfoFrameComponent):
         elif status.startswith("local::"):
             if status == "local::running":
                 raise NotImplementedError
+        elif status == "finished":
+            raise NotImplementedError
         else:
             assert not status in AcdOptiRunConfig.statuses 
             raise NotImplementedError
@@ -259,32 +268,55 @@ class RunConfig(InfoFrameComponent):
         
     def event_button_solverSetupDel(self, widget, data=None):
         print "RunConfig::event_button_solverSetupDel()"
+        print "Not implemented!"
         
     def event_button_jobSetupEdit(self, widget, data=None):
         print "RunConfig::event_button_jobSetupEdit()"
+        self.frameManager.push(getRunnerSetup(self.frameManager, self.runConfig.runner))
     def event_button_jobSetupChange(self, widget, data=None):
         print "RunConfig::event_button_jobSetupChange()"
         
+    def event_button_uploadDownload(self,widget,data=None):
+        print "RunConfig::event_button_uploadDownload()"
+        if self.runConfig.status == "staged":
+            self.runConfig.upload()
+        self.updateDisplay()
     def event_button_refreshStatus(self, widget, data=None):
         print "RunConfig::event_button_refreshStatus()"
     def event_button_runCancel(self,widget,data=None):
         print "RunConfig::event_button_runCancel()"
+        assert self.runConfig.runner.isRemote(), "Not implemented local yet..."
+        if self.runConfig.status == "remote::uploaded":
+            self.runConfig.run()
+        elif self.runConfig.status == "remote::running":
+            self.runConfig.cancel()
+        else:
+            raise NotImplementedError("Unexpected status '" + self.runConfig.status + "'")
+        self.updateDisplay()
         
     def event_button_stageOrClearLocdown(self,widget,data=None):
         print "RunConfig::event_button_stageOrClearLocdown()"
         status = self.runConfig.status
-        assert not status.startswith("remote")
+        assert not status.startswith("local::"), "Local not implemented yet!"
 
         if self.runConfig.status == "initialized":
-            self.runConfig.stage()
+            try:
+                self.runConfig.stage()
+            except AcdOptiException_runConfig_stageError as e:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         e.args[0] + ": " + e.args[1])
+                mDia.run()
+                mDia.destroy()
         elif self.runConfig.status == "staged":
             self.runConfig.clearLockdown()
-            
+        elif self.runConfig.status == "remote::uploaded" or self.runConfig.status == "remote::queued":
+            self.runConfig.remoteCleanup()
+        else:
+            raise NotImplementedError("Unexpected status '" + self.runConfig.status + "'")
         self.updateDisplay()
     
-    def event_button_uploadDownload(self,widget,data=None):
-        print "RunConfig::event_button_uploadDownload()"
-        
     def event_solverSetupTreeView_rowActivated(self,widget,path,column,data=None):
         print "RunConfig::event_solverSetupTreeView_rowActivated"
         
@@ -298,3 +330,13 @@ class RunConfig(InfoFrameComponent):
         assert solver #It should be there, as the listStore is generated from runConfig.solverSetups
         
         self.frameManager.push(SolverSetup(self.frameManager,solver))
+    def event_solverSetupTreeView_cursorChanged(self, widget,data=None):
+        #Get the currently selected row
+        (path,column) = self.__solverSetupTreeView.get_cursor()
+        if not path:
+            #Nothing selected...
+            self.__solverSetupDelButton.set_sensitive(False)
+            return
+        else:
+            self.__solverSetupDelButton.set_sensitive(True)
+        

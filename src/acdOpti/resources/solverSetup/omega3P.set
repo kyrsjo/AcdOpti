@@ -51,7 +51,7 @@ options {
 				type = fnameEx
 				must = True
 				single = True
-				default = ./cell.ncdf
+				default = ./mesh.ncdf
 		      	}
 			BoundaryCondition {
 				type = dict
@@ -70,6 +70,12 @@ options {
 						must = False
 						single = False //??
 						default = {}
+					}
+					Electric {
+					   type = intList
+                       must = False
+					   single = False //??
+					   default = {}
 					}
 					Exterior {
 						type = intList

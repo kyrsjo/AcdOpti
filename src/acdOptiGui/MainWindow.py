@@ -437,8 +437,10 @@ class MainWindow():
                         color =  "yellow"
                     elif rc.status == "staged":
                         color = "blue"
-                    elif rc.status.startswith("remote::") or rc.status.beginswith("local::"):
-                        color =  "cyan"
+                    elif rc.status.startswith("remote::") or rc.status.startswith("local::"):
+                        color = "cyan"
+                        if rc.status.endswith("::finished"):
+                            color = "magenta" 
                     elif rc.status == "finished":
                         color = "green"
                     rcIter = self.__treeModel.append(miIter, [rcName, self.__treeView.render_icon(gtk.STOCK_PROPERTIES, gtk.ICON_SIZE_MENU), color, rc])

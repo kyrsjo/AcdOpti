@@ -108,7 +108,7 @@ class RunConfig(InfoFrameComponent):
 
         stageRunCancelBox = gtk.HBox()
         self.__stageOrLockdownButton = gtk.Button("Clear lockdown") #Refreshed by updateDisplay()
-        self.__stageOrLockdownButton.connect("clicked", self.event_button_stageOrClearLocdown, None)
+        self.__stageOrLockdownButton.connect("clicked", self.event_button_stageOrClearLockdown, None)
         stageRunCancelBox.pack_start(self.__stageOrLockdownButton)
         
         self.__uploadDownloadButton = gtk.Button("Upload  data") #Refreshed by updateDisplay
@@ -120,6 +120,8 @@ class RunConfig(InfoFrameComponent):
         self.__runCancelButton =  gtk.Button("Run job") #Refreshed by updateDisplay()
         self.__runCancelButton.connect("clicked", self.event_button_runCancel, None)
         self.baseWidget.pack_start(self.__runCancelButton, expand=False)
+
+        
 
         self.updateDisplay()
 
@@ -167,8 +169,8 @@ class RunConfig(InfoFrameComponent):
             self.__runCancelButton.set_label("Run")
             self.__runCancelButton.set_sensitive(False)
         elif status.startswith("remote::"):
-            self.__statusButton.set_sensitive(True)
             if status == "remote::uploaded":
+                self.__statusButton.set_sensitive(False)
                 self.__stageOrLockdownButton.set_label("Delete remote data")
                 self.__stageOrLockdownButton.set_sensitive(True)
                 self.__uploadDownloadButton.set_label("Download data")
@@ -176,13 +178,23 @@ class RunConfig(InfoFrameComponent):
                 self.__runCancelButton.set_label("Run")
                 self.__runCancelButton.set_sensitive(True)
             elif status == "remote::queued" or status == "remote::running":
+                self.__statusButton.set_sensitive(True)
                 self.__stageOrLockdownButton.set_label("Delete remote data")
                 self.__stageOrLockdownButton.set_sensitive(False)
                 self.__uploadDownloadButton.set_label("Download data")
                 self.__uploadDownloadButton.set_sensitive(False)
                 self.__runCancelButton.set_label("Cancel")
                 self.__runCancelButton.set_sensitive(True)
+            elif status == "remote::unclean":
+                self.__statusButton.set_sensitive(False)
+                self.__stageOrLockdownButton.set_label("Delete remote data")
+                self.__stageOrLockdownButton.set_sensitive(True)
+                self.__uploadDownloadButton.set_label("Download data")
+                self.__uploadDownloadButton.set_sensitive(True)
+                self.__runCancelButton.set_label("Cancel")
+                self.__runCancelButton.set_sensitive(False)
             elif status == "remote::finished":
+                self.__statusButton.set_sensitive(False)
                 self.__stageOrLockdownButton.set_label("Delete remote data")
                 self.__stageOrLockdownButton.set_sensitive(True)
                 self.__uploadDownloadButton.set_label("Download data")
@@ -190,13 +202,19 @@ class RunConfig(InfoFrameComponent):
                 self.__runCancelButton.set_label("Cancel")
                 self.__runCancelButton.set_sensitive(False)
             else:
-                assert not status in AcdOptiRunConfig.statuses 
+                assert status in AcdOptiRunConfig.statuses, "status='" + status + "'"
                 raise NotImplementedError
         elif status.startswith("local::"):
             if status == "local::running":
                 raise NotImplementedError
         elif status == "finished":
-            raise NotImplementedError
+            self.__statusButton.set_sensitive(False)
+            self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging and solution")
+            self.__stageOrLockdownButton.set_sensitive(True)
+            self.__uploadDownloadButton.set_label("Download data")
+            self.__uploadDownloadButton.set_sensitive(False)
+            self.__runCancelButton.set_label("Cancel")
+            self.__runCancelButton.set_sensitive(False)
         else:
             assert not status in AcdOptiRunConfig.statuses 
             raise NotImplementedError
@@ -280,22 +298,26 @@ class RunConfig(InfoFrameComponent):
         print "RunConfig::event_button_uploadDownload()"
         if self.runConfig.status == "staged":
             self.runConfig.upload()
+        elif self.runConfig.status == "remote::unclean" or self.runConfig.status == "remote::finished":
+            self.runConfig.getRemote()
         self.updateDisplay()
     def event_button_refreshStatus(self, widget, data=None):
         print "RunConfig::event_button_refreshStatus()"
+        self.runConfig.refreshStatus()
+        self.updateDisplay()
     def event_button_runCancel(self,widget,data=None):
         print "RunConfig::event_button_runCancel()"
         assert self.runConfig.runner.isRemote(), "Not implemented local yet..."
         if self.runConfig.status == "remote::uploaded":
             self.runConfig.run()
-        elif self.runConfig.status == "remote::running":
+        elif self.runConfig.status == "remote::running" or self.runConfig.status == "remote::queued":
             self.runConfig.cancel()
         else:
             raise NotImplementedError("Unexpected status '" + self.runConfig.status + "'")
         self.updateDisplay()
         
-    def event_button_stageOrClearLocdown(self,widget,data=None):
-        print "RunConfig::event_button_stageOrClearLocdown()"
+    def event_button_stageOrClearLockdown(self,widget,data=None):
+        print "RunConfig::event_button_stageOrClearLockdown()"
         status = self.runConfig.status
         assert not status.startswith("local::"), "Local not implemented yet!"
 
@@ -311,8 +333,10 @@ class RunConfig(InfoFrameComponent):
                 mDia.destroy()
         elif self.runConfig.status == "staged":
             self.runConfig.clearLockdown()
-        elif self.runConfig.status == "remote::uploaded" or self.runConfig.status == "remote::queued":
+        elif self.runConfig.status == "remote::uploaded" or self.runConfig.status == "remote::unclean" or self.runConfig.status == "remote::finished":
             self.runConfig.remoteCleanup()
+        elif self.runConfig.status == "finished":
+            self.runConfig.clearLockdown()
         else:
             raise NotImplementedError("Unexpected status '" + self.runConfig.status + "'")
         self.updateDisplay()

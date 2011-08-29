@@ -88,8 +88,6 @@ class AcdOptiException_runConfig_stageError(AcdOptiException):
     pass
 class AcdOptiException_runConfig_updateStateError(AcdOptiException):
     pass
-class AcdOptiException_runConfig_stageError(AcdOptiException):
-    pass
 
 #AcdOptiRunner
 class AcdOptiException_optiRunner_createFail(AcdOptiException):
@@ -99,6 +97,8 @@ class AcdOptiException_optiRunner_loadFail(AcdOptiException):
 class AcdOptiException_optiRunner_remoteProblem(AcdOptiException):
     pass
 class AcdOptiException_optiRunner_stageError(AcdOptiException):
+    pass
+class AcdOptiException_optiRunner_runError(AcdOptiException):
     pass
 #AcdOptiSolverSetup
 class AcdOptiException_solverSetup_createFail(AcdOptiException):

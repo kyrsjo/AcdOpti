@@ -1,4 +1,5 @@
-from AcdOptiFileParser import AcdOptiFileParser_simple
+from AcdOptiFileParser import AcdOptiFileParser_simple,\
+                              DataDict
 from AcdOptiExceptions import AcdOptiException_runConfig_createFail,\
                               AcdOptiException_runConfig_loadFail,\
                               AcdOptiException_runConfig_stageError,\
@@ -7,6 +8,7 @@ from AcdOptiExceptions import AcdOptiException_runConfig_createFail,\
 
 from AcdOptiSolverSetup import AcdOptiSolverSetup
 from AcdOptiRunner import AcdOptiRunner
+from analysis.analysisInterface import AnalysisInterface
 
 import os, shutil, tarfile
 from datetime import datetime
@@ -20,13 +22,13 @@ class AcdOptiRunConfig:
     
     folder   = None
     instName = None
-    lockdown = None
+    #lockdown = None
     
-    solverSetups = None
-    runner       = None
-    meshInstance = None
+    solverSetups = None #List of solverSetups
+    runner       = None #The runner in use
+    meshInstance = None #Pointer back to the "owning" meshInstance 
     
-    __paramFile = None
+    __paramFile = None  #Settings file
     
     status = "not_initialized"
     
@@ -34,12 +36,17 @@ class AcdOptiRunConfig:
     stageFolder = None #Path to the staging directory (if status>staged, else None)
     stageFile   = None #Full path to the tar.gz file with the staged data (if status>staged, else None)
     
+    finishedFolder = None #Full path to the folder with the finished data
+    
+    analysis = None #List of the analysis loaded
+    
     statuses= ["not_initialized", # Before object is fully created
                "initialized",     # Has one or more runners and a meshInstance
                "staged",          # Object is staged, all files are in place
                "remote::uploaded",# Files uploaded to HPC, but has not yet appeared in queue system
                "remote::queued",  # Job is submitted to HPC, but has not started yet
                "remote::running", # Job is running
+               "remote::unclean", # Job was submitted, but crashed or was canceled
                "remote::finished",# Job has finished, but is not downloaded
                "local::running",  # Local job is running
                "finished"]        # Job is completely finished, ready for analysis
@@ -73,18 +80,33 @@ class AcdOptiRunConfig:
         self.status = self.__paramFile.dataDict.getValSingle("status")
         if not self.status in self.statuses:
             raise AcdOptiException_runConfig_loadFail("Status '" + self.status + "' not valid")
+        
         self.stageName = self.__paramFile.dataDict.getValSingle("stageName")
         if self.stageName == "":
             self.stageName = None
         if self.stageName and self.status == "initialized":
             raise AcdOptiException_runConfig_loadFail("StageName != None while status='" + self.status + "'")
+        
         self.stageFolder = self.__paramFile.dataDict.getValSingle("stageFolder")
         if self.stageFolder == "":
             self.stageFolder = None
+        
         self.stageFile = self.__paramFile.dataDict.getValSingle("stageFile")
         if self.stageFile == "":
             self.stageFile = None
-        #TODO: Sanity check on stageFolder
+        
+        self.finishedFolder = self.__paramFile.dataDict.getValSingle("finishedFolder")
+        if self.finishedFolder == "":
+            self.finishedFolder = None
+            assert self.status != "finished"
+        
+        #Sanity check on folders for staged- and finished data:
+        if not os.path.isdir(os.path.join(self.folder, "stage")):
+            raise AcdOptiException_runConfig_loadFail("stage folder not found")
+        if not os.path.isdir(os.path.join(self.folder, "finished")):
+            raise AcdOptiException_runConfig_loadFail("finished folder not found")
+        if not os.path.isdir(os.path.join(self.folder, "analysis")):
+            raise AcdOptiException_runConfig_loadFail("analysis folder not found")
         
         #Load the solverSetups
         solverSetupNames = self.__paramFile.dataDict.getVals("solverSetup")
@@ -95,15 +117,24 @@ class AcdOptiRunConfig:
         #Load the runner
         runnerType  = self.__paramFile.dataDict["runnerType"]
         self.runner = AcdOptiRunner.getRunner(runnerType, self)
-
+        
+        #Load any analysis specified by the paramFile
+        anaDict = self.__paramFile.dataDict["analysis"]
+        self.analysis = {}
+        for (anaName, anaOptions) in anaDict:
+            print anaName, anaOptions
+            if anaName in self.analysis:
+                raise KeyError("Analysis name '" + anaName + "' encountered twice")
+            self.analysis[anaName] = AnalysisInterface.loadAnalysisByDict(anaOptions)
+            
     
-    def refreshStatus_running(self):
+    def refreshStatus(self):
         """
         Refresh async statuses "remote::*" and "local::*"
         by calling the runner
         """
         print "AcdOptiRunConfig::refreshStatus_remote()"
-        if not self.status.beginswith("remote::") or not self.status.beginswith("local::"):
+        if not (self.status.startswith("remote::") or self.status.startswith("local::")):
             raise AcdOptiException_runConfig_updateStateError("Not an async status, current status='" + self.status + "'")
         
         status = self.runner.queryStatus()
@@ -200,18 +231,34 @@ class AcdOptiRunConfig:
         if self.runner.isRemote():
             assert self.status == "remote::uploaded"
         self.runner.run()
+        self.status = "remote::queued"
+    def getRemote(self):
+        """
+        Given that there are remote data and we are not running,
+        download this data to the local machine.
+        """
+        print "AcdOptiRunConfig::getRemote()"
+        assert self.runner.isRemote()
+        assert self.status == "remote::finished" or self.status == "remote::unclean"
+        self.finishedFolder = self.runner.getRemoteData()
+        self.remoteCleanup()
+        self.status = "finished"
+    
     def cancel(self):
         """
-        Given that there is a run in progress, cancel it.
+        Given that there is a run in progress or queued, cancel it.
         """
         print "AcdOptiRunConfig::cancel()"
         if self.runner.isRemote():
-            assert self.status == "remote::running"
+            assert self.status == "remote::running" or\
+                   self.status == "remote::queued"
         self.runner.cancelRun()
+        self.status = "remote::unclean"
+        
     def remoteCleanup(self):
         print "AcdOptiRunConfig::remoteCleanup()"
         assert self.runner.isRemote()
-        assert self.status == "remote::uploaded" or self.status == "remote::finished"
+        assert self.status=="remote::uploaded" or self.status=="remote::finished" or self.status=="remote::unclean"
         self.runner.remoteCleanup()
         self.status = "staged"
         
@@ -236,12 +283,15 @@ class AcdOptiRunConfig:
         if self.stageFile and os.path.isfile(self.stageFile):
             os.remove(self.stageFile)
         
-        #Clear finished data
-        # TODO:
-        
         self.stageName   = None
         self.stageFolder = None
         self.stageFile   = None
+        
+        #Clear finished data
+        shutil.rmtree(os.path.join(self.folder, "finished"))
+        os.mkdir(os.path.join(self.folder, "finished"))
+        
+        self.finishedFolder = None
         
         self.status = "initialized"
         for solver in self.solverSetups:
@@ -257,15 +307,23 @@ class AcdOptiRunConfig:
         print "AcdOptiRunConfig::write()"
         self.__paramFile.dataDict.setValSingle("status",self.status)
         
-        print self.stageName, self.stageFolder, self.stageFile
+        #TODO: Only store relative paths!
         if self.stageName:
             self.__paramFile.dataDict.setValSingle("stageName", self.stageName)
             self.__paramFile.dataDict.setValSingle("stageFolder", self.stageFolder)
             self.__paramFile.dataDict.setValSingle("stageFile", self.stageFile)
+            
         else:
             self.__paramFile.dataDict.setValSingle("stageName", "")
             self.__paramFile.dataDict.setValSingle("stageFolder", "")
             self.__paramFile.dataDict.setValSingle("stageFile", "")
+
+        if self.finishedFolder != None:
+            assert self.status == "finished"
+            self.__paramFile.dataDict.setValSingle("finishedFolder", self.finishedFolder)
+        else:
+            assert self.status != "finished"
+            self.__paramFile.dataDict.setValSingle("finishedFolder", "")
         
         #Solver setups
         self.__paramFile.dataDict.delItem("solverSetup")
@@ -274,6 +332,12 @@ class AcdOptiRunConfig:
         
         #Runner
         self.__paramFile.dataDict.setValSingle("runnerType", self.runner.type)
+        
+        #Analysis
+        anaDict = self.__paramFile.dataDict["analysis"]
+        anaDict.clear()
+        for (key, val) in self.analysis.iteritems():
+            anaDict.pushBack(key,val.generateRunConfigDict())
         
         self.__paramFile.write()
     
@@ -336,8 +400,18 @@ class AcdOptiRunConfig:
             paramFile.dataDict.pushBack("solverSetup", ssName)
         #Runner type
         paramFile.dataDict.pushBack("runnerType", runnerType) 
+        
+        #Analysis dictionary
+        paramFile.dataDict.pushBack("analysis", DataDict())
+        
         paramFile.write()
         
         #Create the staging folder
         os.mkdir(os.path.join(folder, "stage"))
 
+        #Create the finished folder
+        os.mkdir(os.path.join(folder, "finished"))
+        
+        #Create the analysis folder
+        os.mkdir.analysis(folder,"analysis")
+        

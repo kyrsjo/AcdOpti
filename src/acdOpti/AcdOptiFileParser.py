@@ -103,7 +103,7 @@ class DataDict():
     def __getitem__(self,entry):
         """
         If entry is a string, return the corresponding value (same behavior as getValSingle)
-        If entry is an intteger, return a 2-tuple (key,value).
+        If entry is an integer, return a 2-tuple (key,value).
         Raises TypeError or IndexError on bad input, and AcdOptiException_dataDict_getValsSingle
         if the data is missing or there is to much of it.
         """
@@ -128,15 +128,15 @@ class DataDict():
 
         if DataDict.valValidCheck(val):
             raise TypeError(val)
-
+        
         ii = None
         for i in xrange(self.length):
             if self.keys[i] == key:
                 if ii:
                     raise AcdOptiException_dataDict_setValSingle("Multiple keys found")
                 ii = i
-        if not ii:
-            raise AcdOptiException_dataDict_setValSingle("No keys found")
+        if ii == None:
+            raise AcdOptiException_dataDict_setValSingle("No entries with key='" + key + "' found")
         
         ret = self.vals[ii]
         self.vals[ii] = val

@@ -49,18 +49,15 @@ class SolverSetup(InfoFrameComponent):
         self.__dynamicTableCols.append(gtk.TreeViewColumn("Data type", self.__dynamicTableCRs[-1], text=1))
         self.__dynamicTable.append_column(self.__dynamicTableCols[-1])
 
-        
         self.__dynamicTableCRs.append(gtk.CellRendererText())
         self.__dynamicTableCols.append(gtk.TreeViewColumn("Current value", self.__dynamicTableCRs[-1], text=2, editable=5))
         self.__dynamicTableCRs[-1].connect('edited', self.event_cellRenderer_value_edited, None)
         self.__dynamicTable.append_column(self.__dynamicTableCols[-1])
         
-        
         self.__dynamicTableCRs.append(gtk.CellRendererToggle())
         self.__dynamicTableCols.append(gtk.TreeViewColumn("Enabled", self.__dynamicTableCRs[-1], active=3, activatable=4))
         self.__dynamicTableCRs[-1].connect("toggled", self.event_cellRenderer_enabled_toggled, None)
-        self.__dynamicTable.append_column(self.__dynamicTableCols[-1])
-            
+        self.__dynamicTable.append_column(self.__dynamicTableCols[-1])            
     
         self.__scrollWindow = gtk.ScrolledWindow()
         self.__scrollWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)

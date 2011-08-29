@@ -90,7 +90,7 @@ class MeshInstance(InfoFrameComponent):
 
         #Initialize __tableWidget
         if not self.__tableWidget:
-            self.__tableWidget=gtk.Table(numEntries+1, 3, False)                                
+            self.__tableWidget=gtk.Table(numEntries+1, 3, False)                              
 
             self.__tableWidget.set_row_spacings(3)
             self.__tableWidget.set_col_spacings(3)

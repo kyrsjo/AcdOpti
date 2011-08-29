@@ -4,11 +4,11 @@ from AcdOptiSettings   import AcdOptiSettings
 from AcdOptiExceptions import AcdOptiException_optiRunner_createFail,\
                               AcdOptiException_optiRunner_loadFail,\
                               AcdOptiException_optiRunner_remoteProblem,\
-                              AcdOptiException_optiRunner_stageError
+                              AcdOptiException_optiRunner_stageError,\
+                              AcdOptiException_optiRunner_runError
 
 import paramiko
-
-import os, math
+import os, math, re, tarfile
 
 class AcdOptiRunner:
     """
@@ -52,7 +52,10 @@ class AcdOptiRunner:
         "Query the status of this job, returning one of AcdOptiRunConfig.statuses"
         raise NotImplementedError
     def getRemoteData(self):
-        "If the job is remote, download the data"
+        """
+        If the job is remote, download the data.
+        Returns the path to the folder with the finished data.
+        """
         raise NotImplementedError
     def refreshLockdown(self):
         """
@@ -95,11 +98,11 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
     type = "Hopper"
     CPUsPerNode = 24
     hostname = "hopper.nersc.gov"
-    commonExecs = {"Omega3P::2011May23":"~candel/.community/hopper2/omega3p-2011May23"}
+    #commonExecs = {"Omega3P::2011May23":"~candel/.community/hopper2/omega3p-2011May23"}
     
     __paramFile = None    
     #PBSjobName = None
-    
+    remoteJobID = None
     
     def __init__(self,runConfig):
         
@@ -109,6 +112,21 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         self.__paramFile = AcdOptiFileParser_simple(os.path.join(self.folder,"paramFile_acdOptiRunner_Hopper.set"), 'rw')
         if not self.__paramFile.dataDict["fileID"] == "AcdOptiRunner_Hopper":
             raise AcdOptiException_optiRunner_loadFail("Wrong fileID, got'"+self.__paramFile.dataDict["fileID"] + "'")
+        self.remoteJobID = self.__paramFile.dataDict["remoteJobID"]
+        if self.remoteJobID == "":
+            self.remoteJobID = None
+        if self.remoteJobID != None and not (self.runConfig.status == "remote::queued" or self.runConfig.status != "remote::running"):
+            raise AcdOptiException_optiRunner_loadFail("Found remoteJobID, but status='" + self.runConfig.status + "'")
+        elif self.remoteJobID == None and (self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running"):
+            raise AcdOptiException_optiRunner_loadFail("Did not find remoteJobID, but status='" + self.runConfig.status + "'")
+         
+    
+    def getTorqueMeta(self):
+        "Returns a pointer to the TorqueMeta data structure"
+        return self.__paramFile.dataDict["TorqueMeta"]
+    def getJobs(self):
+        "Return a pointer to the jobs data structure"
+        return self.__paramFile.dataDict["jobs"]
     
     def isRemote(self):
         return True
@@ -125,6 +143,24 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         #client.load_system_host_keys()
         print "Connected."
         return client
+    def __SSHkillDir(self, dir, sftp):
+        """
+        Recursively delete directory dir and its contents using a sftp connection
+        """
+        #Emptying the folder...
+        iDir = ""
+        if dir[-1] == "/":
+            iDir = dir[:-1]
+        else:
+            iDir = dir
+        fileList = sftp.listdir(iDir)
+        for file in fileList:
+            try:
+                sftp.remove(iDir + "/" + file)
+            except IOError:
+                #Directory
+                self.__SSHkillDir(iDir + "/" + file, sftp)
+        sftp.rmdir(iDir)
     
     def upload(self):
         stageFile = self.runConfig.stageFile
@@ -160,11 +196,16 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
         #Unzip
         print "Unzipping..."
-        print "COMMAND:", "tar xzvf " + remoteFile + " --directory " + remoteScratch
-        (ssh_stdin, ssh_stdout, ssh_stderr) = client.exec_command("tar xzvf " + remoteFile + " --directory " + remoteScratch)
-        print "STDOUT:", ssh_stdout.read()
-        print "STDERR:", ssh_stderr.read()
+        print "COMMAND:", "cd " + remoteScratch +"; tar xzvf " + remoteFile # + " --directory " + remoteScratch
+        (ssh_stdin, ssh_stdout, ssh_stderr) = client.exec_command("cd " + remoteScratch +"; tar xzvf " + remoteFile) #+ " --directory " + remoteScratch)
+        (ssh_stdout_str, ssh_stderr_str) = (ssh_stdout.read(), ssh_stderr.read()) 
+        print "STDOUT:", ssh_stdout_str
+        print "STDERR:", ssh_stderr_str
         print "Unzipped."
+        
+        if len(ssh_stderr_str):
+            client.close()
+            raise AcdOptiException_optiRunner_remoteProblem("Problem while unzipping, see output")
         
         #Delete the remote tar.gz
         print "Deleting tar.gz..."
@@ -176,6 +217,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
             print "Already gone."
         
         client.close()
+        
     def remoteCleanup(self):
         #Make connection...
         username = AcdOptiSettings().getSetting("hopperUser")
@@ -185,12 +227,19 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         remoteDir = "/scratch/scratchdirs/" + username + "/"
         remoteScratch = remoteDir + "acdopti_scratch/"
         remoteFile = remoteScratch + os.path.split(self.runConfig.stageFile)[1]
+        remoteFinishedFile = remoteScratch + self.runConfig.stageName + "--finished.tar.gz"
 
-        #Delete the remote tar.gz
-        print "Deleting tar.gz..."
+        #Delete the remote tar.gz's
+        print "Deleting stage tar.gz..."
         dirList = sftp.listdir(remoteScratch)
         if os.path.split(self.runConfig.stageFile)[1] in dirList:
             sftp.remove(remoteFile)
+            print "Deleted."
+        else:
+            print "Already gone."
+        print "Deleting stage tar.gz..."
+        if os.path.split(remoteFinishedFile)[1] in dirList:
+            sftp.remove(remoteFinishedFile)
             print "Deleted."
         else:
             print "Already gone."
@@ -198,14 +247,11 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         #Delete the remote folder
         print "Deleting remote folder..."
         if self.runConfig.stageName in dirList:
-            #Emptying the folder...
-            inDirList = sftp.listdir(remoteScratch + "/" + self.runConfig.stageName)
-            for file in inDirList:
-                sftp.remove(remoteScratch + "/" + self.runConfig.stageName + "/" + file)
-            sftp.rmdir(remoteScratch + self.runConfig.stageName)
-            print "Deleted."
+            self.__SSHkillDir(remoteScratch + "/" + self.runConfig.stageName, sftp)
         else:
             print "Already gone."
+        
+        client.close()
         
     def run(self):
         #Make connection...
@@ -216,12 +262,123 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
         #Submit job
         print "Submitting..."
-        (ssh_stdin, ssh_stdout, ssh_stderr) = client.exec_command("qsub " + remoteScratch + self.runConfig.stageName + "/run.pbs")
-        print "STDOUT:", ssh_stdout.read()
-        print "STDERR:", ssh_stderr.read()
+        (ssh_stdin, ssh_stdout, ssh_stderr) = client.exec_command("cd " + remoteScratch + self.runConfig.stageName + "; qsub " + remoteScratch + self.runConfig.stageName + "/run.pbs")
+        (ssh_stdout_str, ssh_stderr_str) = (ssh_stdout.read(), ssh_stderr.read()) 
+        print "STDOUT:", ssh_stdout_str
+        print "STDERR:", ssh_stderr_str
         print "Submitted."
     
+        client.close()
+        
+        if len(ssh_stderr_str):
+            raise AcdOptiException_optiRunner_remoteProblem("Problem during submission, see output")
+        
+        #Check if the stdout matches XXXXX.YYY, where XXXXX is a number, and YYY is letters.
+        # This is then the job ID.
+        if re.match("[0-9]+\.[a-zA-Z]+$", ssh_stdout_str):
+            self.remoteJobID = ssh_stdout_str.strip()
+            self.__paramFile.dataDict.setValSingle("remoteJobID", self.remoteJobID)
+            print "Submission successful, JobID='" + self.remoteJobID + "'"
+        else:
+            raise AcdOptiException_optiRunner_runError("Problem with job submission, see standard output")
+        self.write()
+        
+    def cancelRun(self):
+        assert self.remoteJobID != "None" 
+        #Make connection...
+        client =  self.__connectSSH()
+        
+        #Cancel the current job
+        print "Issuing cancel command..."
+        (ssh_stdin, ssh_stdout, ssh_stderr) = client.exec_command("qdel " + self.remoteJobID)
+        (ssh_stdout_str, ssh_stderr_str) = (ssh_stdout.read(), ssh_stderr.read()) 
+        print "STDOUT:", ssh_stdout_str
+        print "STDERR:", ssh_stderr_str
+        print "Cancel command issued."
+        
+        client.close()
+        
+        if len(ssh_stderr_str):
+            raise AcdOptiException_optiRunner_remoteProblem("Problem during cancel, see output")
 
+    def queryStatus(self):
+        assert self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running", "status = '" + self.runConfig.status + "'"
+        
+        #Make connection
+        client = self.__connectSSH()
+        
+        print "Getting status..."
+        (ssh_stdin, ssh_stdout, ssh_stderr) = client.exec_command("qstat " + self.remoteJobID)
+        (ssh_stdout_str, ssh_stderr_str) = (ssh_stdout.read(), ssh_stderr.read()) 
+        print "STDOUT:", ssh_stdout_str
+        print "STDERR:", ssh_stderr_str
+        print "Got status."
+        
+        client.close()
+        
+        if len(ssh_stderr_str):
+            raise AcdOptiException_optiRunner_remoteProblem("Problem while getting status, see output")
+        
+        #Parse the status output:
+        if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
+            return "remote::finished"
+        
+        statusline = ""
+        for line in ssh_stdout_str.splitlines():
+            if line.startswith(self.remoteJobID):
+                statusline = line
+                break
+        statusChar = statusline.split()[-2]
+        print "statusLine='" + statusline + "', statusChar='" + statusChar + "'"
+        if statusChar == "Q":
+            return "remote::queued"
+        elif statusChar == "R":
+            return "remote::running"
+        elif statusChar == "C":
+            return "remote::finished"
+        else:
+            raise ValueError("Unknown status char '" + statusChar + "'")
+        
+        
+    def getRemoteData(self):
+        assert self.runConfig.status=="remote::finished" or self.runConfig.status=="remote::unclean"
+        
+        finishedLocalPath=os.path.join(self.folder, "finished")
+        
+        username = AcdOptiSettings().getSetting("hopperUser")
+        remoteDir = "/scratch/scratchdirs/" + username + "/"
+        remoteScratch = remoteDir + "acdopti_scratch/"
+        #remoteJobDir = remoteScratch + self.runConfig.stageName + "/"
+        remoteFile = self.runConfig.stageName + "--finished.tar.gz"
+
+        #Make connection
+        client = self.__connectSSH()
+        sftp = client.open_sftp()
+        
+        #Tar the data
+        print "Zipping..."
+        command = "cd " + remoteScratch +"; tar czvf " + remoteFile + " --force-local " + self.runConfig.stageName
+        print "COMMAND:", command
+        (ssh_stdin, ssh_stdout, ssh_stderr) = client.exec_command(command)
+        (ssh_stdout_str, ssh_stderr_str) = (ssh_stdout.read(), ssh_stderr.read())
+        print "STDOUT:", ssh_stdout_str
+        print "STDERR:", ssh_stderr_str
+        print "Zipped."
+        if len(ssh_stderr_str):
+            client.close()
+            raise AcdOptiException_optiRunner_remoteProblem("Problem during zipping, see output")
+        
+        #Download the tarball
+        sftp.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile))
+        
+        client.close()
+        
+        #Unzip the downloaded solution tar.gz
+        archive = tarfile.open(os.path.join(finishedLocalPath, remoteFile), "r:gz")
+        archive.extractall(path=finishedLocalPath)
+        
+        return os.path.join(finishedLocalPath, self.runConfig.stageName)
+        
     def stage(self):
         self.__makePBS()
     def __makePBS(self):
@@ -233,23 +390,24 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         jobs = self.__paramFile.dataDict["jobs"]
         commands = []
         numNodes = 0
-        for job in jobs:
-            nodesThis = int(math.ceil(int(job["tasks"])/float(self.CPUsPerNode)))
-            if nodesThis > numNodes:
-                numNodes = nodesThis
-            def makeOption(optionName, key):
-                get = job.getVals[key]
-                if len(get) == 1:
-                    return "-" + optionName + " " + get[0]
-                elif len(get) > 0:
-                    raise KeyError("Got more than one hit on key='" + key + "'")
-                else:
-                    return ""
-            command = "aprun -n" + job["tasks"] + " " +\
-                        makeOption("-N", "tasksNode") + " " +\
-                        makeOption("-S", "tasksNuma")
-                        #TODO: More keys in job...
-            command.append(command)  
+        for jobName, job in jobs:
+            command = None
+            if DataDict.boolconv(job["aprun"]):
+                nodesThis = int(math.ceil(int(job["tasks"])/float(self.CPUsPerNode)))
+                if nodesThis > numNodes:
+                    numNodes = nodesThis
+                def makeOption(optionName, key, optional):
+                    get = job[key]
+                    if get == "-1" and optional:
+                        return "" 
+                    return optionName + " " + get[0] + " "
+                command = "aprun "  + makeOption("-n", "tasks", False)\
+                                    + makeOption("-N", "tasksNode", True)\
+                                    + makeOption("-S", "tasksNuma", True)\
+                                    + job["command"] + " " + job["commandArgs"]
+            else:
+                command = job["command"]
+            commands.append(command)
         
         if len(commands) == 0:
             raise AcdOptiException_optiRunner_stageError("No commands built")
@@ -262,7 +420,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         runpbs.write("#!/bin/bash\n")
         
         torqueMeta = self.__paramFile.dataDict["TorqueMeta"]
-        runpbs.write("#PBS -q " + torqueMeta["queue"])
+        runpbs.write("#PBS -q " + torqueMeta["queue"] + "\n")
         runpbs.write("#PBS -l mppwidth=" + str(numNodes*self.CPUsPerNode) + "\n")
         runpbs.write("#PBS -l walltime=" + torqueMeta["walltime"] + "\n")
         runpbs.write("#PBS -N " + self.runConfig.stageName + "\n")
@@ -271,6 +429,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
             runpbs.write("#PBS -V\n")
         
         runpbs.write("\n\n")
+        
         #Write PBS script
         runpbs.write("## Commands:\n")
         for command in commands:
@@ -280,16 +439,18 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
 
 
         #Move it to stage folder
-        #os.rename(os.path.join(self.folder, "run.pbs"), os.path.join(self.folder, "stage", "run.pbs"))
-        
-    def __del__(self):
-        self.paramFile.write()
+        #os.rename(os.path.join(self.folder, "run.pbs"), os.path.join(self.folder, "stage", "run.pbs")) 
+    
+    def write(self):
+        self.__paramFile.write()
     
     @staticmethod
     def createNew(folder, type):
         #Create the settings file
         paramFile = AcdOptiFileParser_simple(os.path.join(folder,"paramFile_acdOptiRunner_Hopper.set"),"w")
         paramFile.dataDict.pushBack("fileID", "AcdOptiRunner_Hopper")
+
+        paramFile.dataDict.pushBack("remoteJobID", "")
 
         #Set default torque meta stuff
         torqueMeta = paramFile.dataDict.pushBack("TorqueMeta", DataDict())
@@ -299,13 +460,25 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         torqueMeta.pushBack("importVars", "True")
 
         #Create a datastructure for storing aprun jobs
-        paramFile.dataDict.pushBack("jobs", DataDict())
+        jobs = paramFile.dataDict.pushBack("jobs", DataDict())
         # Each aprun job has the following fields:
+        #  - aprun:       Boolean, true in the case of aprun jobs
+        #  - command:     Command to run
+        #  - commandArgs: Arguments to pass to the executable (such as name of input file)
         #  - tasks:       Number of MPI tasks, -n.               Essential!
         #  - tasksNode:   Number of MPI tasks pr. node, -N.      Optional.
         #  - tasksNuma:   Number of MPI tasks pr. NUMA node, -S. Optional.
-        #  - commandID:   Executable ID (corresponding to the self.commonExecs flags
-        #  - commandArgs: Arguments to pass to the executable (such as name of input file)
+        # If the aprun flag is False, then only command is used (but all keys should be present!)
+        # Optional args should also be present. Set to "-1" to disable.
+        
+        #This command is always needed.
+        cdpbs = jobs.pushBack("cdPBS", DataDict())
+        cdpbs.pushBack("aprun", "False")
+        cdpbs.pushBack("command", "cd $PBS_O_WORKDIR")
+        cdpbs.pushBack("commandArgs", "")
+        cdpbs.pushBack("tasks", "-1")
+        cdpbs.pushBack("tasksNode", "-1")
+        cdpbs.pushBack("tasksNuma", "-1")
         
         paramFile.write()
         

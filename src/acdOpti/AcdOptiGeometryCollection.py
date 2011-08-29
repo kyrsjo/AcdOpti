@@ -9,7 +9,6 @@ from AcdOptiExceptions import AcdOptiException_geomCollection_loadFail,\
                               AcdOptiException_geomInstance_loadFail,\
                               AcdOptiException_dataDict_getValsSingle
 
-
 import os
 
 class AcdOptiGeometryCollection:

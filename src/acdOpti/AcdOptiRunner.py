@@ -230,14 +230,14 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         remoteFinishedFile = remoteScratch + self.runConfig.stageName + "--finished.tar.gz"
 
         #Delete the remote tar.gz's
-        print "Deleting stage tar.gz..."
+        print "Deleting remote stage tar.gz..."
         dirList = sftp.listdir(remoteScratch)
         if os.path.split(self.runConfig.stageFile)[1] in dirList:
             sftp.remove(remoteFile)
             print "Deleted."
         else:
             print "Already gone."
-        print "Deleting stage tar.gz..."
+        print "Deleting remote finished tar.gz..."
         if os.path.split(remoteFinishedFile)[1] in dirList:
             sftp.remove(remoteFinishedFile)
             print "Deleted."
@@ -299,6 +299,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         client.close()
         
         if len(ssh_stderr_str):
+            if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
+                return
             raise AcdOptiException_optiRunner_remoteProblem("Problem during cancel, see output")
 
     def queryStatus(self):
@@ -316,13 +318,12 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
         client.close()
         
-        if len(ssh_stderr_str):
-            raise AcdOptiException_optiRunner_remoteProblem("Problem while getting status, see output")
-        
         #Parse the status output:
-        if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
-            return "remote::finished"
-        
+        if len(ssh_stderr_str):
+            if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
+                return "remote::finished"
+            raise AcdOptiException_optiRunner_remoteProblem("Problem while getting status, see output")
+                
         statusline = ""
         for line in ssh_stdout_str.splitlines():
             if line.startswith(self.remoteJobID):

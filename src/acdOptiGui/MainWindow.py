@@ -21,6 +21,7 @@ from infoFrames.GeometryInstance import GeometryInstance
 from infoFrames.MeshInstance import MeshInstance
 from infoFrames.RunConfig import RunConfig
 from infoFrames.MeshTemplate import MeshTemplate
+from infoFrames.AnalysisExportedResults import AnalysisExportedResults
 
 from acdOpti.analysis.AnalysisInterface import AnalysisInterface
 
@@ -371,7 +372,8 @@ class MainWindow():
             print "MainWindow::event_treeView_rowActivated() : mesh template, name='" + row[0] + "'"
             self.__infoFrame.push(MeshTemplate(self.__infoFrame, row[-1]))
         elif isinstance(row[-1], AnalysisInterface):
-            self.__infoFrame.writeMessage("Analysis!")
+            print "MainWindow::event_treeView_rowActivated() : analysis, name='" + row[0] + "'"
+            self.__infoFrame.push(AnalysisExportedResults(self.__infoFrame, row[-1]))
         
         else:
             raise NotImplementedError("Unknown class coming down in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")

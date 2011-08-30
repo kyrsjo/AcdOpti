@@ -117,7 +117,7 @@ class SolverSetup(InfoFrameComponent):
         print "SolverSetup::__updateDynamicTable_recursive()"
         
         for (key,val) in metaSetup:
-            print (key,val)
+            #print (key,val)
             type = val["type"]
             if type == "dict":
                 iter = self.__dynamicTableTree.append(parentIter,\

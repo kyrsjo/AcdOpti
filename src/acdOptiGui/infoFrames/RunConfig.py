@@ -402,10 +402,5 @@ class RunConfig(InfoFrameComponent):
         print "RunConfig::event_button_addAnalysis()"
         (type,name,response) = self.__getTypeAndNameDialog(AnalysisInterface.getTypes(), "Select analysis type")
         if response == gtk.RESPONSE_OK:
-            #try:
-
-            ana = AnalysisInterface.createAndLoadAnalysis(type,os.path.join(self.runConfig.folder, "analysis"),name)
-            self.runConfig.analysis[ana.instName] = ana
-            
+            self.runConfig.addAnalysis(type,name)
             self.updateDisplay()
-                

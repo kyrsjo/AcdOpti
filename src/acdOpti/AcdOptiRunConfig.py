@@ -131,6 +131,8 @@ class AcdOptiRunConfig:
         for solver in self.solverSetups:
             solver.refreshLockdown()
         self.runner.refreshLockdown()
+        
+        self.runner.write()
     
     def refreshStatus(self):
         """
@@ -151,6 +153,7 @@ class AcdOptiRunConfig:
         for solver in self.solverSetups:
             solver.refreshLockdown()
         self.runner.refreshLockdown()
+        self.write()
         
     def stage(self):
         """
@@ -226,6 +229,7 @@ class AcdOptiRunConfig:
         assert self.runner.isRemote()
         self.runner.upload()
         self.status = "remote::uploaded"
+        self.write()
     
     def run(self):
         """
@@ -236,6 +240,8 @@ class AcdOptiRunConfig:
             assert self.status == "remote::uploaded"
         self.runner.run()
         self.status = "remote::queued"
+        self.write()
+        
     def getRemote(self):
         """
         Given that there are remote data and we are not running,
@@ -245,9 +251,10 @@ class AcdOptiRunConfig:
         assert self.runner.isRemote()
         assert self.status == "remote::finished" or self.status == "remote::unclean"
         self.finishedFolder = self.runner.getRemoteData()
-        self.remoteCleanup()
         self.status = "finished"
-    
+        self.remoteCleanup()
+        self.write()
+        
     def cancel(self):
         """
         Given that there is a run in progress or queued, cancel it.
@@ -258,13 +265,16 @@ class AcdOptiRunConfig:
                    self.status == "remote::queued"
         self.runner.cancelRun()
         self.status = "remote::unclean"
+        self.write()
         
     def remoteCleanup(self):
         print "AcdOptiRunConfig::remoteCleanup()"
         assert self.runner.isRemote()
-        assert self.status=="remote::uploaded" or self.status=="remote::finished" or self.status=="remote::unclean"
+        assert self.status=="remote::uploaded" or self.status=="remote::finished" or self.status=="remote::unclean" or self.status=="finished"
         self.runner.remoteCleanup()
-        self.status = "staged"
+        if self.status != "finished":
+            self.status = "staged"
+        self.write()
         
     def clearLockdown(self,forced=False):
         """
@@ -277,6 +287,10 @@ class AcdOptiRunConfig:
         print "AcdOptiRunConfig::clearLockdown()"
         if self.status == "initialized" and not forced:
             return
+        
+        #Clear lockdown of analysis
+        for ana in self.analysis.itervalues():
+            ana.clearLockDown()
         
         #Clear staged data folder and tarball
         if self.stageFolder and os.path.isdir(self.stageFolder):
@@ -297,12 +311,18 @@ class AcdOptiRunConfig:
         
         self.finishedFolder = None
         
+        
         self.status = "initialized"
         for solver in self.solverSetups:
             solver.refreshLockdown()
         self.runner.refreshLockdown()
-
+        
         self.write()
+    
+    def addAnalysis(self, type, name=None):
+        "Create and add an analysis of the given type and name"
+        ana = AnalysisInterface.createAndLoadAnalysis(type,os.path.join(self.folder, "analysis"),name)
+        self.analysis[ana.instName] = ana
     
     def write(self):
         """

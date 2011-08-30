@@ -1,6 +1,8 @@
 from acdOpti.AcdOptiFileParser import DataDict
 from acdOpti.AcdOptiExceptions import AcdOptiException
 
+import os
+
 #from Dummy import Dummy
 
 class AnalysisInterface:
@@ -10,7 +12,19 @@ class AnalysisInterface:
     folder   = None #Base folder for all analysis - they create a file or folder here named <name>
     instName = None #Name of this instance, as specified by AnalysisInterface.getName()
     
-    exportResults = None #DataDict with numerical results that can be used for meta-analysis
+    exportResults = None #DataDict with numerical results that can be used for meta-analysis (plotting etc.)
+    
+    def runAnalysis(self):
+        """
+        Call this method to actually run the analysis on the data.
+        Will set lockdown=True.
+        """
+        raise NotImplementedError
+    def clearLockDown(self):
+        """
+        Call this method to clear a lockdown.
+        """
+        raise NotImplementedError
     
     def generateRunConfigDict(self):
         """
@@ -50,11 +64,16 @@ class AnalysisInterface:
         to load and return a specific analysis.
         """
         if not dataDict["type"] in AnalysisInterface.getTypes():
-            raise AnalysisException_createFail("Type '" + type + "' is not valid")
+            raise AnalysisException_loadFail("Type '" + type + "' is not valid")
+        
+        name = dataDict["name"]
+        
+        if not os.path.exists(os.path.join(folder, name)):
+            raise AnalysisException_loadFail("No analysis file found?!")
         
         if dataDict["type"] == "Dummy":
             from Dummy import Dummy
-            return Dummy(folder, dataDict["name"])
+            return Dummy(folder, name)
     
     @staticmethod
     def getTypes():
@@ -80,6 +99,8 @@ class AnalysisInterface:
             raise AnalysisException_createFail("Type '" + type + "' is not valid")
         
         name = AnalysisInterface.getName(type, name)
+        if os.path.exists(os.path.join(folder, name)):
+            raise AnalysisException_loadFail("Analysis file already created?!?")
         
         if type == "Dummy":
             from Dummy import Dummy
@@ -95,4 +116,6 @@ class AnalysisInterface:
         
 #Exceptions
 def AnalysisException_createFail(AcdOptiException):
+    pass
+def AnalysisException_loadFail(AcdOptiException):
     pass

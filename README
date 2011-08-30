@@ -4,7 +4,14 @@ CUBIT[2] scripts, managing all the input/output files, controlling remote jobs
 on HPC resources such as hopper2[3] at NERSC, and running analysis and plots
 on the solutions.
 
-The code is lisenced under GNU General Public Lisence (GPL) version 3.0[4].
+To use the code, you need
+ (1) Password-less SSH access to Hopper2
+ (2) Enter your username and location of acdtool executable in file
+        src/acdOpti/AcdOptiSettings.py
+ (3) The following non-standard-library python packages:
+        pyGTK, paramiko, CUBIT
+
+The code is licensed under GNU General Public License (GPL) version 3.0[4].
 
 References:
 [1]: http://www.slac.stanford.edu/grp/acd/ace3p.html

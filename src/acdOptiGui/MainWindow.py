@@ -22,6 +22,8 @@ from infoFrames.MeshInstance import MeshInstance
 from infoFrames.RunConfig import RunConfig
 from infoFrames.MeshTemplate import MeshTemplate
 
+from acdOpti.analysis.AnalysisInterface import AnalysisInterface
+
 import os
 
 acdOptiGuiPath = os.path.split(__file__)[0] #"/home/kyrre/PhD/optimizer/code/acdOptiGui"
@@ -143,8 +145,8 @@ class MainWindow():
 
         self.window.show_all()
 
-        #Lazy me
-        self.loadProject("../test")
+        #Lazy me...
+        #self.loadProject("../test")
     #END __init__()
 
     def event_delete(self, widget, event, data=None):
@@ -368,6 +370,9 @@ class MainWindow():
         elif isinstance(row[-1], AcdOptiMeshTemplate):
             print "MainWindow::event_treeView_rowActivated() : mesh template, name='" + row[0] + "'"
             self.__infoFrame.push(MeshTemplate(self.__infoFrame, row[-1]))
+        elif isinstance(row[-1], AnalysisInterface):
+            self.__infoFrame.writeMessage("Analysis!")
+        
         else:
             raise NotImplementedError("Unknown class coming down in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
             
@@ -444,7 +449,16 @@ class MainWindow():
                     elif rc.status == "finished":
                         color = "green"
                     rcIter = self.__treeModel.append(miIter, [rcName, self.__treeView.render_icon(gtk.STOCK_PROPERTIES, gtk.ICON_SIZE_MENU), color, rc])
-
+                    
+                    #Analysis
+                    for (anaName,ana) in rc.analysis.iteritems():
+                        if ana.lockdown == True:
+                            color = "green"
+                        elif ana.lockdown == False:
+                            color = "red"
+                        else:
+                            raise NotImplementedError
+                        anaIter = self.__treeModel.append(rcIter, [anaName, self.__treeView.render_icon(gtk.STOCK_INFO, gtk.ICON_SIZE_MENU), color, ana])
         #Mesh template collection
 #        if self.activeProject.meshTemplateCollection.lockdown:
 #            color = "green"

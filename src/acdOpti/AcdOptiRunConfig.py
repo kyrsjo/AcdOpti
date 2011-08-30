@@ -8,7 +8,7 @@ from AcdOptiExceptions import AcdOptiException_runConfig_createFail,\
 
 from AcdOptiSolverSetup import AcdOptiSolverSetup
 from AcdOptiRunner import AcdOptiRunner
-from analysis.analysisInterface import AnalysisInterface
+from analysis.AnalysisInterface import AnalysisInterface
 
 import os, shutil, tarfile
 from datetime import datetime
@@ -125,8 +125,12 @@ class AcdOptiRunConfig:
             print anaName, anaOptions
             if anaName in self.analysis:
                 raise KeyError("Analysis name '" + anaName + "' encountered twice")
-            self.analysis[anaName] = AnalysisInterface.loadAnalysisByDict(anaOptions)
+            self.analysis[anaName] = AnalysisInterface.loadAnalysisByDict(anaOptions, os.path.join(self.folder, "analysis"))
             
+    
+        for solver in self.solverSetups:
+            solver.refreshLockdown()
+        self.runner.refreshLockdown()
     
     def refreshStatus(self):
         """
@@ -395,6 +399,7 @@ class AcdOptiRunConfig:
         paramFile.dataDict.pushBack("stageName", "")
         paramFile.dataDict.pushBack("stageFolder", "")
         paramFile.dataDict.pushBack("stageFile", "")
+        paramFile.dataDict.pushBack("finishedFolder", "")
         #Pushback all solverSetups under the same key
         for ssName in solverSetups:
             paramFile.dataDict.pushBack("solverSetup", ssName)
@@ -413,5 +418,5 @@ class AcdOptiRunConfig:
         os.mkdir(os.path.join(folder, "finished"))
         
         #Create the analysis folder
-        os.mkdir.analysis(folder,"analysis")
+        os.mkdir(os.path.join(folder,"analysis"))
         

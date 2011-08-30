@@ -1,4 +1,5 @@
 import pygtk
+from acdOpti.analysis.AnalysisInterface import AnalysisInterface
 pygtk.require('2.0')
 import gtk
 
@@ -10,7 +11,9 @@ from acdOpti.AcdOptiSolverSetup import AcdOptiSolverSetup
 from acdOpti.AcdOptiRunConfig import AcdOptiRunConfig
 from acdOpti.AcdOptiExceptions import AcdOptiException_solverSetup_createFail,\
                                       AcdOptiException_solverSetup_createFail_nameTaken,\
-    AcdOptiException_runConfig_stageError
+                                      AcdOptiException_runConfig_stageError
+
+import os
 
 class RunConfig(InfoFrameComponent):
     
@@ -40,6 +43,7 @@ class RunConfig(InfoFrameComponent):
     __stageOrLockdownButton = None
     __runCancelButton = None
     
+    __addAnalysisButton = None
     
     def __init__(self, frameManager, runConfig):
         print "RunConfig::__init__()"
@@ -121,8 +125,12 @@ class RunConfig(InfoFrameComponent):
         self.__runCancelButton.connect("clicked", self.event_button_runCancel, None)
         self.baseWidget.pack_start(self.__runCancelButton, expand=False)
 
+        self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
-
+        self.__addAnalysisButton = gtk.Button("Add analysis")
+        self.__addAnalysisButton.connect("clicked", self.event_button_addAnalysis, None)
+        self.baseWidget.pack_start(self.__addAnalysisButton, expand=False)
+        
         self.updateDisplay()
 
         self.baseWidget.show_all()
@@ -152,6 +160,8 @@ class RunConfig(InfoFrameComponent):
             self.__uploadDownloadButton.set_sensitive(False)
             self.__runCancelButton.set_label("Run")
             self.__runCancelButton.set_sensitive(False)
+            self.__solverSetupAddButton.set_sensitive(True)
+            self.__solverSetupDelButton.set_sensitive(True)
         elif status == "initialized":
             self.__statusButton.set_sensitive(False)
             self.__stageOrLockdownButton.set_label("Stage data")
@@ -160,6 +170,8 @@ class RunConfig(InfoFrameComponent):
             self.__uploadDownloadButton.set_sensitive(False)
             self.__runCancelButton.set_label("Run")
             self.__runCancelButton.set_sensitive(False)
+            self.__solverSetupAddButton.set_sensitive(True)
+            self.__solverSetupDelButton.set_sensitive(True)
         elif status == "staged":
             self.__statusButton.set_sensitive(False)
             self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging")
@@ -168,7 +180,11 @@ class RunConfig(InfoFrameComponent):
             self.__uploadDownloadButton.set_sensitive(True)
             self.__runCancelButton.set_label("Run")
             self.__runCancelButton.set_sensitive(False)
+            self.__solverSetupAddButton.set_sensitive(False)
+            self.__solverSetupDelButton.set_sensitive(False)
         elif status.startswith("remote::"):
+            self.__solverSetupAddButton.set_sensitive(False)
+            self.__solverSetupDelButton.set_sensitive(False)
             if status == "remote::uploaded":
                 self.__statusButton.set_sensitive(False)
                 self.__stageOrLockdownButton.set_label("Delete remote data")
@@ -208,6 +224,8 @@ class RunConfig(InfoFrameComponent):
             if status == "local::running":
                 raise NotImplementedError
         elif status == "finished":
+            self.__solverSetupAddButton.set_sensitive(False)
+            self.__solverSetupDelButton.set_sensitive(False)
             self.__statusButton.set_sensitive(False)
             self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging and solution")
             self.__stageOrLockdownButton.set_sensitive(True)
@@ -223,11 +241,20 @@ class RunConfig(InfoFrameComponent):
     def event_delete(self):
         print "RunConfig::event_delete()"
         self.runConfig.write()
-            
-    def event_button_solverSetupAdd(self, widget, data=None):
-        print "RunConfig::event_button_solverSetupAdd()"
-        
-        dia = gtk.Dialog("Select solver type", self.getBaseWindow(),
+    
+    def __getTypeAndNameDialog(self,types,diaTitle):
+        """
+        Helper method for creating a dialog asking for a type and a name.
+        Input:
+         - types: List of strings describing the types
+         - diaTitle: Title of dialog box
+        Returns:
+        (type, name, response)
+         - type: One of the items in types
+         - name: The name typed in by the user, or None if nothing entered 
+         - response: Response code of the dialog (one of the gtk.RESPONSE_??? constants)
+        """
+        dia = gtk.Dialog(diaTitle, self.getBaseWindow(),
                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                          (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                           gtk.STOCK_OK, gtk.RESPONSE_OK))
@@ -235,12 +262,13 @@ class RunConfig(InfoFrameComponent):
 
         #Setup the listModel        
         diaListModel = gtk.ListStore(str)
-        for type in AcdOptiSolverSetup.getTypes():
+        for type in types:
             diaListModel.append([type,])
         
         diaTreeView = gtk.TreeView(diaListModel)
         diaCellRender = gtk.CellRendererText()
         diaTreeViewCol = gtk.TreeViewColumn("Solver types", diaCellRender,text=0)
+        diaTreeView.set_headers_visible(False)
         diaTreeView.append_column(diaTreeViewCol)
         #diaTreeView.set_headers_visible(True)
         dia.vbox.pack_start(diaTreeView, padding = 5)
@@ -269,6 +297,12 @@ class RunConfig(InfoFrameComponent):
         #Delete the dialog
         dia.destroy()
         
+        return (type, name, response)
+    
+    def event_button_solverSetupAdd(self, widget, data=None):
+        print "RunConfig::event_button_solverSetupAdd()"
+        
+        (type,name,response) = self.__getTypeAndNameDialog(AcdOptiSolverSetup.getTypes(), "Select solver type")
         if response == gtk.RESPONSE_OK:
             try:
                 newSS_name = AcdOptiSolverSetup.createNew(type, self.runConfig.folder, name)
@@ -363,4 +397,15 @@ class RunConfig(InfoFrameComponent):
             return
         else:
             self.__solverSetupDelButton.set_sensitive(True)
-        
+    
+    def event_button_addAnalysis(self,widget,data=None):
+        print "RunConfig::event_button_addAnalysis()"
+        (type,name,response) = self.__getTypeAndNameDialog(AnalysisInterface.getTypes(), "Select analysis type")
+        if response == gtk.RESPONSE_OK:
+            #try:
+
+            ana = AnalysisInterface.createAndLoadAnalysis(type,os.path.join(self.runConfig.folder, "analysis"),name)
+            self.runConfig.analysis[ana.instName] = ana
+            
+            self.updateDisplay()
+                

@@ -145,8 +145,10 @@ class GeometryInstance(InfoFrameComponent):
         #Update the lockdown button
         if lockdown:
             self.__clearLockdownButton.set_sensitive(True)
+            self.__generateButton.set_sensitive(False)
         else:
             self.__clearLockdownButton.set_sensitive(False)
+            self.__generateButton.set_sensitive(True)
         
         self.__tableWidget.show_all()
         self.frameManager.mainWindow.updateProjectExplorer()

@@ -63,7 +63,11 @@ class AnalysisExportedResults(InfoFrameComponent):
             self.__lockdownRunButton.set_label("Clear lockdown")
         else:
             self.__lockdownRunButton.set_label("Run analysis")
-        
+        if self.analysis.runConfig.status == "finished":
+            self.__lockdownRunButton.set_sensitive(True)
+        else:
+            self.__lockdownRunButton.set_sensitive(False)
+            
         #Main window project explorer
         self.frameManager.mainWindow.updateProjectExplorer()
 

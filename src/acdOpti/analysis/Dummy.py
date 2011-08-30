@@ -11,11 +11,13 @@ class Dummy(AnalysisInterface):
     """
     __paramFile = None
     
-    def __init__(self, folder, name):
+    def __init__(self, folder, name, runConfig):
         print "Dummy::__init()"
         self.type     = "Dummy"
         self.folder   = folder
         self.instName = name
+        self.runConfig = runConfig
+        
         
         self.__paramFile = AcdOptiFileParser_simple(os.path.join(folder, name), 'rw')
         if self.__paramFile.dataDict["fileID"] != "Analysis::Dummy":

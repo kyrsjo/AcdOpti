@@ -125,7 +125,7 @@ class AcdOptiRunConfig:
             print anaName, anaOptions
             if anaName in self.analysis:
                 raise KeyError("Analysis name '" + anaName + "' encountered twice")
-            self.analysis[anaName] = AnalysisInterface.loadAnalysisByDict(anaOptions, os.path.join(self.folder, "analysis"))
+            self.analysis[anaName] = AnalysisInterface.loadAnalysisByDict(anaOptions, os.path.join(self.folder, "analysis"), self)
             
     
         for solver in self.solverSetups:
@@ -321,7 +321,7 @@ class AcdOptiRunConfig:
     
     def addAnalysis(self, type, name=None):
         "Create and add an analysis of the given type and name"
-        ana = AnalysisInterface.createAndLoadAnalysis(type,os.path.join(self.folder, "analysis"),name)
+        ana = AnalysisInterface.createAndLoadAnalysis(type, self, os.path.join(self.folder, "analysis"), name)
         self.analysis[ana.instName] = ana
     
     def write(self):

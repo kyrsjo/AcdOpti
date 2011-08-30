@@ -11,6 +11,7 @@ class AnalysisInterface:
     type     = None #Type of analysis
     folder   = None #Base folder for all analysis - they create a file or folder here named <name>
     instName = None #Name of this instance, as specified by AnalysisInterface.getName()
+    runConfig = None
     
     exportResults = None #DataDict with numerical results that can be used for meta-analysis (plotting etc.)
     
@@ -57,7 +58,7 @@ class AnalysisInterface:
             return name
     
     @staticmethod
-    def loadAnalysisByDict(dataDict, folder):
+    def loadAnalysisByDict(dataDict, folder, runConfig):
         """
         Use the information in a dataDict
         of the format written by generateRunConfigDict
@@ -71,19 +72,27 @@ class AnalysisInterface:
         if not os.path.exists(os.path.join(folder, name)):
             raise AnalysisException_loadFail("No analysis file found?!")
         
+        import acdOpti.AcdOptiRunConfig
+        assert isinstance(runConfig, acdOpti.AcdOptiRunConfig.AcdOptiRunConfig)
+        
         if dataDict["type"] == "Dummy":
             from Dummy import Dummy
-            return Dummy(folder, name)
+            return Dummy(folder, name, runConfig)
+        elif dataDict["type"] == "FileList":
+            from FileList import FileList
+            return FileList(folder,name,runConfig)
+        else:
+            raise NotImplementedError("This shoudn't happen?!?")
     
     @staticmethod
     def getTypes():
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy"]
+        return ["Dummy", "FileList"]
     
     @staticmethod
-    def createAndLoadAnalysis(type, folder, name=None):
+    def createAndLoadAnalysis(type, runConfig, folder, name=None):
         """
         Creates a new analysis of the specified type,
         with common analysis folder given.
@@ -102,10 +111,17 @@ class AnalysisInterface:
         if os.path.exists(os.path.join(folder, name)):
             raise AnalysisException_loadFail("Analysis file already created?!?")
         
+        import acdOpti.AcdOptiRunConfig
+        assert isinstance(runConfig, acdOpti.AcdOptiRunConfig.AcdOptiRunConfig)
+        
         if type == "Dummy":
             from Dummy import Dummy
             Dummy.createNew(folder, name)
-            return Dummy(folder, name)
+            return Dummy(folder, name, runConfig)
+        elif type == "FileList":
+            from FileList import FileList
+            FileList.createNew(folder,name)
+            return FileList(folder,name,runConfig)
         
     @staticmethod
     def createNew(folder, name):

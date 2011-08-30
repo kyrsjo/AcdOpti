@@ -28,7 +28,7 @@ class GeometryCollection(InfoFrameComponent):
     __labelCollection   = None
     __entryCollection   = None
     __delButtCollection = None
-    __scrolledWindow =  None
+    __scrolledWindow    =  None
 
     __clearLockdownButton = None
     __editJournalButton = None

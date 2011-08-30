@@ -149,7 +149,7 @@ options {
 		must = True
 		single = True
 		children {
-			NumEigenValues {
+			NumEigenvalues {
 				type = int
 				must = True
 				single = True

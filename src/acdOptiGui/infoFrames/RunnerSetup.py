@@ -160,6 +160,7 @@ class RunnerSetup_Hopper(InfoFrameComponent):
             self.__queueCombo.set_sensitive(False)
             self.__walltimeEdit.set_sensitive(False)
             self.__repoEdit.set_sensitive(False)
+            self.__importvarsCheck.set_sensitive(False)
             self.__tasksList.set_sensitive(False)
             self.__tasksAddButton.set_sensitive(False)
             self.__tasksDelButton.set_sensitive(False)

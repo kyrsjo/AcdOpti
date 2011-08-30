@@ -40,8 +40,7 @@ class AcdOptiMeshInstance:
     lockdown               = False
     
     cubitMeshPreCommands  = ["reset", "open 'geom.cub'"]
-    cubitMeshPostCommands = ["transform mesh output scale 0.001",\
-                             "export genesis 'mesh.gen' block all overwrite"]
+    cubitMeshPostCommands = ["export genesis 'mesh.gen' block all overwrite"]
     
     
     def __init__(self, folder, geometryInstance, meshTemplateCollection):

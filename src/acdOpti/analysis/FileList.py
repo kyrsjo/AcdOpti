@@ -12,7 +12,7 @@ class FileList(AnalysisInterface):
     __paramFile = None
     
     def __init__(self, folder, name, runConfig):
-        print "FileList::__init()"
+        print "FileList::__init__()"
         self.type      = "FileList"
         self.folder    = folder
         self.instName  = name

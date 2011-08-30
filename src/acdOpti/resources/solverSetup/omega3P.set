@@ -2,7 +2,7 @@
 fileID = SolverSetupTemplate
 
 // Metainformation about solver setup
-fileFormat      = Lua
+fileFormat      = KVC
 fileNameDefault = setup.o3p
 type            = omega3P //For concistency check
 

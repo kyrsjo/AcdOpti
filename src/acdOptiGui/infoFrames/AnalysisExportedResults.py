@@ -57,7 +57,8 @@ class AnalysisExportedResults(InfoFrameComponent):
         #TreeView
         self.__treeModel.clear()
         self.__updateTable_recursive(self.analysis.exportResults, None)
-
+        self.__treeView.expand_all()
+        
         #Button
         if self.analysis.lockdown:
             self.__lockdownRunButton.set_label("Clear lockdown")

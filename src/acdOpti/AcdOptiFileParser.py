@@ -594,10 +594,10 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         return retrs
     #END repr_lifter
 
-class AcdOptiFileParser_KVC(AcdOptiFileParser):
+class AcdOptiFileParser_Lua(AcdOptiFileParser):
     """
-    Reads and writes ACD text files in the "KVC" syntax,
-    used by solver output file
+    Reads and writes ACD text files in the "Lua" syntax,
+    also used by solver output file.
     """
     def __init__(self,data,mode):
         raise exceptions.NotImplementedError
@@ -606,9 +606,9 @@ class AcdOptiFileParser_KVC(AcdOptiFileParser):
         raise exceptions.NotImplementedError
 
 
-class AcdOptiFileParser_Lua(AcdOptiFileParser):
+class AcdOptiFileParser_KVC(AcdOptiFileParser):
     """
-    Reads and writes ACD text files in the "Lua" syntax,
+    Reads and writes ACD text files in the "KVC" syntax,
     used by solver input params.
     
     It really uses the simple parser behind-the-scenes,
@@ -624,7 +624,7 @@ class AcdOptiFileParser_Lua(AcdOptiFileParser):
     }
     """
     def __init__(self,data,mode):
-        print "AcdOptiFileParser_Lua::__init__(), mode=", mode
+        print "AcdOptiFileParser_KVC::__init__(), mode=", mode
         self.mode = mode
         
         if mode == "s":
@@ -650,22 +650,23 @@ class AcdOptiFileParser_Lua(AcdOptiFileParser):
             raise AcdOptiException_fileParser_invalidMode
     
     def __repr__(self):
-        print "AcdOptiFileParser_Lua::__repr__()"
+        print "AcdOptiFileParser_KVC::__repr__()"
         simpleRepr = AcdOptiFileParser_simple.repr_lifter(self.dataDict)
-        return AcdOptiFileParser_Lua.changeFromSimple(simpleRepr)
+        return AcdOptiFileParser_KVC.changeFromSimple(simpleRepr)
         
     @staticmethod
     def changeToSimple(data):
         """
-        Converts a string from "LUA" format to "simple"
+        Converts a string from "KVC" format to "simple"
         """
         data = re.sub(":\s*{", "{", data)
-        data = data.replace(":", "=")
+        #TODO: Problem - if there is a ":" in the string, we now have dual "=" -> Parser not happy.
+        data = data.replace(":", "=") 
         return data
     @staticmethod
     def changeFromSimple(data):
         """
-        Converts a string from "simple" to "LUA" format
+        Converts a string from "simple" to "KVC" format
         """
         data = data.replace("=", ":")
         data = re.sub("(\w)\s*{", r'\1 : {', data)

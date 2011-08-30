@@ -3,8 +3,6 @@ from acdOpti.AcdOptiExceptions import AcdOptiException
 
 import os
 
-#from Dummy import Dummy
-
 class AnalysisInterface:
     lockdown = None
     
@@ -81,6 +79,9 @@ class AnalysisInterface:
         elif dataDict["type"] == "FileList":
             from FileList import FileList
             return FileList(folder,name,runConfig)
+        elif dataDict["type"] == "Omega3P_modeInfo":
+            from Omega3P_modeInfo import Omega3P_modeInfo
+            return Omega3P_modeInfo(folder,name,runConfig)
         else:
             raise NotImplementedError("This shoudn't happen?!?")
     
@@ -89,7 +90,7 @@ class AnalysisInterface:
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy", "FileList"]
+        return ["Dummy", "FileList", "Omega3P_modeInfo"]
     
     @staticmethod
     def createAndLoadAnalysis(type, runConfig, folder, name=None):
@@ -122,6 +123,10 @@ class AnalysisInterface:
             from FileList import FileList
             FileList.createNew(folder,name)
             return FileList(folder,name,runConfig)
+        elif type == "Omega3P_modeInfo":
+            from Omega3P_modeInfo import Omega3P_modeInfo
+            Omega3P_modeInfo.createNew(folder, name)
+            return Omega3P_modeInfo(folder,name,runConfig)
         
     @staticmethod
     def createNew(folder, name):

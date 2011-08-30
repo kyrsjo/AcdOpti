@@ -12,7 +12,7 @@ class Dummy(AnalysisInterface):
     __paramFile = None
     
     def __init__(self, folder, name, runConfig):
-        print "Dummy::__init()"
+        print "Dummy::__init__()"
         self.type     = "Dummy"
         self.folder   = folder
         self.instName = name

@@ -44,6 +44,7 @@ class FileList(AnalysisInterface):
         
         
     def clearLockdown(self):
+        print "FileList::clearLockdown()"
         self.exportResults["files"].clear()
         self.lockdown = False
         self.write()
@@ -60,7 +61,12 @@ class FileList(AnalysisInterface):
         paramFile.dataDict.pushBack("export", DataDict())
         paramFile.dataDict["export"].pushBack("files", DataDict())
         paramFile.write()
-
+    
+#    @staticmethod
+#    def createNew_clone(folder,cloneFrom,newRunConfig):
+#        newFileList = FileList.createNew(folder, cloneFrom.name)
+#        return FileList(folder,cloneFrom.name,newRunConfig)
+    
 class FileListException(AcdOptiException):
         pass
     

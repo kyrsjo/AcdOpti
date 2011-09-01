@@ -294,7 +294,7 @@ class MeshInstance(InfoFrameComponent):
                 
                 self.meshInstance.templateOverrides_del(data)
                 self.__entryCollection[data].set_sensitive(False)
-                self.__entryCollection[data].set_text(self.meshInstance.meshTemplate.paramDefaults[data])
+                self.__entryCollection[data].set_text(self.meshInstance.meshTemplate.paramDefaults_get(data))
                 
             else:
                 #Abort
@@ -302,7 +302,7 @@ class MeshInstance(InfoFrameComponent):
                 self.__checkCollection[data].set_active(False)
         else:
             #Unchecked
-            self.meshInstance.templateOverrides_insert(data, self.meshInstance.meshTemplate.paramDefaults[data])
+            self.meshInstance.templateOverrides_insert(data, self.meshInstance.meshTemplate.paramDefaults_get(data))
             self.__entryCollection[data].set_sensitive(True)
         
     def event_button_clearLockdown(self, widget, data=None):

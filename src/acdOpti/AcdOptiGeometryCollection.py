@@ -98,6 +98,7 @@ class AcdOptiGeometryCollection:
                 print e
                 raise AcdOptiException_geomCollection_loadFail(\
                     "Problem loading geometry instance \"" + d + "\"")
+                
     def write(self):
         """
         Write the current contents of this class to paramFile,
@@ -127,6 +128,30 @@ class AcdOptiGeometryCollection:
             if key in self.geomInstances[gi].templateOverrides_getKeys():
                 return self.geomInstances[gi]
         return None
+
+    def addGeomInstance(self,name):
+        """
+        Creates and adds a GeometryInstance to the geomCollection.
+        Raises an AcdOptiException_geomInstance_createFail if the name already exists.
+        The created geomInstance is returned.
+        """
+        #Create the AcdOptiGeometryInstance
+        folder = os.path.join(self.folder, name)
+        AcdOptiGeometryInstance.createNew(folder)
+
+        #Add it to the project/geomCollection
+        assert not name in self.geomInstances, "Folder did not exist but there was an entry in self.geomInstances?!? name='" + name + "'"
+        self.geomInstances[name] = AcdOptiGeometryInstance(folder,self)
+        
+        return self.geomInstances[name]
+    
+    def cloneGeomInstance(self,oldName, newName):
+        """
+        Create a new geomInstance called <newName>, having
+        identical same settings, meshInstance etc. as the one called <oldName>.
+        """
+        newGeom = AcdOptiGeometryInstance.createNew_clone(os.path.join(self.folder, newName), self.geomInstances[oldName]) 
+        self.geomInstances[newName] = newGeom
 
     def setLockdown(self):
         """

@@ -29,6 +29,7 @@ class GeometryInstance(InfoFrameComponent):
     __checkCollection = None
     
     __clearLockdownButton = None
+    __cloneButton    = None
     __exportButton   = None
     __generateButton = None
     __meshButton     = None
@@ -40,20 +41,21 @@ class GeometryInstance(InfoFrameComponent):
         self.geomInstance = geomInstance
          
         #Create GUI
+        self.baseWidget = gtk.VBox()
+
         self.__topLabels = []
 
-        tlab = gtk.Label("Tag name")
-        self.__topLabels.append(tlab)
-        
-        tlab = gtk.Label("Value")
-        self.__topLabels.append(tlab)
+        self.__topLabels.append(gtk.Label("Tag name"))
+        self.__topLabels.append(gtk.Label("Value")) 
+        self.__topLabels.append(gtk.Label("Use default"))
 
-        tlab = gtk.Label("Use default")
-        self.__topLabels.append(tlab)
 
         self.__clearLockdownButton = gtk.Button(label="Clear lockdown")
         self.__clearLockdownButton.connect("clicked", self.event_button_clearLockdown, None)
-
+        
+        self.__cloneButton = gtk.Button(label="Clone this geometry instance (deep copy)")
+        self.__cloneButton.connect("clicked", self.event_button_clone, None)
+        
         self.__exportButton = gtk.Button(label="Export CUBIT journal to file...")
         self.__exportButton.connect("clicked", self.event_button_export, None)
         
@@ -64,24 +66,23 @@ class GeometryInstance(InfoFrameComponent):
         self.__meshButton.connect("clicked", self.event_button_mesh)
 
         self.updateTable()
-
         self.__scrolledWindow = gtk.ScrolledWindow()
         self.__scrolledWindow.set_policy(gtk.POLICY_NEVER,gtk.POLICY_AUTOMATIC)
         self.__scrolledWindow.add_with_viewport(self.__tableWidget)
         self.__scrolledWindow.set_shadow_type(gtk.SHADOW_NONE)
-        
-        self.baseWidget = gtk.VBox()
         self.baseWidget.pack_start(self.__scrolledWindow,      expand=True)
+
         self.baseWidget.pack_start(self.__clearLockdownButton, expand=False)
-        self.baseWidget.pack_start(self.__meshButton,          expand=False)
+        self.baseWidget.pack_start(self.__cloneButton,         expand=False)
         self.baseWidget.pack_start(self.__exportButton,        expand=False)
         self.baseWidget.pack_start(self.__generateButton,      expand=False)
+        self.baseWidget.pack_start(self.__meshButton,          expand=False)
         
         self.baseWidget.show_all()
         
     def updateTable(self):
         """
-        Fills self.__tableWidget
+        Creates and/or (re-)fills self.__tableWidget
         """
         numEntries = self.geomInstance.template.paramDefaults_len()
         lockdown   = self.geomInstance.lockdown
@@ -212,6 +213,51 @@ class GeometryInstance(InfoFrameComponent):
         print "GeometryInstance::event_button_clearLockdown()"
         self.geomInstance.clearLockdown()
         self.updateTable()
+    
+    def event_button_clone(self, widget,data=None):
+        print "GeometryInstance::event_button_clone()"
+        #Ask for the new geomInstance name
+        dia = gtk.Dialog("Please enter name of new mesh instance:", self.getBaseWindow(),
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                          gtk.STOCK_OK, gtk.RESPONSE_OK))
+        dia.set_default_response(gtk.RESPONSE_OK)
+        nameBox = gtk.Entry()
+        nameBox.set_text(self.geomInstance.instName + "_clone")
+        
+        dia.vbox.pack_start(nameBox)
+        dia.show_all()
+        response = dia.run()
+        cloneName = nameBox.get_text()
+        dia.destroy()
+            
+        if response == gtk.RESPONSE_OK:
+            #Check for whitespace
+            if " " in cloneName:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name cannot contain whitespace")
+                mDia.run()
+                mDia.destroy()
+            elif cloneName == "":
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name cannot be empty")
+                mDia.run()
+                mDia.destroy()
+            elif cloneName in self.geomInstance.template.geomInstances:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name already in use")
+                mDia.run()
+                mDia.destroy()
+            #Everything OK: Try to attach the MeshInstance!
+            else:    
+                self.geomInstance.template.cloneGeomInstance(self.geomInstance.instName, cloneName)        
+                self.frameManager.mainWindow.updateProjectExplorer()
     
     def event_button_export(self, widget, data=None):
         print "GeometryInstance::event_button_export()"

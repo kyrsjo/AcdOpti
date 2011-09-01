@@ -30,7 +30,9 @@ class Dummy(AnalysisInterface):
         self.exportResults.setValSingle("result", "3.14")
         self.lockdown = True
         self.write()
+        
     def clearLockdown(self):
+        print "Dummy::clearLockdown()"
         self.exportResults.setValSingle("result", "")
         self.lockdown = False
         self.write()
@@ -47,6 +49,11 @@ class Dummy(AnalysisInterface):
         paramFile.dataDict.pushBack("export", DataDict())
         paramFile.dataDict["export"].pushBack("result", "")
         paramFile.write()
+    
+#    @staticmethod
+#    def createNew_clone(folder,cloneFrom,newRunConfig):
+#        newDummy = Dummy.createNew(folder, cloneFrom.name)
+#        return Dummy(folder,cloneFrom.name,newRunConfig)
 
 class DummyException(AcdOptiException):
         pass

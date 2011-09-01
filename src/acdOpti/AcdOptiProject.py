@@ -4,6 +4,7 @@ import AcdOptiFileParser
 from AcdOptiExceptions import *
 
 import os
+from acdOpti.AcdOptiScanCollection import AcdOptiScanCollection
 
 class AcdOptiProject():
     """
@@ -20,6 +21,8 @@ class AcdOptiProject():
     
     geomCollection          = None
     meshTemplateCollection  = None
+    
+    scanCollection = None
     
     def __init__(self, projectFolder_name):
         """
@@ -55,14 +58,9 @@ class AcdOptiProject():
         self.geomCollection = AcdOptiGeometryCollection.AcdOptiGeometryCollection(\
             os.path.join(self.projectFolder_name, "geomInstances"), self)
 
-#        #Try to load the geomTemplateFile
-#        self.geomTemplateFile_path = os.path.join(self.projectFolder_name, self.geomTemplateFile_name)
-#        try:
-#            self.geomTemplateFile = AcdOptiCubitTemplateFile(self.geomTemplateFile_path)
-#        except IOError:
-#            #File not found
-#            self.geomTemplateFile = None
-
+        #Load the scanCollection
+        self.scanCollection = AcdOptiScanCollection(os.path.join(self.projectFolder_name, "scans"), self)
+        
     #END __init__()
         
     @staticmethod
@@ -93,7 +91,9 @@ class AcdOptiProject():
         #Geometry instance folder
         AcdOptiGeometryCollection.AcdOptiGeometryCollection.createNew(\
             os.path.join(folder, "geomInstances"))
-
+        
+        #Scan collection
+        AcdOptiScanCollection.createNew(os.path.join(folder, "scans"))
 
 
     

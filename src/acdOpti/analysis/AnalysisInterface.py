@@ -19,11 +19,14 @@ class AnalysisInterface:
         Will set lockdown=True.
         """
         raise NotImplementedError
-    def clearLockDown(self):
+    def clearLockdown(self):
         """
         Call this method to clear a lockdown.
         """
+        print "AnalysisIterface::clearLockDown()"
+        #pass
         raise NotImplementedError
+    
     
     def generateRunConfigDict(self):
         """
@@ -134,7 +137,17 @@ class AnalysisInterface:
         Create a new analysis of the implementing type
         """
         raise NotImplementedError
-        
+    
+
+    @classmethod
+    def createNew_clone(cls, folder,cloneFrom,newRunConfig):
+        """
+        Clone an already existing analysis
+        of the implementing type.
+        """
+        cls.createNew(folder, cloneFrom.instName)
+        return cls(folder,cloneFrom.instName,newRunConfig)
+        #raise NotImplementedError
 #Exceptions
 def AnalysisException_createFail(AcdOptiException):
     pass

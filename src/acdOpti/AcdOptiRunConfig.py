@@ -38,7 +38,7 @@ class AcdOptiRunConfig:
     
     finishedFolder = None #Full path to the folder with the finished data
     
-    analysis = None #List of the analysis loaded
+    analysis = None #Dict of the analysis loaded
     
     statuses= ["not_initialized", # Before object is fully created
                "initialized",     # Has one or more runners and a meshInstance
@@ -126,8 +126,8 @@ class AcdOptiRunConfig:
             if anaName in self.analysis:
                 raise KeyError("Analysis name '" + anaName + "' encountered twice")
             self.analysis[anaName] = AnalysisInterface.loadAnalysisByDict(anaOptions, os.path.join(self.folder, "analysis"), self)
-            
     
+        #Refresh lockdowns
         for solver in self.solverSetups:
             solver.refreshLockdown()
         self.runner.refreshLockdown()
@@ -137,19 +137,36 @@ class AcdOptiRunConfig:
     def refreshStatus(self):
         """
         Refresh async statuses "remote::*" and "local::*"
-        by calling the runner
+        by calling the runner.
+        Also switch between not_initialized and initialized
+        by checking runner and solverSetups.  
         """
-        print "AcdOptiRunConfig::refreshStatus_remote()"
+        print "AcdOptiRunConfig::refreshStatus()"
+        
+        if not self.status in self.statuses:
+            raise AcdOptiException_runConfig_updateStateError("Not a valid status, current status='" + self.status + "'")
+        
+        #Switch initialized/not_initialized
+        # TODO: more thorough checks...
+        if self.status == "not_initialized":
+            if len(self.solverSetups):
+                self.status = "initialized"
+                return
+        elif self.status == "initialized":
+            if not len(self.solverSetups):
+                self.status = "not_initialized"
+                return
+        
+        #Check remote statuses
         if not (self.status.startswith("remote::") or self.status.startswith("local::")):
             raise AcdOptiException_runConfig_updateStateError("Not an async status, current status='" + self.status + "'")
         
         status = self.runner.queryStatus()
-        
         if not status in self.statuses:
             raise AcdOptiException_runConfig_updateStateError("Got an invalid status, current status='" + self.status + "'")
-        
         self.status = status
         
+        #Update solvers
         for solver in self.solverSetups:
             solver.refreshLockdown()
         self.runner.refreshLockdown()
@@ -290,7 +307,8 @@ class AcdOptiRunConfig:
         
         #Clear lockdown of analysis
         for ana in self.analysis.itervalues():
-            ana.clearLockDown()
+            print ana.instName
+            ana.clearLockdown()
         
         #Clear staged data folder and tarball
         if self.stageFolder and os.path.isdir(self.stageFolder):
@@ -439,4 +457,35 @@ class AcdOptiRunConfig:
         
         #Create the analysis folder
         os.mkdir(os.path.join(folder,"analysis"))
+    
+    @staticmethod
+    def createNew_clone(folder, cloneFrom, newMeshInstance):
+        """
+        Creates a new runConfig in a not previously existing folder,
+        which has identical settings as an already existing runConfig.
+        The newly created runConfig is then returned.
+        
+        This is a deep copy, runners, solvers, and analysis etc. are also cloned.
+        """
+        
+        #Create the new runConfig
+        AcdOptiRunConfig.createNew(folder, cloneFrom.runner.type, None)
+        newRC = AcdOptiRunConfig(folder, newMeshInstance)
+        
+        #Copy runner data
+        newRC.runner.cloneInto(cloneFrom.runner)
+        
+        #Copy the solvers
+        for solv in cloneFrom.solverSetups:
+            print "Add solver " + str(solv)
+            newSolv = AcdOptiSolverSetup.createNew_clone(folder, solv,newRC)
+            newRC.solverSetups.append(newSolv)
+        #Copy analysis
+        
+        for (anaName, ana) in cloneFrom.analysis.iteritems():
+            newRC.analysis[anaName] = ana.createNew_clone(os.path.join(folder, "analysis"), ana, newRC)
+        
+        newRC.refreshStatus()
+        newRC.write()
+        return newRC
         

@@ -82,6 +82,12 @@ class AcdOptiRunner:
         else:
             raise AcdOptiException_optiRunner_loadFail("Unknown type '" + type +"'")
     
+    def cloneInto(self,cloneFrom):
+        """
+        Empty this runner and copy the data from cloneFrom.
+        """
+        raise NotImplementedError
+    
     @staticmethod
     def createNew(type, folder):
         """
@@ -420,7 +426,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         runpbs = open(os.path.join(self.runConfig.stageFolder, "run.pbs"), 'w')
         runpbs.write("#!/bin/bash\n")
         
-        torqueMeta = self.__paramFile.dataDict["TorqueMeta"]
+        torqueMeta = self.getTorqueMeta()
         runpbs.write("#PBS -q " + torqueMeta["queue"] + "\n")
         runpbs.write("#PBS -l mppwidth=" + str(numNodes*self.CPUsPerNode) + "\n")
         runpbs.write("#PBS -l walltime=" + torqueMeta["walltime"] + "\n")
@@ -445,6 +451,27 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
     def write(self):
         self.__paramFile.write()
     
+    def cloneInto(self,cloneFrom):
+        """
+        Empty this runner and copy the data from cloneFrom.
+        """
+        
+        #Copy the torque stuff
+        torqueOriginal = cloneFrom.getTorqueMeta()
+        torqueThis = self.getTorqueMeta()
+        torqueThis.clear()
+        for (k,v) in torqueOriginal.copy():
+            torqueThis.pushBack(k,v) 
+        
+        #Copy the jobs stuff
+        jobsOriginal = cloneFrom.getJobs()
+        jobsThis = self.getJobs()
+        jobsThis.clear()
+        for (k,v) in jobsOriginal.copy():
+            jobsThis.pushBack(k,v)
+        
+        self.write()
+        
     @staticmethod
     def createNew(folder, type):
         #Create the settings file

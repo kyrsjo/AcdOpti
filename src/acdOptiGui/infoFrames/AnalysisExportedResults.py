@@ -30,7 +30,6 @@ class AnalysisExportedResults(InfoFrameComponent):
         
         self.__treeModel = gtk.TreeStore(str, str)
         self.__treeView = gtk.TreeView(self.__treeModel)
-        self.baseWidget.pack_start(self.__treeView, expand=True)
         self.__treeCols = []
         self.__treeRenders = []
         
@@ -41,7 +40,12 @@ class AnalysisExportedResults(InfoFrameComponent):
         self.__treeRenders.append(gtk.CellRendererText())
         self.__treeCols.append(gtk.TreeViewColumn("Value", self.__treeRenders[-1], text=1))
         self.__treeView.append_column(self.__treeCols[-1])
-        
+         
+        self.__scrollWindow = gtk.ScrolledWindow()
+        self.__scrollWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
+        self.__scrollWindow.add_with_viewport(self.__treeView)
+        self.baseWidget.pack_start(self.__scrollWindow, expand=True)
+
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
         self.__lockdownRunButton = gtk.Button("Run analysis") #Updated in __updateGui()

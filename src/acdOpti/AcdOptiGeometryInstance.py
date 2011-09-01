@@ -254,7 +254,7 @@ class AcdOptiGeometryInstance():
         """
         Creates a new empty geomInstance in a
         not previously existing folder.
-        Folder name should be the same as geometry instance name.
+        Geometry instance name will be the same as the folder name.
         
         Raises AcdOptiException_geomInstance_createFail
         is something goes wrong (such as "Folder already exists")
@@ -267,7 +267,7 @@ class AcdOptiGeometryInstance():
 
         #Create the folder
         if os.path.isdir(folder):
-            raise AcdOptiException_geomInstance_createFail ("Folder \"" + folder + "\" already exists")
+            raise AcdOptiException_geomInstance_createFail("Folder \"" + folder + "\" already exists")
         os.mkdir(folder)
         
         #Create paramFile.set file
@@ -281,6 +281,29 @@ class AcdOptiGeometryInstance():
         #Create folder for meshInstance's
         os.mkdir(os.path.join(folder, AcdOptiGeometryInstance.meshInstanceFolderName))
 
+    @staticmethod
+    def createNew_clone(folder, cloneFrom):
+        """
+        Creates a new geomInstance in a not previously existing folder,
+        which has identical settings as an already existing geometryInstance.
+        The newly created geomInstance is then returned.
+        
+        This is a deep copy, meshInstances etc. are also cloned.
+        """
+        #Create the new geomInstance
+        AcdOptiGeometryInstance.createNew(folder)
+        newInstance = AcdOptiGeometryInstance(folder, cloneFrom.template)
+
+        #Copy information        
+        for key in cloneFrom.templateOverrides_getKeys():
+            newInstance.templateOverrides_insert(key, cloneFrom.templateOverrides_get(key))
+        
+        for (meshName, mesh) in cloneFrom.meshInsts.iteritems():
+            newMesh = AcdOptiMeshInstance.createNew_clone(os.path.join(folder,"meshInstances",meshName), mesh, newInstance)
+            newInstance.meshInsts[meshName] = newMesh
+        
+        newInstance.write()
+        return newInstance
 
     #Object variables
     lockdown    = False #Write-protected?

@@ -1,7 +1,7 @@
-import pygtk
-from acdOpti.AcdOptiMeshTemplateCollection import AcdOptiMeshTemplateCollection
+import pygtk #@UnresolvedImport
+from acdOpti.AcdOptiScan import AcdOptiScan
 pygtk.require('2.0')
-import gtk
+import gtk #@UnresolvedImport
 
 from acdOpti.AcdOptiProject import AcdOptiProject
 from acdOpti.AcdOptiGeometryCollection import AcdOptiGeometryCollection
@@ -9,6 +9,8 @@ from acdOpti.AcdOptiGeometryInstance import AcdOptiGeometryInstance
 from acdOpti.AcdOptiMeshInstance import AcdOptiMeshInstance
 from acdOpti.AcdOptiRunConfig import AcdOptiRunConfig
 from acdOpti.AcdOptiMeshTemplate import AcdOptiMeshTemplate
+from acdOpti.AcdOptiMeshTemplateCollection import AcdOptiMeshTemplateCollection
+from acdOpti.AcdOptiScanCollection import AcdOptiScanCollection
 
 from acdOpti.AcdOptiExceptions import *
 from AcdOptiGuiExceptions import *
@@ -45,8 +47,10 @@ class MainWindow():
     __newButton               = None
     __openButton              = None
     __geomInstanceNewButton   = None
-    __meshTemplateNewButton = None
+    __meshTemplateNewButton   = None
+    __scanNewButton           = None
 
+    __scrolledWindow  = None
     __treeModel       = None
     __treeView        = None
     __treeViewColumn  = None
@@ -109,6 +113,11 @@ class MainWindow():
         self.__meshTemplateNewButton.set_sensitive(False)
         self.__toolbar.insert(self.__meshTemplateNewButton, -1)
 
+        self.__scanNewButton = gtk.ToolButton(label="Add parameter scan")
+        self.__scanNewButton.set_stock_id(gtk.STOCK_EXECUTE)
+        self.__scanNewButton.connect("clicked", self.event_toolbutton_scanNewButton, None)
+        self.__scanNewButton.set_sensitive(False)
+        self.__toolbar.insert(self.__scanNewButton, -1)
 
         self.__VBox1.pack_start(self.__toolbar, False)
 
@@ -136,7 +145,10 @@ class MainWindow():
 
         self.__treeView.connect("row-activated", self.event_treeView_rowActivated, None)
 
-        self.__HBox2.pack_start(self.__treeView, False)
+        self.__scrolledWindow = gtk.ScrolledWindow()
+        self.__scrolledWindow.set_policy(gtk.POLICY_NEVER,gtk.POLICY_AUTOMATIC)
+        self.__scrolledWindow.add_with_viewport(self.__treeView)
+        self.__HBox2.pack_start(self.__scrolledWindow, False)
         
         #self.__treeModel.append(None, ["Load a project to start",])
         
@@ -237,7 +249,7 @@ class MainWindow():
         
         self.loadProject(fname)
     # END event_toolbutton_open()
-        
+
     def event_toolbutton_geomInstanceNewButton(self, widget, event, data=None):
         print "MainWindow::event_toolbutton_geomInstanceNewButton()"
         
@@ -262,7 +274,6 @@ class MainWindow():
             
             if response == gtk.RESPONSE_OK:
                 #Check for whitespace
-                print "got: \"" + name + "\""
                 if " " in name:
                     mDia = gtk.MessageDialog(self.window,
                                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -273,11 +284,14 @@ class MainWindow():
                 #OK, try to make the folder..
                 else:
                     try:
-                        self.addGeom(name)
+                        self.activeProject.geomCollection.addGeomInstance(name)
+                        self.updateProjectExplorer()
+                        #self.addGeom(name)
                         break #Done!
-                    except AcdOptiGuiException_guiMain_nameTaken:
+                    except AcdOptiException_geomInstance_createFail as e:
                         #Nope, try again
-                        print "got: \"" + name + "\""
+
+                        print "Exception args: " + str(e.args)
                         mDia = gtk.MessageDialog(self.window,
                                                  gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                                  gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
@@ -339,7 +353,60 @@ class MainWindow():
             #Response cancel or close
             else:
                 break
-  
+    def event_toolbutton_scanNewButton(self, widget,data=None):
+        print "MainWindow::event_toolbutton_scanNewButton()"
+        
+#        #Temporary button hijacking
+#        self.activeProject.geomCollection.cloneGeomInstance("baseline", "testClone")
+#        self.updateProjectExplorer()
+#        
+        name = ""
+        while True:
+            dia = gtk.Dialog("Please enter name of new parameter scan:", self.window,
+                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                             (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                              gtk.STOCK_OK, gtk.RESPONSE_OK))
+            dia.set_default_response(gtk.RESPONSE_OK)
+            nameBox = gtk.Entry()
+            nameBox.set_text(name)
+            nameBox.show()
+            dia.vbox.pack_start(nameBox)
+            dia.show_all()
+    
+            response = dia.run()
+            name = nameBox.get_text()
+    
+            dia.destroy()
+            
+            if response == gtk.RESPONSE_OK:
+                #Check for whitespace
+                print "got: \"" + name + "\""
+                if " " in name:
+                    mDia = gtk.MessageDialog(self.window,
+                                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                             gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                             "Name cannot contain whitespace")
+                    mDia.run()
+                    mDia.destroy()
+                #OK, try to make the folder..
+                else:
+                    try:
+                        self.activeProject.scanCollection.add(name)
+                        self.updateProjectExplorer()
+                        break #Done!
+                    except AcdOptiException_scan_createFail:
+                        #Nope, try again
+                        print "got: \"" + name + "\""
+                        mDia = gtk.MessageDialog(self.window,
+                                                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                                 gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                                 "Name already in use")
+                        mDia.run()
+                        mDia.destroy()
+                        continue;
+            #Response cancel or close
+            else:
+                break
 
     def event_treeView_rowActivated(self,widget,path,column,data=None):
         print "MainWindow::event_treeView_rowActivated(), path =", path
@@ -366,15 +433,20 @@ class MainWindow():
         elif isinstance(row[-1], AcdOptiRunConfig):
             print "MainWindow::event_treeView_rowActivated() : run config, name='" + row[0] + "'"
             self.__infoFrame.push(RunConfig(self.__infoFrame,row[-1]))
+        elif isinstance(row[-1], AnalysisInterface):
+            print "MainWindow::event_treeView_rowActivated() : analysis, name='" + row[0] + "'"
+            self.__infoFrame.push(AnalysisExportedResults(self.__infoFrame, row[-1]))
         elif isinstance(row[-1], AcdOptiMeshTemplateCollection):
             print "MainWindow::event_treeView_rowActivated() : mesh template collection"
         elif isinstance(row[-1], AcdOptiMeshTemplate):
             print "MainWindow::event_treeView_rowActivated() : mesh template, name='" + row[0] + "'"
             self.__infoFrame.push(MeshTemplate(self.__infoFrame, row[-1]))
-        elif isinstance(row[-1], AnalysisInterface):
-            print "MainWindow::event_treeView_rowActivated() : analysis, name='" + row[0] + "'"
-            self.__infoFrame.push(AnalysisExportedResults(self.__infoFrame, row[-1]))
-        
+        elif isinstance(row[-1], AcdOptiScanCollection):
+            print "MainWindow::event_treeView_rowActivated() : Scan collection"
+            self.__infoFrame.writeMessage("Scan collection")
+        elif isinstance(row[-1], AcdOptiScan):
+            print "MainWindow::event_treeView_rowActivated() : scan, name='" + row[0] + "'"
+            self.__infoFrame.writeMessage("Scan, name='" + row[-1].instName + "'")
         else:
             raise NotImplementedError("Unknown class coming down in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
             
@@ -400,6 +472,7 @@ class MainWindow():
         self.__openButton.set_sensitive(False)
         self.__geomInstanceNewButton.set_sensitive(True)
         self.__meshTemplateNewButton.set_sensitive(True)
+        self.__scanNewButton.set_sensitive(True)
 
     def updateProjectExplorer(self):
         """
@@ -457,17 +530,13 @@ class MainWindow():
                         if ana.lockdown == True:
                             color = "green"
                         elif ana.lockdown == False:
-                            color = "red"
+                            color = "yellow"
                         else:
                             raise NotImplementedError
                         anaIter = self.__treeModel.append(rcIter, [anaName, self.__treeView.render_icon(gtk.STOCK_INFO, gtk.ICON_SIZE_MENU), color, ana])
-        #Mesh template collection
-#        if self.activeProject.meshTemplateCollection.lockdown:
-#            color = "green"
-#        else:
-#            color = "yellow"
-        mcIter = self.__treeModel.append(projIter, ["Mesh templates", self.__meshIcon, "white", self.activeProject.meshTemplateCollection])
         
+        #Mesh template collection
+        mcIter = self.__treeModel.append(projIter, ["Mesh templates", self.__meshIcon, "white", self.activeProject.meshTemplateCollection])
         #Mesh templates
         for (mtName,mt) in self.activeProject.meshTemplateCollection.meshTemplates.iteritems():
             if mt.lockdown:
@@ -476,30 +545,18 @@ class MainWindow():
                 color = "yellow"
             mtIter = self.__treeModel.append(mcIter, [mtName, self.__meshIcon, color, mt])
 
+        #Scan collection
+        scIter = self.__treeModel.append(projIter, ["Scans", self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), "white", self.activeProject.scanCollection])
+        #Scans
+        for (scanName, scan) in self.activeProject.scanCollection.scans.iteritems():
+            if scan.lockdown:
+                color = "green"
+            else:
+                color = "yellow"
+            sIter = self.__treeModel.append(scIter,[scanName, self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), color, scan])
+
         self.__treeView.expand_all()
 
-    def addGeom(self, name):
-        """
-        Adding a geom to the project's geomCollection,
-        and updates the GUI.
-        """
-        print "MainWindow::addGeom()"
-        
-        #Check that name is unique
-        if name in self.activeProject.geomCollection.geomInstances.keys():
-            raise AcdOptiGuiException_guiMain_nameTaken
-        
-        #Create the AcdOptiGeometryInstance
-        geomFolder = self.activeProject.geomCollection.folder
-        folder = os.path.join(geomFolder, name)
-        AcdOptiGeometryInstance.createNew(folder)
-
-        #Add it to the project/geomCollection
-        self.activeProject.geomCollection.geomInstances[name] =\
-            AcdOptiGeometryInstance(folder,self.activeProject.geomCollection)
-        
-        #Add it to the treeView
-        self.updateProjectExplorer()
     
     def addMesh(self,name):
         """

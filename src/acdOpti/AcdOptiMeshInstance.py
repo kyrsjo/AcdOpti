@@ -120,7 +120,7 @@ class AcdOptiMeshInstance:
             if k in self.__templateOverrides:
                 raise AcdOptiException_geomCollection_loadFail\
                     ("Double occurrence of key \"" + k + "\" in templateOverrides on file")
-            if not k in self.meshTemplate.paramDefaults:
+            if not k in self.meshTemplate.paramDefaults_getKeys():
                     raise AcdOptiException_meshInstance_loadFail(
                         "Entry \"" + k + "\" in templateOverrides on file has no match in the template")
             self.__templateOverrides[k] = v
@@ -331,3 +331,31 @@ class AcdOptiMeshInstance:
         
         #Create folder for the runConfigs
         os.mkdir(os.path.join(folder, "runConfigs"))
+    
+    @staticmethod
+    def createNew_clone(folder, cloneFrom, newGeomInstance):
+        """
+        Creates a new meshInstance in a not previously existing folder,
+        which has identical settings as an already existing meshInstance,
+        but is attached to newGeomInstance
+        The newly created meshInstance is then returned.
+        
+        This is a deep copy, runConfigs etc. are also cloned.
+        """
+
+        #Create the new meshInstance
+        AcdOptiMeshInstance.createNew(folder, newGeomInstance.instName, cloneFrom.meshTemplate.instName)
+        newInstance = AcdOptiMeshInstance(folder, newGeomInstance, cloneFrom.meshTemplateCollection)
+
+        #Copy information        
+        for key in cloneFrom.templateOverrides_getKeys():
+            newInstance.templateOverrides_insert(key, cloneFrom.templateOverrides_get(key))
+        
+        for (runConfigName, runConfig) in cloneFrom.runConfigs.iteritems():
+            newRC = AcdOptiRunConfig.createNew_clone(os.path.join(folder, "runConfigs", runConfig.instName), runConfig, newInstance)
+            newInstance.runConfigs[runConfigName] = newRC
+            
+        newInstance.write()
+        return newInstance
+    
+    

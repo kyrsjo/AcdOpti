@@ -44,6 +44,7 @@ class RunnerSetup_Hopper(InfoFrameComponent):
         
         #Torque stuff:
         tqm = self.runner.getTorqueMeta()
+        print tqm
         self.baseWidget.pack_start(gtk.Label("Torque information:"), expand=False,padding=5)
         self.__torqueTable   = gtk.Table(4,2,False)
         

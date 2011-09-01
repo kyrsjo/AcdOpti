@@ -98,7 +98,8 @@ class AcdOptiSolverSetup:
         """
         print "AcdOptiSolverSetup::stage()"
         # TODO: Sanity check on this objects status
-        self.__metaSetupFile.write()
+        
+        self.write()
         self.__generateSetup()
         os.rename(self.fileName, os.path.join(self.runConfig.stageFolder, self.name))
 
@@ -110,7 +111,11 @@ class AcdOptiSolverSetup:
         print self.metaSetup
         metaSetupDict = AcdOptiSolverSetup.__generateSetup_recursiveHelper(self.metaSetup)
         setupFile.importDataDict(metaSetupDict)
-        setupFile.write()  
+        setupFile.write()
+    
+    def write(self):
+        self.__metaSetupFile.write()
+    
     @staticmethod
     def __generateSetup_recursiveHelper(setupDict):
         print "AcdOptiSolverSetup::__generateSetup_recursiveHelper()"#, setupDict=", setupDict
@@ -185,6 +190,23 @@ class AcdOptiSolverSetup:
         metaFile.write()
         
         return name
+    
+    @staticmethod
+    def createNew_clone(folder, cloneFrom, newRunConfig):
+        """
+        Creates a new solverSetup in a not previously existing folder,
+        which has identical settings as an already existing solverSetup.
+        The newly created solverSetup is then returned.
+        """
+        AcdOptiSolverSetup.createNew(cloneFrom.type, folder, cloneFrom.name)
+        newSolverSetup = AcdOptiSolverSetup(cloneFrom.name, newRunConfig)
+        
+        newSolverSetup.metaSetup.clear()
+        for (k,v) in cloneFrom.metaSetup.copy():
+            newSolverSetup.metaSetup.pushBack(k,v)
+        
+        newSolverSetup.write()
+        return newSolverSetup
     
     @staticmethod
     def __genMetaOptions(childDict):

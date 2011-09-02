@@ -1,5 +1,4 @@
-from AcdOptiFileParser import AcdOptiFileParser_simple,\
-                              DataDict
+from AcdOptiFileParser import AcdOptiFileParser_simple, DataDict
 from AcdOptiCubitTemplateFile import AcdOptiCubitTemplateFile
 
 from AcdOptiGeometryInstance import AcdOptiGeometryInstance
@@ -149,9 +148,12 @@ class AcdOptiGeometryCollection:
         """
         Create a new geomInstance called <newName>, having
         identical same settings, meshInstance etc. as the one called <oldName>.
+        The new geom instance is returned.
         """
+        assert oldName in self.geomInstances
         newGeom = AcdOptiGeometryInstance.createNew_clone(os.path.join(self.folder, newName), self.geomInstances[oldName]) 
         self.geomInstances[newName] = newGeom
+        return newGeom
 
     def setLockdown(self):
         """

@@ -8,6 +8,7 @@ from acdOpti.AcdOptiGeometryCollection import AcdOptiGeometryCollection
 from acdOpti.AcdOptiGeometryInstance import AcdOptiGeometryInstance
 from acdOpti.AcdOptiMeshInstance import AcdOptiMeshInstance
 from acdOpti.AcdOptiRunConfig import AcdOptiRunConfig
+from acdOpti.analysis.AnalysisInterface import AnalysisInterface
 from acdOpti.AcdOptiMeshTemplate import AcdOptiMeshTemplate
 from acdOpti.AcdOptiMeshTemplateCollection import AcdOptiMeshTemplateCollection
 from acdOpti.AcdOptiScanCollection import AcdOptiScanCollection
@@ -24,8 +25,7 @@ from infoFrames.MeshInstance import MeshInstance
 from infoFrames.RunConfig import RunConfig
 from infoFrames.MeshTemplate import MeshTemplate
 from infoFrames.AnalysisExportedResults import AnalysisExportedResults
-
-from acdOpti.analysis.AnalysisInterface import AnalysisInterface
+from infoFrames.Scan import Scan
 
 import os
 
@@ -446,9 +446,9 @@ class MainWindow():
             self.__infoFrame.writeMessage("Scan collection")
         elif isinstance(row[-1], AcdOptiScan):
             print "MainWindow::event_treeView_rowActivated() : scan, name='" + row[0] + "'"
-            self.__infoFrame.writeMessage("Scan, name='" + row[-1].instName + "'")
+            self.__infoFrame.push(Scan(self.__infoFrame, row[-1]))
         else:
-            raise NotImplementedError("Unknown class coming down in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
+            raise NotImplementedError("Unknown class encountered in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
             
             
     def loadProject(self, fname):
@@ -554,7 +554,7 @@ class MainWindow():
             else:
                 color = "yellow"
             sIter = self.__treeModel.append(scIter,[scanName, self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), color, scan])
-
+            
         self.__treeView.expand_all()
 
     

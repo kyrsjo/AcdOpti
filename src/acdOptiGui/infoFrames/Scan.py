@@ -6,6 +6,8 @@ import os
 
 from InfoFrameComponent import InfoFrameComponent
 
+from acdOpti.AcdOptiExceptions import AcdOptiException_scan_scanFail
+
 class Scan(InfoFrameComponent):
     """
     Class that makes it possible to setup and execute
@@ -121,6 +123,10 @@ class Scan(InfoFrameComponent):
     def updateDisplay(self):
         #Combo box: Select geometry
         self.__geomCombo.handler_block(self.__geomChangedHandlerID)
+        #Clear  whatever's in there
+        for i in xrange(self.__geomCombo.get_model().iter_n_children(None)):
+            self.__geomCombo.remove_text(0)
+        #Refill
         idx = 0
         geomSelectedName = None
         if self.scanInstance.baseGeomInstance !=  None:
@@ -134,6 +140,10 @@ class Scan(InfoFrameComponent):
         
         #Combo box: Select variable
         self.__scanVariableCombo.handler_block(self.__scanVariableChangedHandlerID)
+        #Clear  whatever's in there
+        for i in xrange(self.__scanVariableCombo.get_model().iter_n_children(None)):
+            self.__scanVariableCombo.remove_text(0)
+        #Refill
         idx = 0
         scanVariableName = self.scanInstance.scanParameter_name
         for varName in self.scanInstance.getValidParamNames():
@@ -153,7 +163,25 @@ class Scan(InfoFrameComponent):
         #Lockdown
         if self.scanInstance.lockdown == True:
             self.__geomCombo.set_sensitive(False)
+            self.__scanVariableCombo.set_sensitive(False)
             
+            self.__rangeMaxEntry.set_sensitive(False)
+            self.__rangeMinEntry.set_sensitive(False)
+            self.__rangeStepEntry.set_sensitive(False)
+            
+            self.__createScanButton.set_sensitive(False)
+        elif self.scanInstance.lockdown == False:
+            self.__geomCombo.set_sensitive(True)
+            self.__scanVariableCombo.set_sensitive(True)
+            
+            self.__rangeMaxEntry.set_sensitive(True)
+            self.__rangeMinEntry.set_sensitive(True)
+            self.__rangeStepEntry.set_sensitive(True)
+            
+            self.__createScanButton.set_sensitive(True)
+            
+        else:
+            assert False, "Scan instance lockdown was not initialized?!?"
     
     def saveToScan(self):
         if self.__geomCombo.get_active_text() != None:
@@ -180,7 +208,16 @@ class Scan(InfoFrameComponent):
     def event_button_createScan(self, widget, data=None):
         print "Scan::event_button_createScan()"
         self.saveToScan()
-        self.scanInstance.createScan()
+        try:
+            self.scanInstance.createScan()
+        except AcdOptiException_scan_scanFail as e:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Could not create scan, an error occured: '"+ e.args[0] + "'")
+                mDia.run()
+                mDia.destroy()
+        self.updateDisplay()
         self.frameManager.mainWindow.updateProjectExplorer()
 
     def event_button_stageScan(self, widget, data=None):

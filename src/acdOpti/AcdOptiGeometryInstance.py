@@ -72,7 +72,7 @@ class AcdOptiGeometryInstance():
         
         for (k,v) in zip(templateOverrides_data.keys, templateOverrides_data.vals):
             if k in self.__templateOverrides:
-                raise AcdOptiException_geomCollection_loadFail\
+                raise AcdOptiException_geomInstance_loadFail\
                     ("Double occurrence of key \"" + k + "\" in templateOverrides on file")
             if not k in self.template.paramDefaults_getKeys():
                     raise AcdOptiException_geomInstance_loadFail(
@@ -91,6 +91,10 @@ class AcdOptiGeometryInstance():
             except AcdOptiException_meshInstance_loadFail as e:
                 raise AcdOptiException_geomCollection_loadFail(\
                     "Problem loading mesh instance \"" + dAbs + "\", got error \"" + str(e) + "\"")
+        
+        #Scan instance name
+        self.scanInstance_name = self.__paramFile.dataDict["scanInstance_name"]  
+        
     
     def write(self):
         """
@@ -99,6 +103,11 @@ class AcdOptiGeometryInstance():
         """
         print "AcdOptiGeometryInstance::write()"
         self.__paramFile.dataDict.setValSingle("lockdown", str(self.lockdown))
+        if self.scanInstance != None:
+            self.__paramFile.dataDict.setValSingle("scanInstance_name", self.scanInstance.instName)
+        else:
+            self.__paramFile.dataDict.setValSingle("scanInstance_name", "")
+            
         
         templateOverrides_data = self.__paramFile.dataDict.getValSingle("templateOverrides")
         templateOverrides_data.clear()
@@ -276,6 +285,7 @@ class AcdOptiGeometryInstance():
         paramFile.dataDict.pushBack("fileID", "geomInstance")
         paramFile.dataDict.pushBack("lockdown", "False")
         paramFile.dataDict.pushBack("templateOverrides", DataDict())
+        paramFile.dataDict.pushBack("scanInstance_name", "")
         paramFile.write()
         
         #Create folder for meshInstance's
@@ -318,6 +328,10 @@ class AcdOptiGeometryInstance():
     __templateOverrides = None #Dict describing the variables that are
                              # given a different value than the default
                              # from the collection.  
+
+    scanInstance = None #If this geomInstance belongs to a scan, this points to it.
+                        # This is set by the scanInstance's __init__()
+    scanInstance_name = None # The name of said scanInstance. Used by it's init for consitency check.
     
     #Static class fields
     cubitGeomPreCommands  = ["reset"]

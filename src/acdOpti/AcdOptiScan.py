@@ -1,6 +1,7 @@
 from AcdOptiFileParser import AcdOptiFileParser_simple, DataDict
 from AcdOptiExceptions import AcdOptiException_scan_createFail,\
-                              AcdOptiException_scan_loadFail
+                              AcdOptiException_scan_loadFail,\
+                              AcdOptiException_scan_scanFail
 import os
 
 import numpy as np
@@ -18,6 +19,7 @@ class AcdOptiScan:
     
     instName = None
     lockdown = None #irreversible lockdown on parameters, happens after createScan()
+    staged   = None #2'nd "lockdown", indicates that geoms has been staged.
 
     baseGeomInstance = None
     
@@ -52,7 +54,9 @@ class AcdOptiScan:
             raise AcdOptiException_scan_loadFail("instName doesn't match folder name")
         
         self.lockdown = DataDict.boolconv(self.__paramfile.dataDict.getValSingle("lockdown"))
-        
+        self.stocked  = DataDict.boolconv(self.__paramfile.dataDict.getValSingle("stocked"))
+
+
         self.slaveGeomsDict = self.__paramfile.dataDict["slaveGeoms"]
         self.slaveGeoms = []
         baseGeomInstance_name = self.__paramfile.dataDict["baseGeomInstance_name"]
@@ -77,6 +81,8 @@ class AcdOptiScan:
         
         for (geomName, nothingOfInterest) in self.slaveGeomsDict:
             self.slaveGeoms.append(self.scanCollection.project.geomCollection.geomInstances[geomName])
+            assert self.slaveGeoms[-1].scanInstance_name == self.instName
+            self.slaveGeoms[-1].scanInstance = self
             
     def write(self):
         if self.baseGeomInstance != None:
@@ -114,15 +120,33 @@ class AcdOptiScan:
         """
         Using the data in baseGeomInstance_name and the range,
         create the scan. A function that will be called on each iteration may be provided.
+        
+        If a common error occurs, a AcdOptiException_scan_scanFail with the error message of interest is raised.
         """
-        assert self.scanParameter_range != None
-        assert self.baseGeomInstance in self.scanCollection.project.geomCollection.geomInstances.values()
-        assert not self.lockdown
+        #Check that we are ready to scan
+        if self.lockdown:
+            raise AcdOptiException_scan_scanFail("Scan already created.")
+        
+        if not self.scanParameter_name in self.getValidParamNames():
+            raise AcdOptiException_scan_scanFail("No (valid) scan parameter selected.")
+        
+        if self.scanParameter_range_min == None or self.scanParameter_range_max == None or self.scanParameter_range_step == None:
+            raise AcdOptiException_scan_scanFail("Scan range not ready.")
+        self.scanParameter_range = np.arange(self.scanParameter_range_min,\
+                                             self.scanParameter_range_max,\
+                                             self.scanParameter_range_step)
+        if len(self.scanParameter_range) == 0:
+            raise AcdOptiException_scan_scanFail("Scan range empty.")
+        
+        if not self.baseGeomInstance in self.scanCollection.project.geomCollection.geomInstances.values():
+            raise AcdOptiException_scan_scanFail("No (valid) geomInstance selected")
         
         for val in self.scanParameter_range:
             oldName = self.baseGeomInstance.instName
             newName = oldName + "--scan--" + self.scanParameter_name + "#" + str(val)
             newGeom = self.scanCollection.project.geomCollection.cloneGeomInstance(oldName,newName)
+            newGeom.scanInstance = self
+            newGeom.write()
             self.slaveGeoms.append(newGeom)
             if progressCallback != None:
                 progressCallback()
@@ -146,6 +170,7 @@ class AcdOptiScan:
         paramFile.dataDict.pushBack("fileID", "AcdOptiScan")
         paramFile.dataDict.pushBack("instName", instName)
         paramFile.dataDict.pushBack("lockdown", "False")
+        paramFile.dataDict.pushBack("stocked", "False")
         
         paramFile.dataDict.pushBack("baseGeomInstance_name", "")
         

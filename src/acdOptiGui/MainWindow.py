@@ -493,13 +493,49 @@ class MainWindow():
             color = "yellow"
         gcIter = self.__treeModel.append(projIter, ["Geometries", self.__geomIcon, color, self.activeProject.geomCollection])
         
+        #All geomInstances *not* belonging to a scanInstance
+        geomColMap = {}
+        for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
+            if v.scanInstance == None:
+                geomColMap[k] = v
+        self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, gcIter)
+
+        #Mesh template collection
+        mcIter = self.__treeModel.append(projIter, ["Mesh templates", self.__meshIcon, "white", self.activeProject.meshTemplateCollection])
+        #Mesh templates
+        for (mtName,mt) in self.activeProject.meshTemplateCollection.meshTemplates.iteritems():
+            if mt.lockdown:
+                color = "green"
+            else:
+                color = "yellow"
+            mtIter = self.__treeModel.append(mcIter, [mtName, self.__meshIcon, color, mt])
+
+        #Scan collection
+        scIter = self.__treeModel.append(projIter, ["Scans", self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), "white", self.activeProject.scanCollection])
+        #Scans
+        for (scanName, scan) in self.activeProject.scanCollection.scans.iteritems():
+            if scan.lockdown:
+                color = "green"
+            else:
+                color = "yellow"
+            sIter = self.__treeModel.append(scIter,[scanName, self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), color, scan])
+            geomColMap = {}
+            for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
+                if v.scanInstance == scan:
+                    geomColMap[k] = v
+            self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, sIter)
+            
+            
+        self.__treeView.expand_all()
+
+    def __updateProjectExplorer_helper_geomInstancesWithChildren(self,geomInstancesMap,baseTreeIter):
         # GeomInstances
-        for (giName, gi) in self.activeProject.geomCollection.geomInstances.iteritems():
+        for (giName, gi) in geomInstancesMap.iteritems():
             if gi.lockdown:
                 color = "green"
             else:
                 color = "yellow"
-            giIter = self.__treeModel.append(gcIter, [giName, self.__geomIcon, color, gi])
+            giIter = self.__treeModel.append(baseTreeIter, [giName, self.__geomIcon, color, gi])
 
             #  MeshInstances:
             for (miName, mi) in gi.meshInsts.iteritems():
@@ -535,28 +571,6 @@ class MainWindow():
                             raise NotImplementedError
                         anaIter = self.__treeModel.append(rcIter, [anaName, self.__treeView.render_icon(gtk.STOCK_INFO, gtk.ICON_SIZE_MENU), color, ana])
         
-        #Mesh template collection
-        mcIter = self.__treeModel.append(projIter, ["Mesh templates", self.__meshIcon, "white", self.activeProject.meshTemplateCollection])
-        #Mesh templates
-        for (mtName,mt) in self.activeProject.meshTemplateCollection.meshTemplates.iteritems():
-            if mt.lockdown:
-                color = "green"
-            else:
-                color = "yellow"
-            mtIter = self.__treeModel.append(mcIter, [mtName, self.__meshIcon, color, mt])
-
-        #Scan collection
-        scIter = self.__treeModel.append(projIter, ["Scans", self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), "white", self.activeProject.scanCollection])
-        #Scans
-        for (scanName, scan) in self.activeProject.scanCollection.scans.iteritems():
-            if scan.lockdown:
-                color = "green"
-            else:
-                color = "yellow"
-            sIter = self.__treeModel.append(scIter,[scanName, self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), color, scan])
-            
-        self.__treeView.expand_all()
-
     
     def addMesh(self,name):
         """

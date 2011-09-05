@@ -291,7 +291,8 @@ class Scan(InfoFrameComponent):
 
     def event_button_runAnalysis(self, widget, data=None):
         print "Scan::event_button_runAnalysis()"
-    
+        self.scanInstance.runAnalysis()
+        self.frameManager.mainWindow.updateProjectExplorer()
     def event_comboChanged_geom(self, widget, data=None):
         print "Scan::event_comboChanged_geom()"
         #self.updateDisplay()

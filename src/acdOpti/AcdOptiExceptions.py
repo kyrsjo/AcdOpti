@@ -128,3 +128,5 @@ class AcdOptiException_scan_runFail(AcdOptiException):
     pass
 class AcdOptiException_scan_refreshDownloadFail(AcdOptiException):
     pass
+class AcdOptiException_scan_analysisFail(AcdOptiException):
+    pass

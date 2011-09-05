@@ -5,7 +5,8 @@ from AcdOptiExceptions import AcdOptiException_scan_createFail,\
                               AcdOptiException_scan_stageFail,\
                               AcdOptiException_scan_generateRangeFail,\
                               AcdOptiException_scan_runFail,\
-                              AcdOptiException_scan_refreshDownloadFail
+                              AcdOptiException_scan_refreshDownloadFail,\
+                              AcdOptiException_scan_analysisFail
 import os
 
 import numpy as np
@@ -228,6 +229,21 @@ class AcdOptiScan:
                         #TODO: Handle local runner?
                         if rc.status == "remote::finished":
                             rc.getRemote()
+    
+    def runAnalysis(self):
+        """
+        For all finished runConfigs, run the defined analysis.
+        """
+        print "AcdOptiScan::runAnalysis()"
+        if self.run != True:
+            raise AcdOptiException_scan_analysisFail("Not yet ran, run != True")
+        
+        for geom in self.slaveGeoms:
+            for mesh in geom.meshInsts.values():
+                for rc in mesh.runConfigs.values():
+                    if rc.status.startswith("finished"):
+                        for analysis in rc.analysis.values():
+                            analysis.runAnalysis()
     
     @staticmethod
     def createNew(folder):

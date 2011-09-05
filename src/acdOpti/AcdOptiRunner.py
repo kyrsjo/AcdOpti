@@ -106,6 +106,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
     hostname = "hopper.nersc.gov"
     #commonExecs = {"Omega3P::2011May23":"~candel/.community/hopper2/omega3p-2011May23"}
     
+    __sshClient = None #Try to keep using the same SSHClient
+    
     __paramFile = None    
     #PBSjobName = None
     remoteJobID = None
@@ -139,15 +141,25 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
     def __connectSSH(self):
         """
         Method that setups a ssh connection, returning a paramiko.SSHClient object.
-        Remember to close() it!
+        Please close() any SFTPClients opened, but don't close the client itself,
+        as this method tries to reuse an existing client (connecting is what takes most of the time)  
         """
-        print "Connecting..."
+        print "Connecting..."        
+        if self.__sshClient != None:
+            print "Found an old client"
+            if self.__sshClient.get_transport() == None or self.__sshClient.get_transport().is_active() != True:
+                 print "Old client not active."
+            else:
+                "Old client OK!"
+                return self.__sshClient
+        print "Couldn't use old client, creating a new one."
         username = AcdOptiSettings().getSetting("hopperUser")
         client = paramiko.SSHClient()
         client.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
         client.connect(self.hostname, username=username)
         #client.load_system_host_keys()
         print "Connected."
+        self.__sshClient = client
         return client
     def __SSHkillDir(self, dir, sftp):
         """
@@ -193,7 +205,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         #Put the file
         if os.path.split(stageFile)[1] in scratchDirList:
             print "File already on HPC?!?"
-            client.close()
+            #client.close()
             return
         print "Uploading file..."
         remoteFile = remoteScratch + os.path.split(stageFile)[1]
@@ -222,7 +234,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         else:
             print "Already gone."
         
-        client.close()
+        sftp.close()
+        #client.close()
         
     def remoteCleanup(self):
         #Make connection...
@@ -257,7 +270,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         else:
             print "Already gone."
         
-        client.close()
+        #client.close()
+        sftp.close()
         
     def run(self):
         #Make connection...
@@ -274,7 +288,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         print "STDERR:", ssh_stderr_str
         print "Submitted."
     
-        client.close()
+        #client.close()
         
         if len(ssh_stderr_str):
             raise AcdOptiException_optiRunner_remoteProblem("Problem during submission, see output")
@@ -302,7 +316,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         print "STDERR:", ssh_stderr_str
         print "Cancel command issued."
         
-        client.close()
+        #client.close()
         
         if len(ssh_stderr_str):
             if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
@@ -322,7 +336,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         print "STDERR:", ssh_stderr_str
         print "Got status."
         
-        client.close()
+        #client.close()
         
         #Parse the status output:
         if len(ssh_stderr_str):
@@ -372,13 +386,14 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         print "STDERR:", ssh_stderr_str
         print "Zipped."
         if len(ssh_stderr_str):
-            client.close()
+            #client.close()
             raise AcdOptiException_optiRunner_remoteProblem("Problem during zipping, see output")
         
         #Download the tarball
         sftp.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile))
         
-        client.close()
+        #client.close()
+        sftp.close()
         
         #Unzip the downloaded solution tar.gz
         archive = tarfile.open(os.path.join(finishedLocalPath, remoteFile), "r:gz")

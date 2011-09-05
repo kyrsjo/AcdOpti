@@ -102,7 +102,7 @@ class Scan(InfoFrameComponent):
 #        self.__createAndRunButton = gtk.Button("Create and run scan (=> do all of the above!)")
 #        self.baseWidget.pack_start(self.__createAndRunButton, expand=False)
 
-        self.__getDataButton      = gtk.Button("Download finished data")
+        self.__getDataButton      = gtk.Button("Check status and download finished data")
         self.__getDataButton.connect("clicked", self.event_button_getData, None)
         self.baseWidget.pack_start(self.__getDataButton, expand=False)
         
@@ -175,15 +175,29 @@ class Scan(InfoFrameComponent):
             self.__rangeStepEntry.set_sensitive(False)
             
             self.__createScanButton.set_sensitive(False)
+
             if self.scanInstance.staged == True:
                 self.__stageScanButton.set_sensitive(False)
-                self.__runScanButton.set_sensitive(True)
+                
+                if self.scanInstance.run == True:
+                    self.__runScanButton.set_sensitive(False)
+                    self.__getDataButton.set_sensitive(True)
+                    self.__runAnalysisButton.set_sensitive(True)
+                elif self.scanInstance.run == False:
+                    self.__runScanButton.set_sensitive(True)
+                    self.__getDataButton.set_sensitive(False)
+                    self.__runAnalysisButton.set_sensitive(False)
+                else:
+                    raise ValueError("Scan instance 'run' was not initialized?!?")
+                    
             elif self.scanInstance.staged == False:
                 self.__stageScanButton.set_sensitive(True)
                 self.__runScanButton.set_sensitive(False)
+                self.__getDataButton.set_sensitive(False)
+                self.__runAnalysisButton.set_sensitive(False)
+                
             else:
-                raise ValueError("Scan instance staged was not initialized?!?")
-
+                raise ValueError("Scan instance 'staged' was not initialized?!?")
         elif self.scanInstance.lockdown == False:
             self.__geomCombo.set_sensitive(True)
             self.__scanVariableCombo.set_sensitive(True)
@@ -195,8 +209,11 @@ class Scan(InfoFrameComponent):
             self.__createScanButton.set_sensitive(True)
             self.__stageScanButton.set_sensitive(False)
             self.__runScanButton.set_sensitive(False)
+            self.__getDataButton.set_sensitive(False)
+            self.__runAnalysisButton.set_sensitive(False)
+                
         else:
-            raise ValueError("Scan instance lockdown was not initialized?!?")
+            raise ValueError("Scan instance 'lockdown' was not initialized?!?")
     
     def saveToScan(self):
         if self.__geomCombo.get_active_text() != None:
@@ -263,10 +280,15 @@ class Scan(InfoFrameComponent):
         
     def event_button_runScan(self, widget, data=None):
         print "Scan::event_button_runScan()"
+        self.scanInstance.runScan()
+        self.updateDisplay()
+        self.frameManager.mainWindow.updateProjectExplorer()
     
     def event_button_getData(self, widget, data=None):
         print "Scan::event_button_getData()"
-    
+        self.scanInstance.refreshAndDownload()
+        self.frameManager.mainWindow.updateProjectExplorer()
+
     def event_button_runAnalysis(self, widget, data=None):
         print "Scan::event_button_runAnalysis()"
     

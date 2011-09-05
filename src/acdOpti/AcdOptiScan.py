@@ -3,7 +3,9 @@ from AcdOptiExceptions import AcdOptiException_scan_createFail,\
                               AcdOptiException_scan_loadFail,\
                               AcdOptiException_scan_scanFail,\
                               AcdOptiException_scan_stageFail,\
-                              AcdOptiException_scan_generateRangeFail
+                              AcdOptiException_scan_generateRangeFail,\
+                              AcdOptiException_scan_runFail,\
+                              AcdOptiException_scan_refreshDownloadFail
 import os
 
 import numpy as np
@@ -22,6 +24,7 @@ class AcdOptiScan:
     instName = None
     lockdown = None #irreversible lockdown on parameters, happens after createScan()
     staged   = None #2'nd "lockdown", indicates that geoms has been staged.
+    run      = None #3'rd, indicates that geoms has been uploaded&ran.
 
     baseGeomInstance = None
     
@@ -57,6 +60,7 @@ class AcdOptiScan:
         
         self.lockdown = DataDict.boolconv(self.__paramfile.dataDict.getValSingle("lockdown"))
         self.staged  = DataDict.boolconv(self.__paramfile.dataDict.getValSingle("staged"))
+        self.run  = DataDict.boolconv(self.__paramfile.dataDict.getValSingle("run"))
 
 
         self.slaveGeomsDict = self.__paramfile.dataDict["slaveGeoms"]
@@ -122,6 +126,7 @@ class AcdOptiScan:
         
         self.__paramfile.dataDict.setValSingle("lockdown", str(self.lockdown))
         self.__paramfile.dataDict.setValSingle("staged"  , str(self.staged))
+        self.__paramfile.dataDict.setValSingle("run"     , str(self.run))
         
         self.__paramfile.write()
     
@@ -156,7 +161,7 @@ class AcdOptiScan:
         
         for val in self.scanParameter_range:
             oldName = self.baseGeomInstance.instName
-            newName = oldName + "--scan--" + self.scanParameter_name + "#" + str(val)
+            newName = oldName + "--scan--" + self.scanParameter_name + str(val) #Separators  messes things up..
             #Check if this already exists:
             newGeom = None
             if newName in self.scanCollection.project.geomCollection.geomInstances:
@@ -190,7 +195,40 @@ class AcdOptiScan:
                         print "AcdOptiScan::stageAll() : progressCallback()"
                         progressCallback()
         self.staged = True
-      
+    
+    def runScan(self):
+        """
+        Upload and run all runConfigs
+        """
+        print "AcdOptiScan::RunScan()"
+        if not self.staged:
+            raise AcdOptiException_scan_runFail("Not staged yet!")
+        
+        for geom in self.slaveGeoms:
+            for mesh in geom.meshInsts.values():
+                for rc in mesh.runConfigs.values():
+                    rc.upload()
+                    rc.run()
+                    
+        self.run = True
+    
+    def refreshAndDownload(self):
+        """
+        Refresh the status on all the runConfigs, download results where finished
+        """
+        print "AcdOptiScan::refreshAndDownload()"
+        if self.run != True:
+            raise AcdOptiException_scan_refreshDownloadFail("Not yet ran, run != True")
+        
+        for geom in self.slaveGeoms:
+            for mesh in geom.meshInsts.values():
+                for rc in mesh.runConfigs.values():
+                    if rc.status.startswith("remote::"):
+                        rc.refreshStatus()
+                        #TODO: Handle local runner?
+                        if rc.status == "remote::finished":
+                            rc.getRemote()
+    
     @staticmethod
     def createNew(folder):
         #Construct the instance name from folder
@@ -208,6 +246,7 @@ class AcdOptiScan:
         paramFile.dataDict.pushBack("instName", instName)
         paramFile.dataDict.pushBack("lockdown", "False")
         paramFile.dataDict.pushBack("staged", "False")
+        paramFile.dataDict.pushBack("run", "False")
         
         paramFile.dataDict.pushBack("baseGeomInstance_name", "")
         

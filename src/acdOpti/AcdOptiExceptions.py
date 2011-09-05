@@ -120,3 +120,7 @@ class AcdOptiException_scan_loadFail(AcdOptiException):
     pass
 class AcdOptiException_scan_scanFail(AcdOptiException):
     pass
+class AcdOptiException_scan_stageFail(AcdOptiException):
+    pass
+class AcdOptiException_scan_generateRangeFail(AcdOptiException):
+    pass

@@ -6,7 +6,8 @@ import os
 
 from InfoFrameComponent import InfoFrameComponent
 
-from acdOpti.AcdOptiExceptions import AcdOptiException_scan_scanFail
+from acdOpti.AcdOptiExceptions import AcdOptiException_scan_scanFail,\
+                                      AcdOptiException_scan_generateRangeFail
 
 class Scan(InfoFrameComponent):
     """
@@ -31,6 +32,7 @@ class Scan(InfoFrameComponent):
     __rangeMaxEntry = None
     __rangeMinEntry = None
     __rangeStepEntry = None
+    __previewRangeButton = None
     
     __createScanButton = None
     __stageScanButton = None
@@ -78,6 +80,9 @@ class Scan(InfoFrameComponent):
         
         self.__scanVariableDefLabel = gtk.Label("Default value: ") 
         self.baseWidget.pack_start(self.__scanVariableDefLabel, expand=False, padding=5)
+        self.__previewRangeButton = gtk.Button("(Pre)view scan range")
+        self.__previewRangeButton.connect("clicked", self.event_button_previewRange, None)
+        self.baseWidget.pack_start(self.__previewRangeButton, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), expand=True, padding=10) #Take up space!
         
@@ -170,6 +175,15 @@ class Scan(InfoFrameComponent):
             self.__rangeStepEntry.set_sensitive(False)
             
             self.__createScanButton.set_sensitive(False)
+            if self.scanInstance.staged == True:
+                self.__stageScanButton.set_sensitive(False)
+                self.__runScanButton.set_sensitive(True)
+            elif self.scanInstance.staged == False:
+                self.__stageScanButton.set_sensitive(True)
+                self.__runScanButton.set_sensitive(False)
+            else:
+                raise ValueError("Scan instance staged was not initialized?!?")
+
         elif self.scanInstance.lockdown == False:
             self.__geomCombo.set_sensitive(True)
             self.__scanVariableCombo.set_sensitive(True)
@@ -179,9 +193,10 @@ class Scan(InfoFrameComponent):
             self.__rangeStepEntry.set_sensitive(True)
             
             self.__createScanButton.set_sensitive(True)
-            
+            self.__stageScanButton.set_sensitive(False)
+            self.__runScanButton.set_sensitive(False)
         else:
-            assert False, "Scan instance lockdown was not initialized?!?"
+            raise ValueError("Scan instance lockdown was not initialized?!?")
     
     def saveToScan(self):
         if self.__geomCombo.get_active_text() != None:
@@ -205,6 +220,26 @@ class Scan(InfoFrameComponent):
         self.scanInstance.write()
         return False #Return value as expected from event_delete()
     
+    def event_button_previewRange(self, widget, data=None):
+        self.saveToScan()
+        
+        try:
+            if not self.scanInstance.lockdown:
+                self.scanInstance.generateRange()
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
+                                     "Number of entries: " + str(len(self.scanInstance.scanParameter_range)) + ", Range:\n" + str(self.scanInstance.scanParameter_range))
+            mDia.run()
+            mDia.destroy()
+        except AcdOptiException_scan_generateRangeFail as e:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Could not generate range, got error '" + e.args[0] + "'")
+            mDia.run()
+            mDia.destroy()
+    
     def event_button_createScan(self, widget, data=None):
         print "Scan::event_button_createScan()"
         self.saveToScan()
@@ -222,6 +257,9 @@ class Scan(InfoFrameComponent):
 
     def event_button_stageScan(self, widget, data=None):
         print "Scan::event_button_stageScan()"
+        self.scanInstance.stageAll()#progressCallback=self.frameManager.mainWindow.updateProjectExplorer())
+        self.updateDisplay()
+        self.frameManager.mainWindow.updateProjectExplorer()
         
     def event_button_runScan(self, widget, data=None):
         print "Scan::event_button_runScan()"

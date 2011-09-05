@@ -176,10 +176,10 @@ class AcdOptiRunConfig:
         """
         Stages all the files needed for running the job
         """
-        if self.status != "initialized":
-            raise AcdOptiException_runConfig_stageError("Not in status 'initialized', status='" + self.status + "'")
         if self.status == "staged":
-            return
+            return #Skip if already staged
+        elif self.status != "initialized":
+            raise AcdOptiException_runConfig_stageError("Not in status 'initialized', status='" + self.status + "'")
         
         #Find the correct name to use for the staging and create the folder
         meshInstance = self.meshInstance

@@ -136,6 +136,8 @@ class MainWindow():
         self.__cellRender     = gtk.CellRendererText()
         self.__cellRenderIcon = gtk.CellRendererPixbuf()
         
+        self.__treeModel.set_sort_column_id(0, gtk.SORT_ASCENDING)
+
         self.__treeView.append_column(self.__treeViewColumn)
         self.__treeViewColumn.pack_start(self.__cellRenderIcon)
         self.__treeViewColumn.add_attribute(self.__cellRenderIcon, 'pixbuf', 1)
@@ -496,7 +498,7 @@ class MainWindow():
         #All geomInstances *not* belonging to a scanInstance
         geomColMap = {}
         for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
-            if v.scanInstance == None:
+            if len(v.scanInstances) == 0:
                 geomColMap[k] = v
         self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, gcIter)
 
@@ -521,7 +523,7 @@ class MainWindow():
             sIter = self.__treeModel.append(scIter,[scanName, self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), color, scan])
             geomColMap = {}
             for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
-                if v.scanInstance == scan:
+                if scan in v.scanInstances:
                     geomColMap[k] = v
             self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, sIter)
             

@@ -28,6 +28,7 @@ from infoFrames.RunConfig import RunConfig
 from infoFrames.MeshTemplate import MeshTemplate
 from infoFrames.AnalysisExportedResults import AnalysisExportedResults
 from infoFrames.Scan import Scan
+from infoFrames.MetaAnalysis import MetaAnalysis
 
 import os
 
@@ -164,7 +165,7 @@ class MainWindow():
         self.window.show_all()
 
         #Lazy me...
-        #self.loadProject("../test")
+        self.loadProject("../pillbox")
     #END __init__()
 
     def event_delete(self, widget, event, data=None):
@@ -503,7 +504,8 @@ class MainWindow():
             self.__infoFrame.writeMessage("Meta-analysis collection")
         elif isinstance(row[-1], AcdOptiMetaAnalysis):
             print "MainWindow::event_treeView_rowActivated() : Meta analysis, name='" + row[0] + "'"
-            self.__infoFrame.writeMessage("Meta-analysis, name='" + row[0] + "'='" + row[-1].instName)
+            self.__infoFrame.push(MetaAnalysis(self.__infoFrame,row[-1]))
+            #self.__infoFrame.writeMessage("Meta-analysis, name='" + row[0] + "'='" + row[-1].instName)
         else:
             raise NotImplementedError("Unknown class encountered in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
             

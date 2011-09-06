@@ -191,6 +191,8 @@ class AcdOptiScan:
         for geom in self.slaveGeoms:
             for mesh in geom.meshInsts.values():
                 for rc in mesh.runConfigs.values():
+                    if rc.status == "finished":
+                        continue #In case of geom reuse
                     rc.stage()
                     if progressCallback != None:
                         print "AcdOptiScan::stageAll() : progressCallback()"
@@ -208,6 +210,8 @@ class AcdOptiScan:
         for geom in self.slaveGeoms:
             for mesh in geom.meshInsts.values():
                 for rc in mesh.runConfigs.values():
+                    if rc.status == "finished":
+                        continue #In case of geom reuse
                     rc.upload()
                     rc.run()
                     

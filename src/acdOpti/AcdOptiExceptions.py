@@ -140,3 +140,5 @@ class AcdOptiException_metaAnalysis_createFail(AcdOptiException):
     pass 
 class AcdOptiException_metaAnalysis_loadFail(AcdOptiException):
     pass
+class AcdOptiException_metaAnalysis_anaFail(AcdOptiException):
+    pass

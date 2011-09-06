@@ -206,6 +206,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         if os.path.split(stageFile)[1] in scratchDirList:
             print "File already on HPC?!?"
             #client.close()
+            sftp.close()
             return
         print "Uploading file..."
         remoteFile = remoteScratch + os.path.split(stageFile)[1]
@@ -222,7 +223,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         print "Unzipped."
         
         if len(ssh_stderr_str):
-            client.close()
+            #client.close()
+            sftp.close()
             raise AcdOptiException_optiRunner_remoteProblem("Problem while unzipping, see output")
         
         #Delete the remote tar.gz

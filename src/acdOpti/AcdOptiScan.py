@@ -226,7 +226,7 @@ class AcdOptiScan:
                 for rc in mesh.runConfigs.values():
                     if rc.status.startswith("remote::"):
                         rc.refreshStatus()
-                        #TODO: Handle local runner?
+                        #TODO: Handle possible local runner?
                         if rc.status == "remote::finished":
                             rc.getRemote()
     

@@ -130,3 +130,13 @@ class AcdOptiException_scan_refreshDownloadFail(AcdOptiException):
     pass
 class AcdOptiException_scan_analysisFail(AcdOptiException):
     pass
+
+#AcdOptiMetaAnalysisCollection
+class AcdOptiException_metaAnalysisCollection_loadFail(AcdOptiException):
+    pass
+
+#AcdOptiMetaAnalysis
+class AcdOptiException_metaAnalysis_createFail(AcdOptiException):
+    pass 
+class AcdOptiException_metaAnalysis_loadFail(AcdOptiException):
+    pass

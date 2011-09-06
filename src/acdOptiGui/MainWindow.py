@@ -1,5 +1,4 @@
 import pygtk #@UnresolvedImport
-from acdOpti.AcdOptiScan import AcdOptiScan
 pygtk.require('2.0')
 import gtk #@UnresolvedImport
 
@@ -12,6 +11,9 @@ from acdOpti.analysis.AnalysisInterface import AnalysisInterface
 from acdOpti.AcdOptiMeshTemplate import AcdOptiMeshTemplate
 from acdOpti.AcdOptiMeshTemplateCollection import AcdOptiMeshTemplateCollection
 from acdOpti.AcdOptiScanCollection import AcdOptiScanCollection
+from acdOpti.AcdOptiScan import AcdOptiScan
+from acdOpti.AcdOptiMetaAnalysisCollection import AcdOptiMetaAnalysisCollection
+from acdOpti.AcdOptiMetaAnalysis import AcdOptiMetaAnalysis
 
 from acdOpti.AcdOptiExceptions import *
 from AcdOptiGuiExceptions import *
@@ -49,6 +51,7 @@ class MainWindow():
     __geomInstanceNewButton   = None
     __meshTemplateNewButton   = None
     __scanNewButton           = None
+    __metaAnalysisNewButton   = None
 
     __scrolledWindow  = None
     __treeModel       = None
@@ -57,20 +60,13 @@ class MainWindow():
     __cellRender      = None
     __cellRenderIcon  = None
 
-    __meshIcon = None
-    __geomIcon = None
+    __meshIcon  = None
+    __geomIcon  = None
+    __graphIcon = None
 
     #Fields: Logic
     activeProject = None
-    
-    #References for the treeView
-#    __activeProject_treeReference = None
-#    __geomsTop_treeReference = None
-#    __geoms_treeReference = None
-#    __geoms_meshInstances_treeReference = None
-#    __geoms_meshInstances_runConfigs_treeReference = None
-#    __meshesTop_treeReference = None
-#    __meshes_treeReference = None
+
 
     #Methods
     def __init__(self):
@@ -119,6 +115,12 @@ class MainWindow():
         self.__scanNewButton.set_sensitive(False)
         self.__toolbar.insert(self.__scanNewButton, -1)
 
+        self.__metaAnalysisNewButton = gtk.ToolButton(icon_widget=gtk.image_new_from_file(\
+                os.path.join(acdOptiGuiPath, "pix", "32x32", "chart_curve_add.png")), label="Add meta-analysis")
+        self.__metaAnalysisNewButton.connect("clicked", self.event_toolbutton_metaAnalysisNewButton, None)
+        self.__metaAnalysisNewButton.set_sensitive(False)
+        self.__toolbar.insert(self.__metaAnalysisNewButton, -1)
+
         self.__VBox1.pack_start(self.__toolbar, False)
 
         #Sidebar/maindisplay HBox
@@ -128,6 +130,7 @@ class MainWindow():
         #Tree view in left part of screen
         self.__meshIcon       = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "24x24", "mesh.png"))
         self.__geomIcon       = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "24x24", "geom.png"))
+        self.__graphIcon      = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "16x16", "chart_curve.png"))
         
         # tree store stores object name, icon, background color, and the object itself
         self.__treeModel      = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, object)
@@ -357,11 +360,7 @@ class MainWindow():
                 break
     def event_toolbutton_scanNewButton(self, widget,data=None):
         print "MainWindow::event_toolbutton_scanNewButton()"
-        
-#        #Temporary button hijacking
-#        self.activeProject.geomCollection.cloneGeomInstance("baseline", "testClone")
-#        self.updateProjectExplorer()
-#        
+
         name = ""
         while True:
             dia = gtk.Dialog("Please enter name of new parameter scan:", self.window,
@@ -409,7 +408,57 @@ class MainWindow():
             #Response cancel or close
             else:
                 break
-
+    def event_toolbutton_metaAnalysisNewButton(self, widget,data=None):
+        print "MainWindow::event_toolbutton_metaAnalysisNewButton()"
+        
+        name = ""
+        while True:
+            dia = gtk.Dialog("Please enter name of new meta-analysis :", self.window,
+                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                             (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                              gtk.STOCK_OK, gtk.RESPONSE_OK))
+            dia.set_default_response(gtk.RESPONSE_OK)
+            nameBox = gtk.Entry()
+            nameBox.set_text(name)
+            nameBox.show()
+            dia.vbox.pack_start(nameBox)
+            dia.show_all()
+    
+            response = dia.run()
+            name = nameBox.get_text()
+    
+            dia.destroy()
+            
+            if response == gtk.RESPONSE_OK:
+                #Check for whitespace
+                print "got: \"" + name + "\""
+                if " " in name:
+                    mDia = gtk.MessageDialog(self.window,
+                                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                             gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                             "Name cannot contain whitespace")
+                    mDia.run()
+                    mDia.destroy()
+                #OK, try to make the folder..
+                else:
+                    try:
+                        self.activeProject.metaAnalysisCollection.add(name)
+                        self.updateProjectExplorer()
+                        break #Done!
+                    except AcdOptiException_metaAnalysis_createFail:
+                        #Nope, try again
+                        print "got: \"" + name + "\""
+                        mDia = gtk.MessageDialog(self.window,
+                                                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                                 gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                                 "Name already in use")
+                        mDia.run()
+                        mDia.destroy()
+                        continue;
+            #Response cancel or close
+            else:
+                break
+            
     def event_treeView_rowActivated(self,widget,path,column,data=None):
         print "MainWindow::event_treeView_rowActivated(), path =", path
         
@@ -449,6 +498,12 @@ class MainWindow():
         elif isinstance(row[-1], AcdOptiScan):
             print "MainWindow::event_treeView_rowActivated() : scan, name='" + row[0] + "'"
             self.__infoFrame.push(Scan(self.__infoFrame, row[-1]))
+        elif isinstance(row[-1], AcdOptiMetaAnalysisCollection):
+            print "MainWindow::event_treeView_rowActivated() : Meta analysis collection"
+            self.__infoFrame.writeMessage("Meta-analysis collection")
+        elif isinstance(row[-1], AcdOptiMetaAnalysis):
+            print "MainWindow::event_treeView_rowActivated() : Meta analysis, name='" + row[0] + "'"
+            self.__infoFrame.writeMessage("Meta-analysis, name='" + row[0] + "'='" + row[-1].instName)
         else:
             raise NotImplementedError("Unknown class encountered in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
             
@@ -475,6 +530,7 @@ class MainWindow():
         self.__geomInstanceNewButton.set_sensitive(True)
         self.__meshTemplateNewButton.set_sensitive(True)
         self.__scanNewButton.set_sensitive(True)
+        self.__metaAnalysisNewButton.set_sensitive(True)
 
     def updateProjectExplorer(self):
         """
@@ -526,8 +582,17 @@ class MainWindow():
                 if scan in v.scanInstances:
                     geomColMap[k] = v
             self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, sIter)
-            
-            
+        
+        #Meta-analysis-collection
+        macIter = self.__treeModel.append(projIter, ["Meta-analysis", self.__graphIcon, "white", self.activeProject.metaAnalysisCollection])
+        #Meta analysis
+        for (metAnaName, metAna) in self.activeProject.metaAnalysisCollection.metaAnalysis.iteritems():
+            if metAna.lockdown:
+                color = "green"
+            else:
+                color = "yellow"
+            maIter = self.__treeModel.append(macIter,[metAnaName, self.__graphIcon, color, metAna])
+
         self.__treeView.expand_all()
 
     def __updateProjectExplorer_helper_geomInstancesWithChildren(self,geomInstancesMap,baseTreeIter):

@@ -1,10 +1,13 @@
-import AcdOptiGeometryCollection, AcdOptiGeometryInstance
-import AcdOptiMeshTemplateCollection
+from AcdOptiGeometryCollection     import AcdOptiGeometryCollection
+from AcdOptiMeshTemplateCollection import AcdOptiMeshTemplateCollection
+from AcdOptiScanCollection         import AcdOptiScanCollection
+from AcdOptiMetaAnalysisCollection import AcdOptiMetaAnalysisCollection
+#import AcdOptiGeometryInstance
+
 import AcdOptiFileParser
 from AcdOptiExceptions import *
 
 import os
-from acdOpti.AcdOptiScanCollection import AcdOptiScanCollection
 
 class AcdOptiProject():
     """
@@ -23,6 +26,8 @@ class AcdOptiProject():
     meshTemplateCollection  = None
     
     scanCollection = None
+    
+    metaAnalysisCollection = None
     
     def __init__(self, projectFolder_name):
         """
@@ -51,15 +56,16 @@ class AcdOptiProject():
             raise AcdOptiException_project_loadFail("Project name in in file \"project.set\" doesn't match folder name ")
 
         #Load the meshTemplateCollection        
-        self.meshTemplateCollection = AcdOptiMeshTemplateCollection.AcdOptiMeshTemplateCollection(\
-            os.path.join(self.projectFolder_name, "meshTemplates"))
+        self.meshTemplateCollection = AcdOptiMeshTemplateCollection(os.path.join(self.projectFolder_name, "meshTemplates"))
 
         #Load the geomCollection
-        self.geomCollection = AcdOptiGeometryCollection.AcdOptiGeometryCollection(\
-            os.path.join(self.projectFolder_name, "geomInstances"), self)
+        self.geomCollection = AcdOptiGeometryCollection(os.path.join(self.projectFolder_name, "geomInstances"), self)
 
         #Load the scanCollection
         self.scanCollection = AcdOptiScanCollection(os.path.join(self.projectFolder_name, "scans"), self)
+        
+        #Load the metaAnalysisCollection
+        self.metaAnalysisCollection = AcdOptiMetaAnalysisCollection(os.path.join(self.projectFolder_name, "metaAnalysis"), self)
         
     #END __init__()
         
@@ -85,16 +91,16 @@ class AcdOptiProject():
         projectDescription_file.write()
         
         #Mesh template folder
-        AcdOptiMeshTemplateCollection.AcdOptiMeshTemplateCollection.createNew(\
-            os.path.join(folder, "meshTemplates"))
+        AcdOptiMeshTemplateCollection.createNew(os.path.join(folder, "meshTemplates"))
         
         #Geometry instance folder
-        AcdOptiGeometryCollection.AcdOptiGeometryCollection.createNew(\
-            os.path.join(folder, "geomInstances"))
+        AcdOptiGeometryCollection.createNew(os.path.join(folder, "geomInstances"))
         
         #Scan collection
         AcdOptiScanCollection.createNew(os.path.join(folder, "scans"))
-
+        
+        #Meta-analysis collection
+        AcdOptiMetaAnalysisCollection.createNew(os.path.join(folder, "metaAnalysis"))
 
     
 

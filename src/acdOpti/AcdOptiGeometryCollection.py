@@ -30,8 +30,6 @@ class AcdOptiGeometryCollection:
 
     project = None #Pointer to the top-level AcdOptiProject
 
-    #TODO: Need link to geometry cubit template file
-
     def __init__(self,folder, project):
         """
         Initialize (load) a GeometryCollection
@@ -91,12 +89,9 @@ class AcdOptiGeometryCollection:
                 #Skip files etc.
                 continue
             try:
-                self.geomInstances[d] = \
-                    AcdOptiGeometryInstance(dAbs, self)
+                self.geomInstances[d] = AcdOptiGeometryInstance(dAbs, self)
             except AcdOptiException_geomInstance_loadFail as e:
-                print e
-                raise AcdOptiException_geomCollection_loadFail(\
-                    "Problem loading geometry instance \"" + d + "\"")
+                raise AcdOptiException_geomCollection_loadFail("Problem loading geometry instance \"" + d + "\", got error='" + str(e.args) + "'")
                 
     def write(self):
         """

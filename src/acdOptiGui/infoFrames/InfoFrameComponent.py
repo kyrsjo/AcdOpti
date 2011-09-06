@@ -36,12 +36,3 @@ class InfoFrameComponent:
         """
         print "delete_event in InfoFrameComponent"
         return False
-
-    # def makeActive(self):
-    #     self.frameManager.add(self.baseWidget)
-    #     self.isActive = True
-    
-    # def makePassive(self):
-    #     frameManager.clear()
-    #     isActive = False
-        

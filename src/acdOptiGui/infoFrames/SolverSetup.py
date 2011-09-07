@@ -228,7 +228,7 @@ class SolverSetup(InfoFrameComponent):
             self.__copyButton.set_sensitive(False)
             self.__delButton.set_sensitive(False)
             return
-        
+                
         row = self.__dynamicTableTree[path]
         
         if DataDict.boolconv(row[-1]["single"]):
@@ -244,13 +244,15 @@ class SolverSetup(InfoFrameComponent):
             if len(path) == 1:
                 #Top-level
                 parent = self.solverSetup.metaSetup
+                parentChild = parent#["options"]
             else:
                 parentRow = self.__dynamicTableTree[path[:-1]]
                 parent = parentRow[-1]
+                parentChild = parent["children"]
             
             #Search for siblings with same name
             findings = 0
-            for (k,v) in parent["children"]:
+            for (k,v) in parentChild:
                 if k == row[0]:
                     findings += 1
             

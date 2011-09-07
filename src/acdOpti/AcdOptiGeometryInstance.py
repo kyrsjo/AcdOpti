@@ -161,10 +161,9 @@ class AcdOptiGeometryInstance():
         if os.path.isfile(refJouFileName):
             os.remove(refJouFileName)
         templateFile.writeJouFile(params,refJouFileName,self.cubitGeomPreCommands, self.cubitGeomPostCommands)
-
+        
         #Generate the geometry
-        templateFile.runCubit(params, preCommands=self.cubitGeomPreCommands,\
-                              postCommands=self.cubitGeomPostCommands)
+        templateFile.runCubit(params, preCommands=self.cubitGeomPreCommands, postCommands=self.cubitGeomPostCommands)
         os.rename("geom.cub", os.path.join(self.folder, "geom.cub"))
         
         self.setLockdown()
@@ -183,12 +182,6 @@ class AcdOptiGeometryInstance():
         #Check that the mesh instance name is not already in use:
         if meshInstanceName in self.meshInsts:
             raise AcdOptiException_geomInstance_nameError("Mesh instance name already in use")
-        
-        #Find the meshTemplate
-#        try: #TODO: reomove this block?!?
-#            meshTemplate = self.template.project.meshTemplateCollection.meshTemplates[meshTemplateName]
-#        except KeyError:
-#            raise AcdOptiException_geomInstance_nameError("meshTemplateName not found")
         
         folder = os.path.join(self.folder,self.meshInstanceFolderName,meshInstanceName)
     

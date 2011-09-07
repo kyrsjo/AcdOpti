@@ -54,6 +54,8 @@ class AcdOptiException_meshInstance_lockdownError(AcdOptiException):
     pass
 class AcdOptiException_meshInstance_nameError(AcdOptiException):
     pass
+class AcdOptiException_meshInstance_generateFail(AcdOptiException):
+    pass
 
 #DataDict exceptions
 class AcdOptiException_dataDict_stringWithSpace(AcdOptiException):

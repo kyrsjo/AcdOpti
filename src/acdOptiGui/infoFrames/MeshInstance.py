@@ -7,7 +7,8 @@ import os
 from InfoFrameComponent import InfoFrameComponent
 
 from acdOpti.AcdOptiExceptions import AcdOptiException_cubitTemplateFile_CUBITerror,\
-                                      AcdOptiException_runConfig_createFail
+                                      AcdOptiException_runConfig_createFail,\
+                                      AcdOptiException_meshInstance_generateFail
 
 from RunConfig import RunConfig
 
@@ -265,6 +266,12 @@ class MeshInstance(InfoFrameComponent):
             md = gtk.MessageDialog(self.getBaseWindow(),
                                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                                    gtk.BUTTONS_CLOSE, "Error during execution of CUBIT script, offending command:\n" + str(e.args[2]))
+            md.run()
+            md.destroy()
+        except AcdOptiException_meshInstance_generateFail as e:
+            md = gtk.MessageDialog(self.getBaseWindow(),
+                                   gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+                                   gtk.BUTTONS_CLOSE, "There was a problem generating the mesh:\n" + str(e.args[2]))
             md.run()
             md.destroy()
         

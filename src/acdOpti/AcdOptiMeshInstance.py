@@ -1,10 +1,11 @@
 from AcdOptiExceptions import AcdOptiException_meshInstance_createFail,\
                               AcdOptiException_meshInstance_loadFail,\
                               AcdOptiException_meshInstance_lockdownError,\
+                              AcdOptiException_meshInstance_nameError,\
+                              AcdOptiException_meshInstance_generateFail,\
                               AcdOptiException_dataDict_getValsSingle,\
                               AcdOptiException_geomCollection_loadFail,\
-                              AcdOptiException_runConfig_loadFail,\
-                              AcdOptiException_meshInstance_nameError
+                              AcdOptiException_runConfig_loadFail
 from AcdOptiFileParser import AcdOptiFileParser_simple, DataDict
 import os, shutil
 from acdOpti.AcdOptiRunConfig import AcdOptiRunConfig
@@ -202,7 +203,9 @@ class AcdOptiMeshInstance:
         #Convert the mesh to NetCDF
         AcdOptiAcdtoolWrapper.convertGenNcdf(os.path.join(self.folder, "mesh.gen"),
                                              os.path.join(self.folder, "mesh.ncdf"))
-        
+        meshBad = AcdOptiAcdtoolWrapper.meshCheck(os.path.join(self.folder, "mesh.ncdf"))
+        if meshBad:
+            raise AcdOptiException_meshInstance_generateFail("Mesh had ISOTEs -- not a good mesh!")
         
         self.setLockdown()
         return notFound

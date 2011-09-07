@@ -4,7 +4,8 @@ from AcdOptiExceptions import AcdOptiException_runConfig_createFail,\
                               AcdOptiException_runConfig_loadFail,\
                               AcdOptiException_runConfig_stageError,\
                               AcdOptiException_runConfig_updateStateError,\
-                              AcdOptiException_optiRunner_stageError
+                              AcdOptiException_optiRunner_stageError,\
+                              AcdOptiException_meshInstance_generateFail
 
 from AcdOptiSolverSetup import AcdOptiSolverSetup
 from AcdOptiRunner import AcdOptiRunner
@@ -12,6 +13,7 @@ from analysis.AnalysisInterface import AnalysisInterface
 
 import os, shutil, tarfile
 from datetime import datetime
+
 
 class AcdOptiRunConfig:
     """
@@ -202,7 +204,11 @@ class AcdOptiRunConfig:
         
         #Get the mesh file, generate if necessary
         if not self.meshInstance.lockdown:
-            self.meshInstance.generateMesh()
+            try:
+                self.meshInstance.generateMesh()
+            except AcdOptiException_meshInstance_generateFail as e:
+                self.clearLockdown()
+                raise
         shutil.copy(os.path.join(self.meshInstance.folder, "mesh.ncdf"), self.stageFolder)
         shutil.copy(os.path.join(self.meshInstance.folder, "mesh.jou"), self.stageFolder)
         

@@ -165,7 +165,7 @@ class MainWindow():
         self.window.show_all()
 
         #Lazy me...
-        self.loadProject("../pillbox")
+        #self.loadProject("../pillbox")
     #END __init__()
 
     def event_delete(self, widget, event, data=None):

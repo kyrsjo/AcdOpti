@@ -1,0 +1,1426 @@
+fileID = SolverSetupTemplate
+fileFormat = simple
+fileNameDefault = rfPost.in
+type = acdtool_rfpost
+options
+{
+   RFField
+   {
+      type = dict
+      must = True
+      single = True
+      children
+      {
+         O3PMode
+         {
+            type = string
+            must = True
+            single = True
+            default = vector
+         }
+         ModeRangeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         ModeRangeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         ModeID
+         {
+            type = int
+            must = True
+            single = True
+            default = 0
+         }
+         xsymmetry
+         {
+            type = string
+            must = True
+            single = True
+            default = magnetic
+         }
+         ysymmetry
+         {
+            type = string
+            must = True
+            single = True
+            default = magnetic
+         }
+         gradient
+         {
+            type = float
+            must = True
+            single = False
+            default = -1
+         }
+         cavityBeta
+         {
+            type = float
+            must = True
+            single = True
+            default = 1.00000
+         }
+         reversePowerFlow
+         {
+            type = bool
+            must = True
+            single = False
+            boolType = int
+            default = 0
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         gz1
+         {
+            type = float
+            must = True
+            single = True
+            default = -0.03500
+         }
+         gz2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.03500
+         }
+         fx1
+         {
+            type = float
+            must = True
+            single = True
+            default = -10000000.00000
+         }
+         fx2
+         {
+            type = float
+            must = True
+            single = True
+            default = -10000000.00000
+         }
+         fy1
+         {
+            type = float
+            must = True
+            single = True
+            default = -10000000.00000
+         }
+         fy2
+         {
+            type = float
+            must = True
+            single = True
+            default = -10000000.00000
+         }
+         fz1
+         {
+            type = float
+            must = True
+            single = True
+            default = -10000000.00000
+         }
+         fz2
+         {
+            type = float
+            must = True
+            single = True
+            default = -10000000.00000
+         }
+         npoint
+         {
+            type = int
+            must = True
+            single = True
+            default = 300
+         }
+         fmnx
+         {
+            type = int
+            must = True
+            single = True
+            default = 10
+         }
+         fmny
+         {
+            type = int
+            must = True
+            single = True
+            default = 10
+         }
+         fmnz
+         {
+            type = int
+            must = True
+            single = True
+            default = 50
+         }
+      }
+   }
+   RoverQ
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = False
+            boolType=int
+            default = 0
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         x1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         x2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+      }
+   }
+   RoverQT
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int            
+            default = 0
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+      }
+   }
+   kickFactor
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+      }
+   }
+   VFFT
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         printGroup
+         {
+            type = string
+            must = True
+            single = True
+            default = nterm
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         nterm
+         {
+            type = int
+            must = True
+            single = True
+            default = 4
+         }
+         ntheta
+         {
+            type = int
+            must = True
+            single = True
+            default = 16
+         }
+         r0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00500
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+      }
+   }
+   GBZFFT
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = filename1
+         }
+         nterm
+         {
+            type = int
+            must = True
+            single = True
+            default = 4
+         }
+         ntheta
+         {
+            type = int
+            must = True
+            single = True
+            default = 16
+         }
+         energy
+         {
+            type = float
+            must = True
+            single = True
+            default = 5.00000e+07
+         }
+         npoint
+         {
+            type = int
+            must = True
+            single = True
+            default = 300
+         }
+         r0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00500
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         phase1
+         {
+            type = float
+            must = True
+            single = True
+            default = -180.00000
+         }
+         phase2
+         {
+            type = float
+            must = True
+            single = True
+            default = 180.00000
+         }
+         nphase
+         {
+            type = int
+            must = True
+            single = True
+            default = 19
+         }
+      }
+   }
+   Multipole
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = filename1
+         }
+         energy
+         {
+            type = float
+            must = True
+            single = True
+            default = 5.00000e+07
+         }
+         npoint
+         {
+            type = int
+            must = True
+            single = True
+            default = 300
+         }
+         r0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00500
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         phase1
+         {
+            type = float
+            must = True
+            single = True
+            default = -180.00000
+         }
+         phase2
+         {
+            type = float
+            must = True
+            single = True
+            default = 180.00000
+         }
+         nphase
+         {
+            type = int
+            must = True
+            single = True
+            default = 19
+         }
+      }
+   }
+   Track
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = filename1
+         }
+         energy
+         {
+            type = float
+            must = True
+            single = True
+            default = 5.00000e+07
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         rfphase
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         maxSteps
+         {
+            type = int
+            must = True
+            single = True
+            default = 3000
+         }
+      }
+   }
+   TrackScan
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = filename1
+         }
+         scanfilename
+         {
+            type = string
+            must = True
+            single = True
+            default = scanfile1
+         }
+         energy
+         {
+            type = float
+            must = True
+            single = True
+            default = 5.00000e+07
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         phase1
+         {
+            type = float
+            must = True
+            single = True
+            default = -180.00000
+         }
+         phase2
+         {
+            type = float
+            must = True
+            single = True
+            default = 180.00000
+         }
+         nphase
+         {
+            type = int
+            must = True
+            single = True
+            default = 19
+         }
+         maxSteps
+         {
+            type = int
+            must = True
+            single = True
+            default = 3000
+         }
+      }
+   }
+   BeamLoading
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = filename1
+         }
+         energy
+         {
+            type = float
+            must = True
+            single = True
+            default = 5.00000e+07
+         }
+         trajID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         trajID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         trajprint
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         rfscaling
+         {
+            type = float
+            must = True
+            single = True
+            default = 1.00000
+         }
+         phase1
+         {
+            type = float
+            must = True
+            single = True
+            default = -180.00000
+         }
+         phase2
+         {
+            type = float
+            must = True
+            single = True
+            default = 180.00000
+         }
+         nphase
+         {
+            type = int
+            must = True
+            single = True
+            default = 19
+         }
+         maxSteps
+         {
+            type = int
+            must = True
+            single = True
+            default = 3000
+         }
+      }
+   }
+   FieldMap
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         nx
+         {
+            type = int
+            must = True
+            single = True
+            default = 20
+         }
+         ny
+         {
+            type = int
+            must = True
+            single = True
+            default = 20
+         }
+         nz
+         {
+            type = int
+            must = True
+            single = True
+            default = 50
+         }
+         x1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         x2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00100
+         }
+         y2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00100
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+      }
+   }
+   FieldAtPoint
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+      }
+   }
+   ALLFieldAtPoint
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         x0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+      }
+   }
+   FieldOnLine
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         npoint
+         {
+            type = int
+            must = True
+            single = True
+            default = 300
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = filename1
+         }
+         rfphase
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         x1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00100
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         x2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00100
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+      }
+   }
+   ALLFieldOnLine
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         npoint
+         {
+            type = int
+            must = True
+            single = True
+            default = 100
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = fieldOnAxis
+         }
+         rfphase
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         x1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y1
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z1
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+         x2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         y2
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         z2
+         {
+            type = float
+            must = True
+            single = True
+            default = 100000000.00000
+         }
+      }
+   }
+   fieldOn2DBoundary
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = Field2dBoundary
+         }
+         surfaceID
+         {
+            type = int
+            must = True
+            single = True
+            default = 7
+         }
+      }
+   }
+   fieldOnSurface
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = fieldOnSurface_PBC_hiZ
+         }
+         surfaceID
+         {
+            type = int
+            must = True
+            single = True
+            default = 7
+         }
+         output
+         {
+            type = string
+            must = True
+            single = True
+            default = component
+         }
+      }
+   }
+   maxFieldsOnSurface
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         surfaceID
+         {
+            type = int
+            must = True
+            single = True
+            default = 5
+         }
+      }
+   }
+   coaxPort
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         modeID1
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         modeID2
+         {
+            type = int
+            must = True
+            single = True
+            default = -1
+         }
+         portID
+         {
+            type = string
+            must = True
+            single = True
+            default = { }
+         }
+         porta
+         {
+            type = string
+            must = True
+            single = True
+            default = { }
+         }
+         portb
+         {
+            type = string
+            must = True
+            single = True
+            default = { }
+         }
+      }
+   }
+   powerThroughSurface
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         surfaceID
+         {
+            type = int
+            must = True
+            single = True
+            default = 7
+         }
+      }
+   }
+}

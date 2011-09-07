@@ -9,7 +9,7 @@ type            = omega3P //For concistency check
 //Definition of legal options + metainfo
 // Each option is a dict. These dicts must contain:
 // - type                      : is it a dict, integer, float etc?
-// - must                      : Is this strictly necceary to include
+// - must                      : Is this strictly necessary to include
 // - single                    : Is this the only instance (at this level)
 // Type-specific stuff:
 // - type == dict:

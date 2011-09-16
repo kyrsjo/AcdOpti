@@ -61,7 +61,18 @@ class Omega3P_modeInfo(AnalysisInterface):
             data += line
         print data
         
+        #Parse the data
         dataParser = AcdOptiFileParser_KVC(data,"s")
+        
+        for (modeName, mode) in dataParser.dataDict:
+            print mode
+            if "," in mode["Frequency"]:
+                freq = mode["Frequency"]
+                freqSplit = freq.split(",")
+                mode.delItem("Frequency")
+                mode.pushBack("FrequencyReal", freqSplit[0].strip())
+                mode.pushBack("FrequencyImag", freqSplit[1].strip())
+            
         self.exportResults.setValSingle("modes", dataParser.dataDict.copy())
         
         self.lockdown = True

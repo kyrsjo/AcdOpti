@@ -271,7 +271,7 @@ class MeshInstance(InfoFrameComponent):
         except AcdOptiException_meshInstance_generateFail as e:
             md = gtk.MessageDialog(self.getBaseWindow(),
                                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-                                   gtk.BUTTONS_CLOSE, "There was a problem generating the mesh:\n" + str(e.args[2]))
+                                   gtk.BUTTONS_CLOSE, "There was a problem generating the mesh:\n" + str(e.args[0]))
             md.run()
             md.destroy()
         

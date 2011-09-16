@@ -204,10 +204,11 @@ class AcdOptiMeshInstance:
         AcdOptiAcdtoolWrapper.convertGenNcdf(os.path.join(self.folder, "mesh.gen"),
                                              os.path.join(self.folder, "mesh.ncdf"))
         meshBad = AcdOptiAcdtoolWrapper.meshCheck(os.path.join(self.folder, "mesh.ncdf"))
-        if meshBad:
-            raise AcdOptiException_meshInstance_generateFail("Mesh had ISOTEs -- not a good mesh!")
-        
         self.setLockdown()
+
+        if meshBad:
+            raise AcdOptiException_meshInstance_generateFail("Mesh had ISOTEs -- not a good mesh! (mesh still generated)")
+        
         return notFound
     
     def addRunConfig(self,name,runnerType, solverTypes=None):

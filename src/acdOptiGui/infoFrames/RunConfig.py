@@ -362,7 +362,7 @@ class RunConfig(InfoFrameComponent):
                 mDia = gtk.MessageDialog(self.getBaseWindow(),
                                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                          gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                         e.args[0] + ": " + e.args[1])
+                                         e.args[0])
                 mDia.run()
                 mDia.destroy()
         elif self.runConfig.status == "staged":

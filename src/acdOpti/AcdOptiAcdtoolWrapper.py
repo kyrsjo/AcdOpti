@@ -50,7 +50,7 @@ def meshCheck(meshFileName):
     print "Done. Found %u bad elements" % badelems
     
     if badelems > 0:
-        return False
+        return True
     else:
         return False
     

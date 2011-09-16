@@ -207,8 +207,8 @@ class AcdOptiRunConfig:
             try:
                 self.meshInstance.generateMesh()
             except AcdOptiException_meshInstance_generateFail as e:
-                self.clearLockdown()
-                raise
+                self.clearLockdown(forced=True)
+                raise AcdOptiException_runConfig_stageError("Error when generating mesh:\n" + e.args[0])
         shutil.copy(os.path.join(self.meshInstance.folder, "mesh.ncdf"), self.stageFolder)
         shutil.copy(os.path.join(self.meshInstance.folder, "mesh.jou"), self.stageFolder)
         
@@ -226,7 +226,7 @@ class AcdOptiRunConfig:
             #Something went wrong when staging the runner
             # cleanup and raise exception
             self.clearLockdown(forced=True)
-            raise AcdOptiException_runConfig_stageError("Error when staging runner", e.args[0])
+            raise AcdOptiException_runConfig_stageError("Error when staging runner:\n" + e.args[0])
             
         
         #Zip the folder to make it ready for upload

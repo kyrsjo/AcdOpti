@@ -18,9 +18,12 @@
 
 
 import pygtk
-from acdOpti.analysis.AnalysisInterface import AnalysisInterface
 pygtk.require('2.0')
 import gtk
+
+from acdOpti.analysis.AnalysisInterface import AnalysisInterface,\
+                                               AnalysisException_createFail
+
 
 from InfoFrameComponent import InfoFrameComponent
 from SolverSetup import SolverSetup
@@ -408,18 +411,27 @@ class RunConfig(InfoFrameComponent):
         
         self.frameManager.push(SolverSetup(self.frameManager,solver))
     def event_solverSetupTreeView_cursorChanged(self, widget,data=None):
+        print "RunConfig::event_solverSetupTreeView_cursorChanged"
         #Get the currently selected row
         (path,column) = self.__solverSetupTreeView.get_cursor()
         if not path:
             #Nothing selected...
             self.__solverSetupDelButton.set_sensitive(False)
             return
-        else:
+        elif self.runConfig.status == "not_initialized" or self.runConfig.status == "initialized":
             self.__solverSetupDelButton.set_sensitive(True)
     
     def event_button_addAnalysis(self,widget,data=None):
         print "RunConfig::event_button_addAnalysis()"
         (type,name,response) = self.__getTypeAndNameDialog(AnalysisInterface.getTypes(), "Select analysis type")
         if response == gtk.RESPONSE_OK:
-            self.runConfig.addAnalysis(type,name)
+            try:
+                self.runConfig.addAnalysis(type,name)
+            except AnalysisException_createFail as e:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Error when creating analysis:\n" + str(e.args()))
+                mDia.run()
+                mDia.destroy()
             self.updateDisplay()

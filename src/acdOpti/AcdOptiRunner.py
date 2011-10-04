@@ -420,7 +420,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         archive = tarfile.open(os.path.join(finishedLocalPath, remoteFile), "r:gz")
         archive.extractall(path=finishedLocalPath)
         
-        return os.path.join(finishedLocalPath, self.runConfig.stageName)
+        return os.path.join(finishedLocalPath, self.runConfig.stageName) #Duplicated code in runConfig::init()!
         
     def stage(self):
         self.__makePBS()

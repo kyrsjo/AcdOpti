@@ -108,18 +108,32 @@ class AcdOptiRunConfig:
         if self.stageName and self.status == "initialized":
             raise AcdOptiException_runConfig_loadFail("StageName != None while status='" + self.status + "'")
         
-        self.stageFolder = self.__paramFile.dataDict.getValSingle("stageFolder")
-        if self.stageFolder == "":
-            self.stageFolder = None
-        
-        self.stageFile = self.__paramFile.dataDict.getValSingle("stageFile")
-        if self.stageFile == "":
-            self.stageFile = None
-        
-        self.finishedFolder = self.__paramFile.dataDict.getValSingle("finishedFolder")
-        if self.finishedFolder == "":
-            self.finishedFolder = None
-            assert self.status != "finished"
+        #Generate stageFolder, stageFile, finishedFolder from stageName and status
+        if self.statuses.index(self.status) >= self.statuses.index("staged"): 
+            self.stageFolder = os.path.join(self.folder,"stage",self.stageName)
+            if not os.path.isdir(self.stageFolder):
+                raise AcdOptiException_runConfig_loadFail("StageFolder '" + self.stageFolder + "' does not exist, but status='" + self.status + "'")
+            
+            self.stageFile = os.path.join(self.folder, "stage", self.stageName) + ".tar.gz"
+            if not os.path.isfile(self.stageFile):
+                raise AcdOptiException_runConfig_loadFail("StageFile '" + self.stageFile + "' does not exist, but status='" + self.status + "'")
+        if self.status == "finished":
+            self.finishedFolder = os.path.join(self.folder, "finished", self.stageName)
+            if not os.path.isdir(self.finishedFolder):
+                raise AcdOptiException_runConfig_loadFail("FinishedFolder '" + self.finishedFolder + "' does not exist, but status='" + self.status + "'")
+            
+#        self.stageFolder = self.__paramFile.dataDict.getValSingle("stageFolder")
+#        if self.stageFolder == "":
+#            self.stageFolder = None
+#        
+#        self.stageFile = self.__paramFile.dataDict.getValSingle("stageFile")
+#        if self.stageFile == "":
+#            self.stageFile = None
+#        
+#        self.finishedFolder = self.__paramFile.dataDict.getValSingle("finishedFolder")
+#        if self.finishedFolder == "":
+#            self.finishedFolder = None
+#            assert self.status != "finished"
         
         #Sanity check on folders for staged- and finished data:
         if not os.path.isdir(os.path.join(self.folder, "stage")):
@@ -154,6 +168,14 @@ class AcdOptiRunConfig:
         self.runner.refreshLockdown()
         
         self.runner.write()
+        
+        #Check if we have an old file format, and if so write() to convert to new format
+        if len(self.__paramFile.dataDict.getVals("stageFolder")):
+            print "Updating to new file format without full paths specified (relocatable projects!)"
+            self.__paramFile.dataDict.delItem("stageFolder")
+            self.__paramFile.dataDict.delItem("stageFile")
+            self.__paramFile.dataDict.delItem("finishedFolder")
+            self.__paramFile.write()
     
     def refreshStatus(self):
         """
@@ -216,7 +238,6 @@ class AcdOptiRunConfig:
                  + meshInstance.instName + "--"\
                  + self.instName + "-" + self.runner.type + "-" + solverString + "--"\
                  +  datetime.now().isoformat()
-        #self.stageName = "test"
         self.stageFolder = os.path.join(self.folder,"stage",self.stageName)
         os.mkdir(self.stageFolder)
         
@@ -229,7 +250,7 @@ class AcdOptiRunConfig:
                 self.clearLockdown(forced=True)
                 raise AcdOptiException_runConfig_stageError("Error when generating mesh:\n" + e.args[0])
         shutil.copy(os.path.join(self.meshInstance.folder, "mesh.ncdf"), self.stageFolder)
-        shutil.copy(os.path.join(self.meshInstance.folder, "mesh.jou"), self.stageFolder)
+        shutil.copy(os.path.join(self.meshInstance.folder, "mesh.jou" ), self.stageFolder)
         
         #Get the geometry journal file (for reference)
         shutil.copy(os.path.join(self.meshInstance.geometryInstance.folder, "geom.jou"), self.stageFolder)
@@ -377,20 +398,20 @@ class AcdOptiRunConfig:
         #TODO: Only store relative paths!
         if self.stageName:
             self.__paramFile.dataDict.setValSingle("stageName", self.stageName)
-            self.__paramFile.dataDict.setValSingle("stageFolder", self.stageFolder)
-            self.__paramFile.dataDict.setValSingle("stageFile", self.stageFile)
+#            self.__paramFile.dataDict.setValSingle("stageFolder", self.stageFolder)
+#            self.__paramFile.dataDict.setValSingle("stageFile", self.stageFile)
             
         else:
             self.__paramFile.dataDict.setValSingle("stageName", "")
-            self.__paramFile.dataDict.setValSingle("stageFolder", "")
-            self.__paramFile.dataDict.setValSingle("stageFile", "")
+#            self.__paramFile.dataDict.setValSingle("stageFolder", "")
+#            self.__paramFile.dataDict.setValSingle("stageFile", "")
 
-        if self.finishedFolder != None:
-            assert self.status == "finished"
-            self.__paramFile.dataDict.setValSingle("finishedFolder", self.finishedFolder)
-        else:
-            assert self.status != "finished"
-            self.__paramFile.dataDict.setValSingle("finishedFolder", "")
+#        if self.finishedFolder != None:
+#            assert self.status == "finished"
+#            self.__paramFile.dataDict.setValSingle("finishedFolder", self.finishedFolder)
+#        else:
+#            assert self.status != "finished"
+#            self.__paramFile.dataDict.setValSingle("finishedFolder", "")
         
         #Solver setups
         self.__paramFile.dataDict.delItem("solverSetup")
@@ -460,9 +481,10 @@ class AcdOptiRunConfig:
         else:
             paramFile.dataDict.pushBack("status", "not_initialized")
         paramFile.dataDict.pushBack("stageName", "")
-        paramFile.dataDict.pushBack("stageFolder", "")
-        paramFile.dataDict.pushBack("stageFile", "")
-        paramFile.dataDict.pushBack("finishedFolder", "")
+#        paramFile.dataDict.pushBack("stageFolder", "")
+#        paramFile.dataDict.pushBack("stageFile", "")
+#        paramFile.dataDict.pushBack("finishedFolder", "")
+
         #Pushback all solverSetups under the same key
         for ssName in solverSetups:
             paramFile.dataDict.pushBack("solverSetup", ssName)

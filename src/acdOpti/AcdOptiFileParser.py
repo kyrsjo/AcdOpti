@@ -128,7 +128,7 @@ class DataDict():
         """
         if type(entry) == int:
             if entry < 0 or entry > self.length:
-                raise IndexError("Index='"+str(entry)+"' out of range [0,"+ str(self.length-1) +"]")
+                raise IndexError("Index='"+str(entry)+"' outside of range [0,"+ str(self.length-1) +"]")
             return (self.keys[entry], self.vals[entry])
         elif type(entry) == str:
             return self.getValSingle(entry)
@@ -143,19 +143,28 @@ class DataDict():
         If none or multiple entries are encountered,
         raise a AcdOptiException_dataDict_setValSingle exception.
         If val is invalid, raise TypeError.
+        
+        Key may also be an integer index, which then has to be valid.
         """
 
         if DataDict.valValidCheck(val):
             raise TypeError(val)
         
+        #Find the index
         ii = None
-        for i in xrange(self.length):
-            if self.keys[i] == key:
-                if ii:
-                    raise AcdOptiException_dataDict_setValSingle("Multiple keys found")
-                ii = i
-        if ii == None:
-            raise AcdOptiException_dataDict_setValSingle("No entries with key='" + key + "' found")
+        if type(key) == int:
+            if key < 0 or key > self.length:
+                raise IndexError("Index='"+str(key)+"' outside of range [0,"+ str(self.length-1) +"]")
+            ii = key
+        else:
+            #Got a string key => search for it
+            for i in xrange(self.length):
+                if self.keys[i] == key:
+                    if ii:
+                        raise AcdOptiException_dataDict_setValSingle("Multiple keys found")
+                    ii = i
+            if ii == None:
+                raise AcdOptiException_dataDict_setValSingle("No entries with key='" + key + "' found")
         
         ret = self.vals[ii]
         self.vals[ii] = val

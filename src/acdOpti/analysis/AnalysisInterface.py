@@ -33,6 +33,8 @@ class AnalysisInterface:
     runConfig = None
     
     exportResults = None #DataDict with numerical results that can be used for meta-analysis (plotting etc.)
+    settings      = None #Optional flat (no branches) DataDict with settings specific for this analysis instance
+                         #      (file names within result folders, weight factors etc.)
     
     def runAnalysis(self):
         """
@@ -100,6 +102,9 @@ class AnalysisInterface:
         if dataDict["type"] == "Dummy":
             from Dummy import Dummy
             return Dummy(folder, name, runConfig)
+        elif dataDict["type"] == "DummyInput":
+            from DummyInput import DummyInput
+            return DummyInput(folder,name,runConfig)
         elif dataDict["type"] == "FileList":
             from FileList import FileList
             return FileList(folder,name,runConfig)
@@ -114,7 +119,7 @@ class AnalysisInterface:
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy", "FileList", "Omega3P_modeInfo"]
+        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo"]
     
     @staticmethod
     def createAndLoadAnalysis(type, runConfig, folder, name=None):
@@ -143,6 +148,10 @@ class AnalysisInterface:
             from Dummy import Dummy
             Dummy.createNew(folder, name)
             return Dummy(folder, name, runConfig)
+        if type == "DummyInput":
+            from DummyInput import DummyInput
+            DummyInput.createNew(folder, name)
+            return DummyInput(folder, name, runConfig)
         elif type == "FileList":
             from FileList import FileList
             FileList.createNew(folder,name)
@@ -158,7 +167,6 @@ class AnalysisInterface:
         Create a new analysis of the implementing type
         """
         raise NotImplementedError
-    
 
     @classmethod
     def createNew_clone(cls, folder,cloneFrom,newRunConfig):
@@ -167,8 +175,14 @@ class AnalysisInterface:
         of the implementing type.
         """
         cls.createNew(folder, cloneFrom.instName)
-        return cls(folder,cloneFrom.instName,newRunConfig)
-        #raise NotImplementedError
+        newAna = cls(folder,cloneFrom.instName,newRunConfig)
+        if cloneFrom.settings != None:
+            newAna.settings = cloneFrom.settings.copy()
+            newAna.write()
+            
+        return newAna
+        
+        
 ##Exceptions
 class AnalysisException_createFail(AcdOptiException):
     pass

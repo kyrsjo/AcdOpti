@@ -32,6 +32,12 @@ class AnalysisExportedResults(InfoFrameComponent):
     """
     analysis = None
     
+    __settingsScroll  = None
+    __settingsView    = None
+    __settingsModel   = None
+    __settingsCols    = None
+    __settingsRenders = None
+    
     __scrollWindow = None
     __treeView     = None
     __treeModel    = None
@@ -46,6 +52,28 @@ class AnalysisExportedResults(InfoFrameComponent):
         assert isinstance(self.analysis, AnalysisInterface)
         
         self.baseWidget = gtk.VBox()
+        
+        if self.analysis.settings != None:
+            self.__settingsModel   = gtk.ListStore(str,str) #Key, value
+            self.__settingsView    = gtk.TreeView(self.__settingsModel)
+            self.__settingsCols    = []
+            self.__settingsRenders = []
+            
+            self.__settingsRenders.append(gtk.CellRendererText())
+            self.__settingsCols.append(gtk.TreeViewColumn("Key", self.__settingsRenders[-1], text=0))
+            self.__settingsView.append_column(self.__settingsCols[-1])
+        
+            self.__settingsRenders.append(gtk.CellRendererText())
+            self.__settingsRenders[-1].set_property("editable", True)
+            self.__settingsRenders[-1].connect('edited', self.event_cellRenderer_settingsValue_edited, None)
+            self.__settingsCols.append(gtk.TreeViewColumn("Value", self.__settingsRenders[-1], text=1))
+            self.__settingsView.append_column(self.__settingsCols[-1])
+            
+            self.__settingsScroll = gtk.ScrolledWindow()
+            self.__settingsScroll.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
+            self.__settingsScroll.add_with_viewport(self.__settingsView)
+            
+            self.baseWidget.pack_start(self.__settingsScroll, expand=False, padding=5)
         
         self.__treeModel = gtk.TreeStore(str, str)
         self.__treeView = gtk.TreeView(self.__treeModel)
@@ -63,7 +91,7 @@ class AnalysisExportedResults(InfoFrameComponent):
         self.__scrollWindow = gtk.ScrolledWindow()
         self.__scrollWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
         self.__scrollWindow.add_with_viewport(self.__treeView)
-        self.baseWidget.pack_start(self.__scrollWindow, expand=True)
+        self.baseWidget.pack_start(self.__scrollWindow, expand=True, padding=5)
 
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
@@ -77,9 +105,19 @@ class AnalysisExportedResults(InfoFrameComponent):
 
     def __updateGui(self):
         print "AnalysisExportedResults::__updateGui()"
+        #SettingsView
+        if self.analysis.settings != None:
+            self.__settingsModel.clear()
+            for (k,v) in self.analysis.settings:
+                self.__settingsModel.append([k,v])
+            if self.analysis.lockdown:
+                self.__settingsView.set_sensitive(False)
+            else:
+                self.__settingsView.set_sensitive(True)
+            
         #TreeView
         self.__treeModel.clear()
-        self.__updateTable_recursive(self.analysis.exportResults, None)
+        self.__updateTable_recursive(self.analysis.exportResults, None, self.__treeModel)
         self.__treeView.expand_all()
         
         #Button
@@ -95,14 +133,14 @@ class AnalysisExportedResults(InfoFrameComponent):
         #Main window project explorer
         self.frameManager.mainWindow.updateProjectExplorer()
 
-    def __updateTable_recursive(self,exportedDict,parentIter):
+    def __updateTable_recursive(self,exportedDict,parentIter,model):
         for (k,v) in exportedDict:
             if type(v) == str:
-                self.__treeModel.append(parentIter, [k,v])
+                model.append(parentIter, [k,v])
             else:
                 #DataDict
-                iter = self.__treeModel.append(parentIter, [k,""])
-                self.__updateTable_recursive(v, iter)
+                iter = model.append(parentIter, [k,""])
+                self.__updateTable_recursive(v, iter, model)
                 
     def event_button_lockdownRun(self, widget, data=None):
         print "AnalysisExportedResults::event_button_lockdownRun()"
@@ -112,3 +150,11 @@ class AnalysisExportedResults(InfoFrameComponent):
         else:
             self.analysis.runAnalysis()
         self.__updateGui()
+    
+    def event_cellRenderer_settingsValue_edited(self, cell, path, new_text, user_data=None):
+        print "AnalysisExportedResults::event_cellRenderer_settingsValue_edited(), path='" + str(path) + "', new_text='" + new_text + "'"
+        idx = int(path)
+        self.analysis.settings.setValSingle(idx,new_text)
+        self.__settingsModel[idx][1] = new_text
+        
+        

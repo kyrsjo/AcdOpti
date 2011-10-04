@@ -155,13 +155,20 @@ class AcdOptiGeometryInstance():
         params = self.generatePattern()
         
         #Get the CUBIT template file object
-        templateFile = self.template.geomTemplateFile
+        #templateFile = self.template.geomTemplateFile
         
-        return templateFile.subsString(params)
+        #return templateFile.subsString(params)
+        
+        (runScript, notFound) = self.template.geomTemplateFile.generateJou(params, self.cubitGeomPreCommands, self.cubitGeomPostCommands)
+        ret = ""
+        for line in runScript:
+            ret += line + "\n"
+        
+        return (ret, notFound)
     
     def generateGeometry(self):
         """
-        Generates the CUBIT journal with self.generateCubitJou(),
+        Generates the CUBIT journal
         and runs this with the pre- and post-commands that are useful
         for generating a solid.
 

@@ -188,7 +188,7 @@ class AcdOptiMeshInstance:
     
     def generateMesh(self):
         """
-        Generates the CUBIT journal with self.generateCubitJou(),
+        Generates the CUBIT journal,
         and runs this with the pre- and post-commands that are useful
         for generating a mesh.
         

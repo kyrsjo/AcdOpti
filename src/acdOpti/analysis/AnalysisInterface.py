@@ -20,7 +20,9 @@
 from acdOpti.AcdOptiFileParser import DataDict
 from acdOpti.AcdOptiExceptions import AcdOptiException
 
+
 import os
+#from acdOpti import AcdOptiExceptions
 
 class AnalysisInterface:
     lockdown = None
@@ -167,8 +169,8 @@ class AnalysisInterface:
         cls.createNew(folder, cloneFrom.instName)
         return cls(folder,cloneFrom.instName,newRunConfig)
         #raise NotImplementedError
-#Exceptions
-def AnalysisException_createFail(AcdOptiException):
+##Exceptions
+class AnalysisException_createFail(AcdOptiException):
     pass
-def AnalysisException_loadFail(AcdOptiException):
+class AnalysisException_loadFail(AcdOptiException):
     pass

@@ -49,6 +49,9 @@ class MetaAnalysis(InfoFrameComponent):
     __plotToolbar = None
     __hasPlotNow = False
     
+    __targetLineBox = None
+    __targetLineEntry = None
+    
     __varSelectorTable = None
     __varSelectorXEntry = None
     __varSelectorYEntry = None
@@ -65,6 +68,15 @@ class MetaAnalysis(InfoFrameComponent):
         self.baseWidget = gtk.VBox()
         self.__plotVBox = gtk.VBox()
         self.baseWidget.pack_start(self.__plotVBox, expand=True, padding=5)
+        
+        self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
+
+        self.__targetLineBox = gtk.HBox()
+        self.baseWidget.pack_start(self.__targetLineBox,expand=False)
+        
+        self.__targetLineBox.pack_start(gtk.Label("Target horizontal line = "),expand=False, padding=5)
+        self.__targetLineEntry = gtk.Entry()
+        self.__targetLineBox.pack_start(self.__targetLineEntry, expand=True, padding=5)
         
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
 
@@ -118,6 +130,9 @@ class MetaAnalysis(InfoFrameComponent):
         self.__plotAxis.set_xlabel(self.anaInstance.xVariable)
         self.__plotAxis.set_ylabel(self.anaInstance.yVariable)
         matplotlib.pyplot.plot(self.anaInstance.xArray, self.anaInstance.yArray, "*")
+        if self.anaInstance.targetValue != None:
+            matplotlib.pyplot.axhline(self.anaInstance.targetValue, color="r", linestyle="--")
+            
 #        matplotlib.pyplot.plot(np.linspace(0,2*np.pi, 100), np.sin(np.linspace(0,2*np.pi, 100))/self.counter) #TEST
 
         
@@ -125,16 +140,23 @@ class MetaAnalysis(InfoFrameComponent):
         print "MetaAnalysis::updateDisplay()"
         self.__createNewFigure()
         
+        if self.anaInstance.targetValue != None:
+            self.__targetLineEntry.set_text(str(self.anaInstance.targetValue))
+        else:
+            self.__targetLineEntry.set_text("")
+        
         self.__varSelectorXEntry.set_text(self.anaInstance.xVariable)
         self.__varSelectorYEntry.set_text(self.anaInstance.yVariable)
     
         if self.anaInstance.lockdown:
+            self.__targetLineEntry.set_sensitive(False)
             self.__varSelectorXEntry.set_sensitive(False)
             self.__varSelectorYEntry.set_sensitive(False)
             self.__runAnaButton.set_sensitive(False)
             self.__exportButton.set_sensitive(True)
             self.__clearLockdownButton.set_sensitive(True)
         else:
+            self.__targetLineEntry.set_sensitive(True)
             self.__varSelectorXEntry.set_sensitive(True)
             self.__varSelectorYEntry.set_sensitive(True)
             self.__runAnaButton.set_sensitive(True)
@@ -143,6 +165,11 @@ class MetaAnalysis(InfoFrameComponent):
     
     def saveToAna(self):
         print "MetaAnalysis::saveToAna()"
+        
+        try:
+            self.anaInstance.targetValue = float(self.__targetLineEntry.get_text())
+        except:
+            self.anaInstance.targetValue = None
         
         self.anaInstance.xVariable = self.__varSelectorXEntry.get_text()
         self.anaInstance.yVariable = self.__varSelectorYEntry.get_text()

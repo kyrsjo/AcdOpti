@@ -50,6 +50,8 @@ class AcdOptiMetaAnalysis:
     xArray = None 
     yArray = None
     
+    targetValue = None
+    
     lockdown = None
     
     def __init__(self,folder,collection):
@@ -74,7 +76,12 @@ class AcdOptiMetaAnalysis:
         
         self.xVariable = self.__paramfile.dataDict["xVariable"]
         self.yVariable = self.__paramfile.dataDict["yVariable"]
-            
+        
+        if len(self.__paramfile.dataDict.getVals("targetValue")) > 0:
+            self.targetValue = float(self.__paramfile.dataDict["targetValue"])
+        else:
+            self.targetValue = None    
+        
         anaData = self.__paramfile.dataDict["anaData"]
         self.xArray = []
         self.yArray = []
@@ -97,6 +104,15 @@ class AcdOptiMetaAnalysis:
         
         self.__paramfile.dataDict.setValSingle("xVariable", self.xVariable)
         self.__paramfile.dataDict.setValSingle("yVariable", self.yVariable)
+        
+        if self.targetValue != None:
+            if len(self.__paramfile.dataDict.getVals("targetValue")) > 0:
+                self.__paramfile.dataDict.setValSingle("targetValue", str(self.targetValue))
+            else:
+                self.__paramfile.dataDict.pushBack("targetValue", str(self.targetValue))
+        else:
+            if len(self.__paramfile.dataDict.getVals("targetValue")) > 0:
+                self.__paramfile.dataDict.delItem("targetValue")
         
         anaData = self.__paramfile.dataDict["anaData"]
         anaData.clear()

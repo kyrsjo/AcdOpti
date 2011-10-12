@@ -47,9 +47,15 @@ class Omega3P_modeInfo(AnalysisInterface):
     def runAnalysis(self):
         finishedFolder = self.runConfig.finishedFolder
         if finishedFolder == None:
-            raise Omega3P_modeInfo_exception("No data to analyse")
+            raise Omega3P_modeInfo_exception("No data to analyze")
         
-        outputFilePath = os.path.join(finishedFolder, "output")
+        if os.path.isdir(os.path.join(finishedFolder, "omega3p_results")):
+            outputFilePath = os.path.join(finishedFolder, "omega3p_results", "omega3p.out")
+        elif os.path.isfile(os.path.join(finishedFolder,"output")):
+            outputFilePath = os.path.join(finishedFolder, "output")
+        else:
+            self.exportResults.setValSingle("modes", "!!FILE_NOT_FOUND!!")
+            
         outputFile = open(outputFilePath, "r")
         #Find the lines with KVC syntax
 #        data = ""
@@ -75,7 +81,7 @@ class Omega3P_modeInfo(AnalysisInterface):
                 thereYet = True
             elif not thereYet:
                 continue
-            elif ls.startswith("Mesh :"):
+            elif ls.startswith("Mesh :") or ls.startswith("AMRLevel"):
                 break
             data += line
         print data
@@ -91,7 +97,6 @@ class Omega3P_modeInfo(AnalysisInterface):
                 mode.delItem("Frequency")
                 mode.pushBack("FrequencyReal", freqSplit[0].strip())
                 mode.pushBack("FrequencyImag", freqSplit[1].strip())
-            
         self.exportResults.setValSingle("modes", dataParser.dataDict.copy())
         
         self.lockdown = True

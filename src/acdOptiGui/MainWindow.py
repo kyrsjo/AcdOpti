@@ -92,7 +92,7 @@ class MainWindow():
     def __init__(self):
         #Setup the main window
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_title("ACD project organizer")
+        self.window.set_title("AcdOpti GUI")
         self.window.set_border_width(5)
         self.window.set_default_size(800,600)
         self.window.connect("delete_event", self.event_delete)

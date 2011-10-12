@@ -103,6 +103,43 @@ options {
 					}
 				}
 			}//END BoundaryCondition
+			Material {
+                type = dict
+                must = False
+                single = False
+                children {
+                    Attribute {
+                        type = int
+                        must = True
+                        single = True
+                        default = 1
+                    }
+                    Epsilon {
+                        type = float
+                        must = False
+                        single = True
+                        default = 1.0
+                    }
+                    EpsilonImag {
+                        type = float
+                        must = False
+                        single = True
+                        default = -1.0
+                    }
+                    Mu {
+                        type = float
+                        must = False
+                        single = True
+                        default = 1.0
+                    }
+                    MuImag {
+                        type = float
+                        must = False
+                        single = True
+                        default = 1.0
+                    }
+                }   
+            }//END SurfaceMaterial
 			SurfaceMaterial {
 				type = dict
 				must = False

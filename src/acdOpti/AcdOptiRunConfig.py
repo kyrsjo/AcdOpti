@@ -237,7 +237,7 @@ class AcdOptiRunConfig:
                  + geomInstance.instName + "-" + meshTemplate.instName + "--"\
                  + meshInstance.instName + "--"\
                  + self.instName + "-" + self.runner.type + "-" + solverString + "--"\
-                 +  datetime.now().isoformat()
+                 +  datetime.now().isoformat().replace(":","-")
         self.stageFolder = os.path.join(self.folder,"stage",self.stageName)
         os.mkdir(self.stageFolder)
         

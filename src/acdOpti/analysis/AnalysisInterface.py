@@ -111,6 +111,9 @@ class AnalysisInterface:
         elif dataDict["type"] == "Omega3P_modeInfo":
             from Omega3P_modeInfo import Omega3P_modeInfo
             return Omega3P_modeInfo(folder,name,runConfig)
+        elif dataDict["type"] == "RFpost":
+            from RFpost import RFpost
+            return RFpost(folder, name, runConfig)
         else:
             raise NotImplementedError("This shoudn't happen?!?")
     
@@ -119,7 +122,7 @@ class AnalysisInterface:
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo"]
+        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost"]
     
     @staticmethod
     def createAndLoadAnalysis(type, runConfig, folder, name=None):
@@ -139,7 +142,7 @@ class AnalysisInterface:
         
         name = AnalysisInterface.getName(type, name)
         if os.path.exists(os.path.join(folder, name)):
-            raise AnalysisException_loadFail("Analysis file already created?!?")
+            raise AnalysisException_createFail("Analysis file already created?!?")
         
         import acdOpti.AcdOptiRunConfig
         assert isinstance(runConfig, acdOpti.AcdOptiRunConfig.AcdOptiRunConfig)
@@ -160,7 +163,12 @@ class AnalysisInterface:
             from Omega3P_modeInfo import Omega3P_modeInfo
             Omega3P_modeInfo.createNew(folder, name)
             return Omega3P_modeInfo(folder,name,runConfig)
-        
+        elif type == "RFpost":
+            from RFpost import RFpost
+            RFpost.createNew(folder, name)
+            return RFpost(folder, name, runConfig)
+        else:
+            raise AnalysisException_createFail("Unknown analysis type '" + type + "'")
     @staticmethod
     def createNew(folder, name):
         """

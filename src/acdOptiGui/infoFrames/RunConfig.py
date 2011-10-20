@@ -184,6 +184,7 @@ class RunConfig(InfoFrameComponent):
             self.__runCancelButton.set_sensitive(False)
             self.__solverSetupAddButton.set_sensitive(True)
             self.__solverSetupDelButton.set_sensitive(True)
+            self.event_solverSetupTreeView_cursorChanged(None, None)
         elif status == "initialized":
             self.__statusButton.set_sensitive(False)
             self.__stageOrLockdownButton.set_label("Stage data")
@@ -193,7 +194,7 @@ class RunConfig(InfoFrameComponent):
             self.__runCancelButton.set_label("Run")
             self.__runCancelButton.set_sensitive(False)
             self.__solverSetupAddButton.set_sensitive(True)
-            self.__solverSetupDelButton.set_sensitive(True)
+            self.event_solverSetupTreeView_cursorChanged(None, None)
         elif status == "staged":
             self.__statusButton.set_sensitive(False)
             self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging")
@@ -337,12 +338,22 @@ class RunConfig(InfoFrameComponent):
                 mDia.destroy()
                 return
             self.runConfig.solverSetups.append(AcdOptiSolverSetup(newSS_name,self.runConfig))
+            self.runConfig.write()
             self.updateDisplay()
-                
         
     def event_button_solverSetupDel(self, widget, data=None):
         print "RunConfig::event_button_solverSetupDel()"
-        print "Not implemented!"
+        
+        #What do we want to delete?
+        (path,col) = self.__solverSetupTreeView.get_cursor()
+        assert path, "Nothing selected?!"
+        name = self.__solverSetupListStore[path][0]
+
+        #Delete it! (don't bother with a ~impossible exception,
+        # can't do much but raise an error message anyway
+        self.runConfig.delSolverSetup(name)
+        
+        self.updateDisplay()
         
     def event_button_jobSetupEdit(self, widget, data=None):
         print "RunConfig::event_button_jobSetupEdit()"
@@ -410,6 +421,7 @@ class RunConfig(InfoFrameComponent):
         assert solver #It should be there, as the listStore is generated from runConfig.solverSetups
         
         self.frameManager.push(SolverSetup(self.frameManager,solver))
+        
     def event_solverSetupTreeView_cursorChanged(self, widget,data=None):
         print "RunConfig::event_solverSetupTreeView_cursorChanged"
         #Get the currently selected row

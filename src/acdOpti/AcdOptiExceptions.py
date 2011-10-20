@@ -108,6 +108,8 @@ class AcdOptiException_runConfig_stageError(AcdOptiException):
     pass
 class AcdOptiException_runConfig_updateStateError(AcdOptiException):
     pass
+class AcdOptiException_runConfig_solverSetupDelError(AcdOptiException):
+    pass
 #AcdOptiRunner
 class AcdOptiException_optiRunner_createFail(AcdOptiException):
     pass

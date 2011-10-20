@@ -23,6 +23,7 @@ from AcdOptiExceptions import AcdOptiException_runConfig_createFail,\
                               AcdOptiException_runConfig_loadFail,\
                               AcdOptiException_runConfig_stageError,\
                               AcdOptiException_runConfig_updateStateError,\
+                              AcdOptiException_runConfig_solverSetupDelError,\
                               AcdOptiException_optiRunner_stageError,\
                               AcdOptiException_meshInstance_generateFail
 
@@ -388,6 +389,24 @@ class AcdOptiRunConfig:
         ana = AnalysisInterface.createAndLoadAnalysis(type, self, os.path.join(self.folder, "analysis"), name)
         self.analysis[ana.instName] = ana
     
+    def delSolverSetup(self, name):
+        "Delete a solverSetup specified by name"
+        
+        #Check that the solverSetup exists
+        idx = 0
+        for s in self.solverSetups:
+            if s.name == name:
+                break #Found it!
+            idx += 1
+        if idx == len(self.solverSetups) or len(self.solverSetups) == 0:
+            raise AcdOptiException_runConfig_solverSetupDelError("No solversetup named '" + name + "' found")
+    
+        metaSetupFile = self.solverSetups[idx].metaSetupFilePath
+        del self.solverSetups[idx]
+        os.remove(metaSetupFile)
+        
+        self.write()
+    
     def write(self):
         """
         Updates the __paramFile and writes it to disk.
@@ -395,7 +414,6 @@ class AcdOptiRunConfig:
         print "AcdOptiRunConfig::write()"
         self.__paramFile.dataDict.setValSingle("status",self.status)
         
-        #TODO: Only store relative paths!
         if self.stageName:
             self.__paramFile.dataDict.setValSingle("stageName", self.stageName)
 #            self.__paramFile.dataDict.setValSingle("stageFolder", self.stageFolder)

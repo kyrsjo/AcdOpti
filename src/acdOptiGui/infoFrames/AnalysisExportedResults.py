@@ -18,6 +18,7 @@
 
 
 import pygtk
+from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis
 pygtk.require('2.0')
 import gtk
 
@@ -148,7 +149,15 @@ class AnalysisExportedResults(InfoFrameComponent):
         if self.analysis.lockdown:
             self.analysis.clearLockdown()
         else:
-            self.analysis.runAnalysis()
+            try:
+                self.analysis.runAnalysis()
+            except AcdOptiException_analysis_runAnalysis as e:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Couldn't run analysis, error message:\n'" + str(e.args) + "'")
+                mDia.run()
+                mDia.destroy()
         self.__updateGui()
     
     def event_cellRenderer_settingsValue_edited(self, cell, path, new_text, user_data=None):

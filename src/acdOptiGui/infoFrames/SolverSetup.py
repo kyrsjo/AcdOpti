@@ -112,9 +112,10 @@ class SolverSetup(InfoFrameComponent):
     def updateSolverSetup(self):
         """
         Writes data from widgets into the SolverSetup,
-        (unless the solverSetup is in lockdown.) #TODO: ImplementMe
+        (unless the solverSetup is in lockdown.)
         """
         print "SolverSetup::updateSolverSetup()"
+        self.solverSetup.write()
         
     def updateDynamicTable(self):
         """
@@ -169,17 +170,17 @@ class SolverSetup(InfoFrameComponent):
         assert path, "Nothing selected?!"
         row = self.__dynamicTableTree[path]
         
-        #Find the parent "children" dict
+        #Find the parent "children" dict,
+        # and add the child to the mother dataDict
         parent = None
         if len(path) == 1:
             #Top-level
             parent = self.solverSetup.metaSetup
+            parent.pushBack(row[0], row[-1].copy())
         else:
             parentRow = self.__dynamicTableTree[path[:-1]]
             parent = parentRow[-1]
-        
-        #Add the child to the mother dataDict
-        parent["children"].pushBack(row[0], row[-1].copy())        
+            parent["children"].pushBack(row[0], row[-1].copy())
         
         #Add entry to the TreeModel
         self.updateDynamicTable()
@@ -280,4 +281,6 @@ class SolverSetup(InfoFrameComponent):
             else:
                 self.__delButton.set_sensitive(False)
                 
-                
+    def event_delete(self):
+        print "SolverSetup::event_delete()"
+        self.updateSolverSetup()

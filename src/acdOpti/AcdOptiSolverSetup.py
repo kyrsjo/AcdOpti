@@ -55,15 +55,16 @@ class AcdOptiSolverSetup:
     # float     : a float
 
     #Object fields
-    runConfig       = None  # The main runConfig object owning this (and perhaps more) solverSetups
-    type            = None  # Type of the setup file (omega3p etc)
-    name            = None  # Name of the generated setup file
-    folder          = None  # Folder where this file is located
-    fileName        = None  # Full path of the setup file
-    __metaSetupFile = None  # AcdOptiFileParser_simple object with metadata and current settings
-    metaSetup       = None  # DataDict object pointing to metaSetupFile.dataDict["options"] (shortcut pointer)   
-    setupFileFormat = None  # Pointer to correct AcdOptiFileParser_* class 
-    lockdown        = None  # Is the solverSetup currently not writable? (not enforced)
+    runConfig         = None  # The main runConfig object owning this (and perhaps more) solverSetups
+    type              = None  # Type of the setup file (omega3p etc)
+    name              = None  # Name of the generated setup file
+    folder            = None  # Folder where this file is located
+    fileName          = None  # Full path of the setup file
+    __metaSetupFile   = None  # AcdOptiFileParser_simple object with metadata and current settings
+    metaSetupFilePath = None  # Full path to the MetaSetupFile
+    metaSetup         = None  # DataDict object pointing to metaSetupFile.dataDict["options"] (shortcut pointer)   
+    setupFileFormat   = None  # Pointer to correct AcdOptiFileParser_* class 
+    lockdown          = None  # Is the solverSetup currently not writable? (not enforced)
      
     
     def __init__(self, name, runConfig):
@@ -76,7 +77,7 @@ class AcdOptiSolverSetup:
             raise AcdOptiException_solverSetup_loadFail("Subfolder 'stage' is missing")
 
         #Load the metaFile
-        metaFileName = os.path.join(self.folder,name + ".meta") 
+        self.metaSetupFilePath = metaFileName = os.path.join(self.folder,name + ".meta")
         self.__metaSetupFile = AcdOptiFileParser_simple(metaFileName, 'rw')
         assert self.__metaSetupFile.dataDict["fileID"] == "SolverSetup" #TODO: Raise a real error
         
@@ -116,7 +117,9 @@ class AcdOptiSolverSetup:
         which is moved to the "stage" subfolder.
         """
         print "AcdOptiSolverSetup::stage()"
-        # TODO: Sanity check on this objects status
+        # TODO: More Sanity check on this objects status?
+        
+        assert os.path.isdir(self.runConfig.stageFolder)
         
         self.write()
         self.__generateSetup()
@@ -171,8 +174,9 @@ class AcdOptiSolverSetup:
         - type is the name of the type ("omega3P" etc.) wanted
         - folder is where this instance should be created
         - name is the name wanted for this instance.
-          Set to None to use default name
-        
+          Set to None to use default name.
+          Name is also the filename of the solver setup file generated.
+          
         Returns the name used.
         """
         print "AcdOptiSolverSetup::createNew(), type=" + type + ", name=" + str(name)

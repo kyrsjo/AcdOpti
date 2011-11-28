@@ -10,30 +10,22 @@ options
       must = True
       single = True
       children
-      {
-         O3PMode
+      {  
+         ResultDir
          {
             type = string
             must = True
             single = True
-            default = vector
+            default = omega3p_results
          }
-         ModeRangeID1
-         {
-            type = int
+         FreqScanID {
+            type = bool
             must = True
             single = True
-            default = -1
+            boolType = int
+            default = 0
          }
-         ModeRangeID2
-         {
-            type = int
-            must = True
-            single = True
-            default = -1
-         }
-         ModeID
-         {
+         ModeID {
             type = int
             must = True
             single = True
@@ -94,51 +86,9 @@ options
             type = float
             must = True
             single = True
-            default = -0.03500
+            default = -10000000.00000
          }
          gz2
-         {
-            type = float
-            must = True
-            single = True
-            default = 0.03500
-         }
-         fx1
-         {
-            type = float
-            must = True
-            single = True
-            default = -10000000.00000
-         }
-         fx2
-         {
-            type = float
-            must = True
-            single = True
-            default = -10000000.00000
-         }
-         fy1
-         {
-            type = float
-            must = True
-            single = True
-            default = -10000000.00000
-         }
-         fy2
-         {
-            type = float
-            must = True
-            single = True
-            default = -10000000.00000
-         }
-         fz1
-         {
-            type = float
-            must = True
-            single = True
-            default = -10000000.00000
-         }
-         fz2
          {
             type = float
             must = True

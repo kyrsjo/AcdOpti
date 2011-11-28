@@ -38,5 +38,7 @@ class AcdOptiSettings:
             return "ksjobak"
         elif key == "acdtoolpath":
             return "/opt/acdtool/acdtool"
+        elif key == "acdtool_preinit": #Not obligatory; tells acdOpti if some command needs to be run before starting acdtool
+            return "module load openmpi-x86_64"
         else:
             raise AcdOptiException_settings_notFound

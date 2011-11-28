@@ -24,10 +24,18 @@ and returning "pre-processed" output.
 """
 
 from AcdOptiSettings import AcdOptiSettings
+from AcdOptiExceptions import AcdOptiException_settings_notFound
 
 import subprocess
 
 acdtoolpath = AcdOptiSettings().getSetting("acdtoolpath") #"/opt/acdtool/acdtool" 
+
+acdtool_initDone = False
+def initAcdTool():
+    "Helper function, runs the neccessary initialization commands"
+    if not acdtool_initDone:
+        subprocess.check_call("module load openmpi-x86_64", shell=True)
+        
 
 def convertGenNcdf(genFileName, ncdfFileName):
     """
@@ -40,12 +48,25 @@ def convertGenNcdf(genFileName, ncdfFileName):
     
     Output:
     - The output text from acdtool
+    - Number of bad elements (ISOTE)
     """
-    cmdline = acdtoolpath + " meshconvert cubitq netcdf %s %s" % (genFileName, ncdfFileName)
+    initAcdTool()
+    
+    #cmdline = acdtoolpath + " meshconvert cubitq netcdf %s %s" % (genFileName, ncdfFileName)
+    cmdline = acdtoolpath + " meshconvert %s %s" % (genFileName, ncdfFileName)
+    
     print "AcdOptiAcdtoolWrapper.convertGenNcdf(): Running command \"%s\" - please wait for result..." % cmdline
     acdoutput = subprocess.check_output(cmdline, bufsize=-1, shell=True) #Warning: Insecure mechanism (shell=True)
-
-    return acdoutput
+    print acdoutput
+    
+    badelems = 0
+    print "Grepp'ing output for ISOTEs..."
+    for line in acdoutput.split("\n"):
+        if line.startswith("Total Number of invalid second order tetrahedral elements (ISOTE) is:"):
+            badelems = int(line.strip().split()[-1])
+    print "Done. Found %u bad elements" % badelems
+    
+    return (acdoutput, badelems)
 
 def meshCheck(meshFileName):
     """

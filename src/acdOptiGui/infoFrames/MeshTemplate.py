@@ -96,7 +96,7 @@ class MeshTemplate(InfoFrameComponent):
         self.baseWidget.show_all()
 
         
-    def updateTable(self):
+    def updateTable(self, activateEntryName=None):
         """
         Fills the tableWidget
         """
@@ -145,6 +145,8 @@ class MeshTemplate(InfoFrameComponent):
             self.__tableWidget.attach(ent,1,2,i+1,i+2, xoptions=gtk.FILL|gtk.EXPAND, yoptions=gtk.FILL)
             if lockdown:
                 ent.set_sensitive(False)
+            if activateEntryName == k:
+                ent.grab_focus()
 
             self.__delButtCollection[k]=but=gtk.Button(stock=gtk.STOCK_DELETE)
             but.connect("clicked", self.event_button_del, k)
@@ -272,6 +274,7 @@ class MeshTemplate(InfoFrameComponent):
             dia.set_default_response(gtk.RESPONSE_OK)
             nameBox = gtk.Entry()
             nameBox.set_text(name)
+            nameBox.set_activates_default(True)
             nameBox.show()
             dia.vbox.pack_start(nameBox)
             dia.show_all()
@@ -303,7 +306,7 @@ class MeshTemplate(InfoFrameComponent):
                 else:
                     #OK, add the key & update
                     self.saveData(addKey=name)
-                    self.updateTable()
+                    self.updateTable(name)
                     return
             else:
                 #Response cancel or close

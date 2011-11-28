@@ -66,9 +66,9 @@ class DataDict():
         """
         Helper function, converts the many shades of bool found into python's True/False
         """
-        if boolIn == "True" or boolIn == "true" or boolIn == "1" or boolIn == "on":
+        if boolIn in ["True", "true", "1", "on"]:
             return True
-        elif boolIn == "False" or boolIn == "false" or boolIn == "0" or boolIn == "off":
+        elif boolIn in ["False", "false", "0", "off"]:
             return False
         else:
             raise TypeError("Input boolIn=" + str(boolIn) + " is invalid.")

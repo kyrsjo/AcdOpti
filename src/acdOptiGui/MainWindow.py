@@ -628,7 +628,10 @@ class MainWindow():
             #  MeshInstances:
             for (miName, mi) in gi.meshInsts.iteritems():
                 if mi.lockdown:
-                    color = "green"
+                    if mi.meshBad:
+                        color = "orange"
+                    else:
+                        color = "green"
                 else:
                     color = "yellow"
                 miIter = self.__treeModel.append(giIter,[miName, self.__meshIcon, color, mi])

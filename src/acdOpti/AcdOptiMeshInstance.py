@@ -58,6 +58,7 @@ class AcdOptiMeshInstance:
     instName               = None
 
     lockdown               = False
+    meshBad                = False #True if a mesh is generated and has ISOTEs 
     
     cubitMeshPreCommands  = ["reset", "open 'geom.cub'"]
     cubitMeshPostCommands = ["export genesis 'mesh.gen' block all overwrite"]
@@ -109,6 +110,13 @@ class AcdOptiMeshInstance:
         else:
             raise AcdOptiException_meshInstance_loadFail(\
                 "Invalid content in field \"lockdown\" of file paramFile.set")
+        
+        meshBad = self.__paramFile.dataDict.getVals("meshBad")
+        if len(meshBad) == 0:
+            self.meshBad = False
+        else:
+            assert len(meshBad) == 1
+            self.meshBad = DataDict.boolconv(meshBad[0])
         
         #Check that the geometryInstance is correct
         geometryInstance_expectedName = self.__paramFile.dataDict.getValSingle("geomInstance_name")
@@ -220,13 +228,16 @@ class AcdOptiMeshInstance:
         os.rename("mesh.gen", os.path.join(self.folder, "mesh.gen"))
         
         #Convert the mesh to NetCDF
-        AcdOptiAcdtoolWrapper.convertGenNcdf(os.path.join(self.folder, "mesh.gen"),
+        (acdoutput, badelems) = AcdOptiAcdtoolWrapper.convertGenNcdf(os.path.join(self.folder, "mesh.gen"),
                                              os.path.join(self.folder, "mesh.ncdf"))
-        meshBad = AcdOptiAcdtoolWrapper.meshCheck(os.path.join(self.folder, "mesh.ncdf"))
+
         self.setLockdown()
 
-        if meshBad:
+        if badelems > 0:
+            self.meshBad = True
             raise AcdOptiException_meshInstance_generateFail("Mesh had ISOTEs -- not a good mesh! (mesh still generated)")
+        else:
+            self.meshBad = False
         
         return notFound
     
@@ -259,6 +270,11 @@ class AcdOptiMeshInstance:
         templateOverrides_data.clear()
         for k in self.__templateOverrides:
             templateOverrides_data.pushBack(k,self.__templateOverrides[k])
+        
+        if len(self.__paramFile.dataDict.getVals("meshBad")) > 0:
+            self.__paramFile.dataDict.setValSingle("meshBad", str(self.meshBad))
+        else:
+            self.__paramFile.dataDict.pushBack("meshBad", str(self.meshBad))
         
         self.__paramFile.write()
     
@@ -297,6 +313,8 @@ class AcdOptiMeshInstance:
         
         for rc in self.runConfigs.values():
             rc.clearLockdown()
+        
+        self.meshBad = False
         
         self.lockdown = False
         self.write()

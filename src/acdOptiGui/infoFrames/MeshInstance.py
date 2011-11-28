@@ -43,6 +43,7 @@ class MeshInstance(InfoFrameComponent):
     __scrolledWindow  = None
     
     __meshTemplateNameLabel = None
+    __meshBadIndicator = None
     
     __clearLockdownButton = None
     __runConfigButton = None
@@ -67,7 +68,8 @@ class MeshInstance(InfoFrameComponent):
         tlab = gtk.Label("Use default")
         self.__topLabels.append(tlab)
 
-        self.__meshTemplateNameLabel = gtk.Label("Name of mesh template: \"" + self.meshInstance.meshTemplate.instName + "\"")        
+        self.__meshTemplateNameLabel = gtk.Label("Name of mesh template: \"" + self.meshInstance.meshTemplate.instName + "\"")
+        self.__meshBadIndicator = gtk.Label("Mesh bad (ISOTEs): " + str(self.meshInstance.meshBad))        
 
         self.__clearLockdownButton = gtk.Button(label="Clear lockdown")
         self.__clearLockdownButton.connect("clicked", self.event_button_clearLockdown, None)
@@ -91,6 +93,7 @@ class MeshInstance(InfoFrameComponent):
         
         self.baseWidget = gtk.VBox()
         self.baseWidget.pack_start(self.__meshTemplateNameLabel, expand=False)
+        self.baseWidget.pack_start(self.__meshBadIndicator,      expand=False)
         self.baseWidget.pack_start(self.__scrolledWindow,        expand=True)
         self.baseWidget.pack_start(self.__clearLockdownButton,   expand=False)
         self.baseWidget.pack_start(self.__runConfigButton,       expand=False)
@@ -166,6 +169,9 @@ class MeshInstance(InfoFrameComponent):
             self.__tableWidget.attach(check,2,3,i+1,i+2, xoptions=gtk.FILL, yoptions=gtk.FILL)
         
         self.__tableWidget.show_all()
+    
+        #Update the meshBad label
+        self.__meshBadIndicator.set_text("Mesh bad (ISOTEs): " + str(self.meshInstance.meshBad))
     
         #Update the lockdown button
         if lockdown:

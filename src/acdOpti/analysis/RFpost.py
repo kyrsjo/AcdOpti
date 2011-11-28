@@ -18,8 +18,8 @@
 
 from AnalysisInterface import AnalysisInterface
 from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple
-from acdOpti.AcdOptiExceptions import AcdOptiException,\
-                                      AcdOptiException_dataDict_getValsSingle
+from acdOpti.AcdOptiExceptions import AcdOptiException_dataDict_getValsSingle,\
+                                      AcdOptiException_analysis_runAnalysis
 
 import os
 import re
@@ -88,7 +88,7 @@ class RFpost(AnalysisInterface):
         
         #Filter through sections to find the interesting results
         self.exportResults.pushBack("RoverQ", self.__ParseRoverQ(sectionNamesList, sectionList))
-        self.exportResults.pushBack("maxFieldssOnSurface", self.__ParseMaxFieldsOnSurface(sectionNamesList, sectionList)) #This depends on RoverQ!
+        self.exportResults.pushBack("maxFieldsOnSurface", self.__ParseMaxFieldsOnSurface(sectionNamesList, sectionList)) #This depends on RoverQ!
 #        
 #        self.exportResults.setValSingle("Nparrot", str(N))
 #        self.exportResults.setValSingle("Npi", str(3.14*N))
@@ -216,8 +216,8 @@ class RFpost(AnalysisInterface):
         paramFile.dataDict.pushBack("lockdown", "False")
         paramFile.dataDict.pushBack("export", DataDict())
         paramFile.dataDict.pushBack("settings", DataDict())
-        paramFile.dataDict["settings"].pushBack("RFpost_LogFileName", "")
+        paramFile.dataDict["settings"].pushBack("RFpost_LogFileName", "acdtool.log")
         paramFile.write()
     
-class RFpostException(AcdOptiException):
+class RFpostException(AcdOptiException_analysis_runAnalysis):
         pass

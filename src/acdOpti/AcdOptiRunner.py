@@ -316,7 +316,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
         #Check if the stdout matches XXXXX.YYY, where XXXXX is a number, and YYY is letters.
         # This is then the job ID.
-        if re.match("[0-9]+\.[a-zA-Z]+$", ssh_stdout_str):
+        if re.match("[0-9]+\.\w+$", ssh_stdout_str):
             self.remoteJobID = ssh_stdout_str.strip()
             self.__paramFile.dataDict.setValSingle("remoteJobID", self.remoteJobID)
             print "Submission successful, JobID='" + self.remoteJobID + "'"

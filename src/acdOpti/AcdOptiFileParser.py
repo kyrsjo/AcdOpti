@@ -30,6 +30,7 @@ import re
 #whitespace = (" ", "\n", "\t") #What is regarded as whitespace?
 
 parserDebug = False #Set this to True to print extra stuff for debugging, False to disable
+parserInfo  = False #Set this to True to print info-messages
 
 class DataDict():
     """
@@ -513,7 +514,7 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         Accepts a list of tokenized lines as produced by preprocess,
         turn it into a (tree of) DataDicts 
         """
-        print "AcdOptiFileParser_simple::dictify()"
+        if parserInfo: print "AcdOptiFileParser_simple::dictify()"
         if parserDebug: 
             print "Got tokenLines:"
             AcdOptiFileParser_simple.tokenLinesPrettyPrint(tokenLines)

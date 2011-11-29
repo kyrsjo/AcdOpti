@@ -115,7 +115,8 @@ class SolverSetup(InfoFrameComponent):
         (unless the solverSetup is in lockdown.)
         """
         print "SolverSetup::updateSolverSetup()"
-        self.solverSetup.write()
+        if self.solverSetup.lockdown == False:
+            self.solverSetup.write()
         
     def updateDynamicTable(self):
         """

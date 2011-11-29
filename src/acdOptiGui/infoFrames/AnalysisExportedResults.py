@@ -23,6 +23,7 @@ pygtk.require('2.0')
 import gtk
 
 from InfoFrameComponent import InfoFrameComponent
+from SolverSetup import SolverSetup
 
 from acdOpti.analysis.AnalysisInterface import AnalysisInterface
 
@@ -38,6 +39,8 @@ class AnalysisExportedResults(InfoFrameComponent):
     __settingsModel   = None
     __settingsCols    = None
     __settingsRenders = None
+    
+    __localSolverButton = None
     
     __scrollWindow = None
     __treeView     = None
@@ -75,6 +78,11 @@ class AnalysisExportedResults(InfoFrameComponent):
             self.__settingsScroll.add_with_viewport(self.__settingsView)
             
             self.baseWidget.pack_start(self.__settingsScroll, expand=False, padding=5)
+        
+        if self.analysis.localSolver != None:
+            self.__localSolverButton = gtk.Button("Setup local solver...")
+            self.__localSolverButton.connect("clicked", self.event_button_localSolver, None)
+            self.baseWidget.pack_start(self.__localSolverButton, expand=False, padding=5)
         
         self.__treeModel = gtk.TreeStore(str, str)
         self.__treeView = gtk.TreeView(self.__treeModel)
@@ -160,6 +168,10 @@ class AnalysisExportedResults(InfoFrameComponent):
                 mDia.destroy()
         self.__updateGui()
     
+    def event_button_localSolver(self, widget, data=None):
+        print "AnalysisExportedResults::event_button_localSolver()"
+        self.frameManager.push(SolverSetup(self.frameManager,self.analysis.localSolver))
+
     def event_cellRenderer_settingsValue_edited(self, cell, path, new_text, user_data=None):
         print "AnalysisExportedResults::event_cellRenderer_settingsValue_edited(), path='" + str(path) + "', new_text='" + new_text + "'"
         idx = int(path)

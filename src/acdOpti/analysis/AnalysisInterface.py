@@ -35,6 +35,7 @@ class AnalysisInterface:
     exportResults = None #DataDict with numerical results that can be used for meta-analysis (plotting etc.)
     settings      = None #Optional flat (no branches) DataDict with settings specific for this analysis instance
                          #      (file names within result folders, weight factors etc.)
+    localSolver   = None #Optional pointer to a AcdOptiSolverManager for a solver that needs to be run for this analysis
     
     def runAnalysis(self):
         """
@@ -114,6 +115,9 @@ class AnalysisInterface:
         elif dataDict["type"] == "RFpost":
             from RFpost import RFpost
             return RFpost(folder, name, runConfig)
+        elif dataDict["type"] == "RFpost_local":
+            from RFpost_local import RFpost_local
+            return RFpost_local(folder, name, runConfig)
         else:
             raise NotImplementedError("This shoudn't happen?!?")
     
@@ -122,7 +126,7 @@ class AnalysisInterface:
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost"]
+        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost", "RFpost_local"]
     
     @staticmethod
     def createAndLoadAnalysis(type, runConfig, folder, name=None):
@@ -167,6 +171,10 @@ class AnalysisInterface:
             from RFpost import RFpost
             RFpost.createNew(folder, name)
             return RFpost(folder, name, runConfig)
+        elif type == "RFpost_local":
+            from RFpost_local import RFpost_local
+            RFpost_local.createNew(folder, name)
+            return RFpost_local(folder,name,runConfig)
         else:
             raise AnalysisException_createFail("Unknown analysis type '" + type + "'")
     @staticmethod

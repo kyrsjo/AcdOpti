@@ -33,6 +33,9 @@ elif not os.path.isdir("/tmp/AcdOpti"):
 CUBIT_basepath = "/tmp/AcdOpti"
 CUBIT_journalPath = os.path.join(CUBIT_basepath, "debugJournal.jou")
 
+#Make sure that "." is the decimal separator
+os.environ['LC_NUMERIC'] = 'en_US.utf8'
+
 import cubit
 cubit.init([""])
 

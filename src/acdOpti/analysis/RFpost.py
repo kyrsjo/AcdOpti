@@ -210,7 +210,7 @@ class RFpost(AnalysisInterface):
         self.__paramFile.write()
     
     @staticmethod
-    def createNew(folder,name=None):
+    def createNew(folder,name):
         paramFile = AcdOptiFileParser_simple(os.path.join(folder,name), "w")
         paramFile.dataDict.pushBack("fileID", "Analysis::RFpost")
         paramFile.dataDict.pushBack("lockdown", "False")

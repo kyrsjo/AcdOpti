@@ -111,7 +111,7 @@ class Omega3P_modeInfo(AnalysisInterface):
         self.__paramFile.write()
     
     @staticmethod
-    def createNew(folder,name=None):
+    def createNew(folder,name):
         paramFile = AcdOptiFileParser_simple(os.path.join(folder,name), "w")
         paramFile.dataDict.pushBack("fileID", "Analysis::Omega3P_modeInfo")
         paramFile.dataDict.pushBack("lockdown", "False")

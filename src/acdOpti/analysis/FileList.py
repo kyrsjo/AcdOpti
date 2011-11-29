@@ -72,7 +72,7 @@ class FileList(AnalysisInterface):
         self.__paramFile.write()
     
     @staticmethod
-    def createNew(folder,name=None):
+    def createNew(folder,name):
         paramFile = AcdOptiFileParser_simple(os.path.join(folder,name), "w")
         paramFile.dataDict.pushBack("fileID", "Analysis::FileList")
         paramFile.dataDict.pushBack("lockdown", "False")

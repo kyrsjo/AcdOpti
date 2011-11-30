@@ -17,12 +17,14 @@
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
 from AnalysisInterface import AnalysisInterface
-from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple
+
+from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple, AcdOptiFileParser_KVC
+from acdOpti.AcdOptiSolverManager import AcdOptiSolverManager
+import acdOpti.AcdOptiAcdtoolWrapper as AcdOptiAcdtoolWrapper
+
 from acdOpti.AcdOptiExceptions import AcdOptiException
 
-from acdOpti.AcdOptiSolverManager import AcdOptiSolverManager
-
-import os
+import os, shutil
 
 class RFpost_local(AnalysisInterface):
     """
@@ -54,15 +56,55 @@ class RFpost_local(AnalysisInterface):
     
     def runAnalysis(self):
         print "RFpost_local::runAnalysis()"
-        #self.exportResults.setValSingle("result", "3.14")
+        
+        #Generate the setup file
         self.lockdown = True
+
+        origResultDir = self.localSolver.metaSetup['RFField']['children']['ResultDir']['value'] #Subdirectory whith the data
+        dataPath = os.path.join(self.folder, self.instName, "data") #Path to symlink to data folder
+        dataPath2 = os.path.join(dataPath, origResultDir) #Path to O3P etc. results thorough symlink
+        self.localSolver.metaSetup['RFField']['children']['ResultDir'].setValSingle("value", os.path.join("data", origResultDir))
+        
+        self.localSolver.generateSetup()
         self.localSolver.lockdown = True
+        
+        #Create a symlink to avoid long folder names (ACDtool doesn't like that)
+        if os.path.islink(dataPath):
+            os.unlink(dataPath)
+        os.symlink(self.runConfig.finishedFolder, dataPath) #UNIX only!
+        
+        #Modify the postprocess.in file to the right path
+        shutil.copy(os.path.join(dataPath2, "VECTOR", "postprocess.in"),\
+                    os.path.join(self.folder, self.instName, "postprocess.in.bak"))
+        
+        postFile = AcdOptiFileParser_KVC(os.path.join(dataPath2, "VECTOR", "postprocess.in"),"rw")
+        #print postFile.dataDict
+        postFile.dataDict["ModelInfo"].setValSingle("File", os.path.join(dataPath, "mesh.ncdf"))
+        postFile.dataDict["CheckPoint"].setValSingle("Directory", os.path.join(os.path.join(dataPath2, "VECTOR")))
+        postFile.write()
+        
+#        print "PUSH ANY KEY TO CONTINUE"
+#        raw_input()
+#        
+        #Run AcdTool!
+        AcdOptiAcdtoolWrapper.rfPost("rfPost.in", os.path.join(self.folder, self.instName))
+        
+        #Restore stuff
+        self.localSolver.metaSetup['RFField']['children']['ResultDir'].setValSingle("value", origResultDir)
+        self.localSolver.write()
+        
+        shutil.copy(os.path.join(self.folder, self.instName, "postprocess.in.bak"),\
+                    os.path.join(dataPath2, "VECTOR", "postprocess.in"))
+        
+        os.unlink(dataPath)
+        
         self.write()
         
     def clearLockdown(self):
         print "RFpost_local::clearLockdown()"
         #self.exportResults.setValSingle("result", "")
         self.lockdown = False
+        os.remove(self.localSolver.fileName)
         self.localSolver.lockdown = False
         self.write()
     

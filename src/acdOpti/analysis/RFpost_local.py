@@ -22,11 +22,12 @@ from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple, AcdOpt
 from acdOpti.AcdOptiSolverManager import AcdOptiSolverManager
 import acdOpti.AcdOptiAcdtoolWrapper as AcdOptiAcdtoolWrapper
 
-from acdOpti.AcdOptiExceptions import AcdOptiException
+from RFpostParser import RFpostParser, RFpostException
+
 
 import os, shutil
 
-class RFpost_local(AnalysisInterface):
+class RFpost_local(AnalysisInterface, RFpostParser):
     """
     Analysis that runs acdtool postprocess rf locally.
     The output can then be parsed by the RFpost analysis.
@@ -46,7 +47,7 @@ class RFpost_local(AnalysisInterface):
         #Load paramFile
         self.__paramFile = AcdOptiFileParser_simple(os.path.join(folder, name, "paramFile.set"), 'rw')
         if self.__paramFile.dataDict["fileID"] != "Analysis::RFpost_local":
-            raise RFpost_local_exception("Got fileID='" + self.__paramFile.dataDict["fileID"] + "'")
+            raise RFpostException("Got fileID='" + self.__paramFile.dataDict["fileID"] + "'")
         self.lockdown = DataDict.boolconv(self.__paramFile.dataDict["lockdown"])
 
         self.exportResults = self.__paramFile.dataDict["export"]
@@ -83,9 +84,6 @@ class RFpost_local(AnalysisInterface):
         postFile.dataDict["CheckPoint"].setValSingle("Directory", os.path.join(os.path.join(dataPath2, "VECTOR")))
         postFile.write()
         
-#        print "PUSH ANY KEY TO CONTINUE"
-#        raw_input()
-#        
         #Run AcdTool!
         AcdOptiAcdtoolWrapper.rfPost("rfPost.in", os.path.join(self.folder, self.instName))
         
@@ -98,11 +96,21 @@ class RFpost_local(AnalysisInterface):
         
         os.unlink(dataPath)
         
+        #Parse output
+        ifile = open(os.path.join(self.folder, self.instName, "rfpost.out"), 'r')
+        fileData = ifile.read()
+        ifile.close()
+        
+        #Save results
+        addDic = self.parseData(fileData)
+        for (k,v) in addDic:
+            self.exportResults.pushBack(k,v)
+        
         self.write()
         
     def clearLockdown(self):
         print "RFpost_local::clearLockdown()"
-        #self.exportResults.setValSingle("result", "")
+        self.exportResults.clear()
         self.lockdown = False
         os.remove(self.localSolver.fileName)
         self.localSolver.lockdown = False
@@ -128,5 +136,3 @@ class RFpost_local(AnalysisInterface):
         #paramFile.dataDict["export"].pushBack("result", "")
         paramFile.write()
     
-class RFpost_local_exception(AcdOptiException):
-        pass

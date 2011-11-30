@@ -40,5 +40,7 @@ class AcdOptiSettings:
             return "/opt/acdtool/acdtool"
         elif key == "acdtool_preinit": #Not obligatory; tells acdOpti if some command needs to be run before starting acdtool
             return "module load openmpi-x86_64"
+        elif key == "paraviewpath":
+            return "/usr/bin/paraview"
         else:
             raise AcdOptiException_settings_notFound

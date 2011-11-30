@@ -31,6 +31,10 @@ from acdOpti.AcdOptiExceptions import AcdOptiException_cubitTemplateFile_CUBITer
 
 from RunConfig import RunConfig
 
+import acdOpti.AcdOptiCommandWrapper as AcdOptiCommandWrapper
+from acdOpti.AcdOptiSettings import AcdOptiSettings
+
+
 class MeshInstance(InfoFrameComponent):
     
     meshInstance = None    
@@ -48,6 +52,7 @@ class MeshInstance(InfoFrameComponent):
     __clearLockdownButton = None
     __runConfigButton = None
     __exportButton   = None
+    __paraviewButton = None
     __generateButton = None
     
     
@@ -68,6 +73,8 @@ class MeshInstance(InfoFrameComponent):
         tlab = gtk.Label("Use default")
         self.__topLabels.append(tlab)
 
+        
+
         self.__meshTemplateNameLabel = gtk.Label("Name of mesh template: \"" + self.meshInstance.meshTemplate.instName + "\"")
         self.__meshBadIndicator = gtk.Label("Mesh bad (ISOTEs): " + str(self.meshInstance.meshBad))        
 
@@ -79,6 +86,9 @@ class MeshInstance(InfoFrameComponent):
         
         self.__exportButton = gtk.Button(label="Export CUBIT journal to file...")
         self.__exportButton.connect("clicked", self.event_button_export, None)
+        
+        self.__paraviewButton = gtk.Button(label="Run ParaView...")
+        self.__paraviewButton.connect("clicked", self.event_button_paraview)
         
         self.__generateButton = gtk.Button(label="Run CUBIT to generate mesh")
         self.__generateButton.connect("clicked", self.event_button_generate, None)
@@ -98,6 +108,7 @@ class MeshInstance(InfoFrameComponent):
         self.baseWidget.pack_start(self.__clearLockdownButton,   expand=False)
         self.baseWidget.pack_start(self.__runConfigButton,       expand=False)
         self.baseWidget.pack_start(self.__exportButton,          expand=False)
+        self.baseWidget.pack_start(self.__paraviewButton,        expand=False)
         self.baseWidget.pack_start(self.__generateButton,        expand=False)
 
         self.baseWidget.show_all()
@@ -396,4 +407,8 @@ class MeshInstance(InfoFrameComponent):
         # END while True
         self.updateTable()
         self.frameManager.mainWindow.updateProjectExplorer()
-            
+        
+    def event_button_paraview(self, widget,data=None):
+        print "MeshInstance::event_button_paraview()"
+        paraViewPath = AcdOptiSettings().getSetting("paraviewpath")
+        AcdOptiCommandWrapper.runProgramInFolder(paraViewPath, self.meshInstance.folder)

@@ -335,6 +335,8 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
     used by acdtool rfpost.
     
     Expected syntax example:
+    /*Comment
+    */
     key {
     key = value
     key2 = value //Comment
@@ -347,6 +349,7 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         Insignificant when before { and } 
     * "="  : Separates key/value within a dict
     * "//" : Ignore the rest of this line
+    * "/*  : Ignore untill hitting "*/"
     * "{(arbitary ammount of whitespace)}" : Value is an empty string
     Other rules:
     Whitespace at beginning and end of key and value is ignored
@@ -436,11 +439,26 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         
         #Strip comments, leading/trailing whitespace, and blank/comment lines
         str_in_strippedlines = []
+        multiComment = False
         for line in str_in.splitlines():
-            tmp = line.split("//")[0]
+            if multiComment:
+                if "*/" in line:
+                    foo = line.split("*/")[-1]
+                else:
+                    continue
+            elif "/*" in line:
+                if "*/" in line:
+                    foo = line.split("/*")[0] + " " + line.split("*/")[-1]
+                else:
+                    multiComment = True
+                    continue
+            else:
+                foo = line
+            tmp = foo.split("//")[0]
             tmp = tmp.strip()
             if tmp != "":
                 str_in_strippedlines.append(tmp)
+                
         if parserDebug: print "str_in_strippedlines =", str_in_strippedlines
         
         #Make sure that all lines are either "key = val", "key {" or "}"
@@ -647,6 +665,8 @@ class AcdOptiFileParser_KVC(AcdOptiFileParser):
     and is an additional character between Label and "{" for key/dict pairs. 
     
     Expected syntax example:
+    /* Comment
+    */
     Label : {
     field : value
     field2 : value //Comment

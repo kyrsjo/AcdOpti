@@ -71,7 +71,7 @@ class AcdOptiSolverManager:
     metaSetupFilePath = None  # Full path to the MetaSetupFile
     metaSetup         = None  # DataDict object pointing to metaSetupFile.dataDict["options"] (shortcut pointer)   
     setupFileFormat   = None  # Pointer to correct AcdOptiFileParser_* class 
-    lockdown          = None  # Is the solverSetup currently not writable? (not enforced)
+    lockdown          = False # Is the solverSetup currently not writable? (not enforced, but influences GUI)
      
     
     def __init__(self, name, folder):
@@ -119,7 +119,7 @@ class AcdOptiSolverManager:
         self.fileName = os.path.join(self.folder, self.name)
        
     def generateSetup(self):
-        "Generates a setupFile from the current contents of metaSetup, which is written."
+        "Generates a setupFile from the current contents of metaSetup, which is written in the given folder."
         print "AcdOptiSolverSetupManager::__generateSetup()"
         self.write()
         
@@ -189,7 +189,7 @@ class AcdOptiSolverManager:
             name = typeFile.dataDict.getValSingle("fileNameDefault")
         
         #Generate the metaFile
-        metaFileName = name + ".meta"
+        metaFileName = os.path.join(folder, name + ".meta")
 
         #First: check that the name is not in use
         if os.path.isfile(os.path.join(folder,metaFileName)):

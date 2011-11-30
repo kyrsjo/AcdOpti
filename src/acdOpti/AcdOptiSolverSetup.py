@@ -45,7 +45,6 @@ class AcdOptiSolverSetup(AcdOptiSolverManager):
 
     #Object fields
     runConfig         = None  # The main runConfig object owning this (and perhaps more) solverSetups
-    lockdown          = None  # Is the solverSetup currently not writable? (not enforced)
          
     def __init__(self, name, runConfig):
         AcdOptiSolverManager.__init__(self, name, runConfig.folder)

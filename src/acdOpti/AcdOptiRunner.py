@@ -142,7 +142,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         self.remoteJobID = self.__paramFile.dataDict["remoteJobID"]
         if self.remoteJobID == "":
             self.remoteJobID = None
-        if self.remoteJobID != None and not (self.runConfig.status == "remote::queued" or self.runConfig.status != "remote::running"):
+        if self.remoteJobID != None and not (self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running"):
             raise AcdOptiException_optiRunner_loadFail("Found remoteJobID, but status='" + self.runConfig.status + "'")
         elif self.remoteJobID == None and (self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running"):
             raise AcdOptiException_optiRunner_loadFail("Did not find remoteJobID, but status='" + self.runConfig.status + "'")

@@ -27,6 +27,7 @@ from AcdOptiSettings import AcdOptiSettings
 from AcdOptiExceptions import AcdOptiException_settings_notFound
 
 import subprocess
+import os
 
 acdtoolpath = AcdOptiSettings().getSetting("acdtoolpath") #"/opt/acdtool/acdtool" 
 
@@ -76,6 +77,8 @@ def meshCheck(meshFileName):
     and prints output
     """
     
+    initAcdTool()
+    
     cmdline = acdtoolpath + " mesh check %s" % meshFileName
     print "AcdOptiAcdtoolWrapper.meshCheck(): Running command '%s' -- please wait for result..." % cmdline
     acdoutput = subprocess.check_output(cmdline, bufsize=-1, shell=True) #Warning: Insecure mechanism (shell=True)
@@ -93,5 +96,23 @@ def meshCheck(meshFileName):
         return True
     else:
         return False
+
+def rfPost(inputFileName, folder):
+    """
+    Runs acdtool postprocess rf <inputfilename>.
+    Output is printed
+    """
     
+    initAcdTool()
     
+    cmdline = acdtoolpath + " postprocess rf " + inputFileName
+    print "AcdOptiToolWrapper.rfPost(): Running command '%s' -- please wait for result..." % cmdline
+    cwd = os.getcwd()
+    os.chdir(folder)
+    try:
+        acdoutput = subprocess.check_output(cmdline, bufsize=-1, shell=True) #Warning: Insecure mechanism (shell=True)
+    finally:
+        os.chdir(cwd)
+    
+    print acdoutput
+    print "Done."

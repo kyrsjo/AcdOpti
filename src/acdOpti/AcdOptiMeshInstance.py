@@ -304,12 +304,21 @@ class AcdOptiMeshInstance:
         
         if not self.lockdown:
             return
+        
+        #Delete mesh files
         if os.path.isfile(os.path.join(self.folder, "mesh.gen")):
             os.remove(os.path.join(self.folder, "mesh.gen"))
         if os.path.isfile(os.path.join(self.folder, "mesh.ncdf")):
             os.remove(os.path.join(self.folder, "mesh.ncdf"))
         if os.path.isfile(os.path.join(self.folder, "mesh.jou")):
             os.remove(os.path.join(self.folder, "mesh.jou"))
+        
+        #Delete vtu files from acdtool meshconvert
+        list = os.listdir(self.folder)
+        for l in list:
+            if l.endswith(".vtu"):
+                os.remove(os.path.join(self.folder, l))
+        
         
         for rc in self.runConfigs.values():
             rc.clearLockdown()

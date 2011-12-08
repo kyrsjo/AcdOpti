@@ -142,7 +142,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         self.remoteJobID = self.__paramFile.dataDict["remoteJobID"]
         if self.remoteJobID == "":
             self.remoteJobID = None
-        if self.remoteJobID != None and not (self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running"):
+        if self.remoteJobID != None and not self.runConfig.status.startswith("remote::"):
             raise AcdOptiException_optiRunner_loadFail("Found remoteJobID, but status='" + self.runConfig.status + "'")
         elif self.remoteJobID == None and (self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running"):
             raise AcdOptiException_optiRunner_loadFail("Did not find remoteJobID, but status='" + self.runConfig.status + "'")
@@ -259,6 +259,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         #client.close()
         
     def remoteCleanup(self):
+        assert self.runConfig.status in ["remote::uploaded", "remote::finished", "remote::unclean"]
+        
         #Make connection...
         username = AcdOptiSettings().getSetting("hopperUser")
         client = self.__connectSSH()
@@ -325,7 +327,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         self.write()
         
     def cancelRun(self):
-        assert self.remoteJobID != "None" 
+        assert self.remoteJobID != None 
         #Make connection...
         client =  self.__connectSSH()
         
@@ -341,8 +343,14 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
         if len(ssh_stderr_str):
             if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
+                #Aready finished
+                print "Job was already finished"
+                self.remoteJobID = None
+                self.write()
                 return
             raise AcdOptiException_optiRunner_remoteProblem("Problem during cancel, see output")
+        
+        self.write()
 
     def queryStatus(self):
         assert self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running", "status = '" + self.runConfig.status + "'"
@@ -362,6 +370,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         #Parse the status output:
         if len(ssh_stderr_str):
             if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
+                self.remoteJobID = None
+                self.write()
                 return "remote::finished"
             raise AcdOptiException_optiRunner_remoteProblem("Problem while getting status, see output")
                 
@@ -377,6 +387,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         elif statusChar == "R" or statusChar == "E": #E: Exiting after having run
             return "remote::running"
         elif statusChar == "C":
+            self.remoteJobID = None
+            self.write()
             return "remote::finished"
         else:
             raise ValueError("Unknown status char '" + statusChar + "'")
@@ -384,6 +396,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
     def getRemoteData(self):
         assert self.runConfig.status=="remote::finished" or self.runConfig.status=="remote::unclean"
+        #print "self.remoteJobID =", self.remoteJobID
+        assert self.remoteJobID == None
         
         finishedLocalPath=os.path.join(self.folder, "finished")
         
@@ -443,7 +457,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
                     get = job[key]
                     if get == "-1" and optional:
                         return "" 
-                    return optionName + " " + get[0] + " "
+                    return optionName + " " + get + " "
                 command = "aprun "  + makeOption("-n", "tasks", False)\
                                     + makeOption("-N", "tasksNode", True)\
                                     + makeOption("-S", "tasksNuma", True)\

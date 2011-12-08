@@ -315,8 +315,8 @@ class AcdOptiRunConfig:
         assert self.runner.isRemote()
         assert self.status == "remote::finished" or self.status == "remote::unclean"
         self.finishedFolder = self.runner.getRemoteData()
-        self.status = "finished"
         self.remoteCleanup()
+        self.status = "finished"
         self.write()
         
     def cancel(self):

@@ -110,9 +110,11 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         
     def clearLockdown(self):
         print "RFpost_local::clearLockdown()"
+        if not self.lockdown:
+            return
         self.exportResults.clear()
-        self.lockdown = False
         os.remove(self.localSolver.fileName)
+        self.lockdown = False
         self.localSolver.lockdown = False
         self.write()
     

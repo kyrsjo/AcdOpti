@@ -16,13 +16,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
+
 from acdOpti.AcdOptiFileParser import DataDict
 
 from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis, AcdOptiException_dataDict_getValsSingle
 
 import re
+redigits = r'-*\d+.\d+e[+-]\d+'
 
-class RFpostParser:
+class RFpostParser():
     """
     Class providing functions usefull for RFpost and RFpost_local,
     that parses the output from acdtool postprocess rf
@@ -58,7 +60,7 @@ class RFpostParser:
         #Filter through sections to find the interesting results
         retDict = DataDict()
         retDict.pushBack("RoverQ", self.ParseRoverQ(sectionNamesList, sectionList))
-        retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList)) #This depends on RoverQ!
+        retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict)) #This depends on RoverQ's results, accessed through retDict
         
         return retDict
 
@@ -96,21 +98,22 @@ class RFpostParser:
         retDict = DataDict()
         for line in loi:
             ldic = DataDict()
-            ls = line.split()
-            ldic.pushBack("ModeID", ls[0])
-            ldic.pushBack("Frequency", ls[1])
-            ldic.pushBack("Vr", ls[2][1:])
-            ldic.pushBack("Vi", ls[3][:-1])
-            ldic.pushBack("Vabs", ls[4])
-            ldic.pushBack("RoQ", ls[5])
+            ls = re.match(r'\s*(\d+)\s+('+redigits+")\s+\(\s*("+redigits+"),\s*(" + redigits + ")\s*\)\s*("+redigits+")\s*("+redigits+")",line)
+            #ls = line.split()
+            ldic.pushBack("ModeID", ls.group(1))
+            ldic.pushBack("Frequency", ls.group(2))
+            ldic.pushBack("Vr", ls.group(3))
+            ldic.pushBack("Vi", ls.group(4))
+            ldic.pushBack("Vabs", ls.group(5))
+            ldic.pushBack("RoQ", ls.group(6))
             retDict.pushBack("mode",ldic)
         
         return retDict
     
-    def ParseMaxFieldsOnSurface(self,sectionNamesList,sectionList):
+    def ParseMaxFieldsOnSurface(self,sectionNamesList,sectionList,retDataROQ=None):
         """
         Parses 'maxFieldsOnSurface' sections, returns a DataDict with one entry (another dataDict) for each section found.
-        Dependent on output from RoverQ analysis for normalization (if not found, this is just skipped)
+        Dependent on output from RoverQ analysis for normalization, which it searches for through "retData". Skipped if not found.
         """
         mfosSec =  self.__findMySections(sectionNamesList, sectionList, "maxFieldsOnSurface")
         
@@ -140,22 +143,21 @@ class RFpostParser:
                 Hmax = Hmax_match.group(1)
                 modDict.pushBack("Hmax", Hmax)
                 
-                try:
-                    RoQ = self.exportResults["RoverQ"]
-                    Vabs = None
-                    for mode in RoQ.getVals("mode"):
-                        if int(mode["ModeID"]) == int(modID):
-                            Vabs = float(mode["Vabs"])
-                    if Vabs != None:
-                        modDict.pushBack("Emax_norm", str(float(Emax)/Vabs))
-                        modDict.pushBack("Hmax_norm", str(float(Hmax)/Vabs))
-                    else:
-                        print "Didn't find a good Vabs"
+                if retDataROQ != None:
+                    try:
+                        RoQ = retDataROQ["RoverQ"]
+                        Vabs = None
+                        for mode in RoQ.getVals("mode"):
+                            if int(mode["ModeID"]) == int(modID):
+                                Vabs = float(mode["Vabs"])
+                        if Vabs != None:
+                            modDict.pushBack("Emax_norm", str(float(Emax)/Vabs))
+                            modDict.pushBack("Hmax_norm", str(float(Hmax)/Vabs))
+                        else:
+                            print "Didn't find a good Vabs"
                     
-                except AcdOptiException_dataDict_getValsSingle:
-                    print "No normalization found, skipping"
-                
-                    
+                    except AcdOptiException_dataDict_getValsSingle:
+                        print "No normalization found, skipping"
                 
                 secDict.pushBack("mode", modDict)
                 

@@ -55,6 +55,13 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         #Load RFpost solverManager
         self.localSolver = AcdOptiSolverManager("rfPost.in", os.path.join(folder,name))
     
+        #Load the settings
+        if len(self.__paramFile.dataDict.getVals("settings")) == 0:
+            self.__paramFile.dataDict.pushBack("settings", DataDict())
+            self.__paramFile.dataDict["settings"].pushBack("L","")
+            self.__paramFile.write()
+        self.settings = self.__paramFile.dataDict["settings"]
+    
     def runAnalysis(self):
         print "RFpost_local::runAnalysis()"
         
@@ -102,7 +109,12 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         ifile.close()
         
         #Save results
-        addDic = self.parseData(fileData)
+        try:
+            L = float(self.settings["L"])
+        except ValueError:
+            print 'Couldnt parse self.settings["L"]'
+            L = -1.0;
+        addDic = self.parseData(fileData, L)
         for (k,v) in addDic:
             self.exportResults.pushBack(k,v)
         
@@ -134,7 +146,11 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         paramFile = AcdOptiFileParser_simple(os.path.join(folder,name,"paramFile.set"), "w")
         paramFile.dataDict.pushBack("fileID", "Analysis::RFpost_local")
         paramFile.dataDict.pushBack("lockdown", "False")
+        
         paramFile.dataDict.pushBack("export", DataDict())
-        #paramFile.dataDict["export"].pushBack("result", "")
+        
+        paramFile.dataDict.pushBack("settings", DataDict())
+        paramFile.dataDict["settings"].pushBack("L","")
+        
         paramFile.write()
     

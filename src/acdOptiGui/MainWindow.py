@@ -144,7 +144,8 @@ class MainWindow():
         self.__VBox1.pack_start(self.__toolbar, False)
 
         #Sidebar/maindisplay HBox
-        self.__HBox2 = gtk.HBox(False, 5)
+        #self.__HBox2 = gtk.HBox(False, 5)
+        self.__HBox2 = gtk.HPaned()
         self.__VBox1.pack_start(self.__HBox2)
         
         #Tree view in left part of screen
@@ -157,6 +158,7 @@ class MainWindow():
         self.__treeView       = gtk.TreeView(self.__treeModel)
         self.__treeViewColumn = gtk.TreeViewColumn('Project explorer')
         self.__cellRender     = gtk.CellRendererText()
+        #self.__cellRender.props.scale = 0.7
         self.__cellRenderIcon = gtk.CellRendererPixbuf()
         
         self.__treeModel.set_sort_column_id(0, gtk.SORT_ASCENDING)
@@ -171,14 +173,17 @@ class MainWindow():
         self.__treeView.connect("row-activated", self.event_treeView_rowActivated, None)
 
         self.__scrolledWindow = gtk.ScrolledWindow()
-        self.__scrolledWindow.set_policy(gtk.POLICY_NEVER,gtk.POLICY_AUTOMATIC)
+        self.__scrolledWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
         self.__scrolledWindow.add_with_viewport(self.__treeView)
-        self.__HBox2.pack_start(self.__scrolledWindow, False)
+        #self.__HBox2.pack_start(self.__scrolledWindow, False)
+        self.__HBox2.add1(self.__scrolledWindow)
         
         #self.__treeModel.append(None, ["Load a project to start",])
         
         #Frame on which to display other info
-        self.__infoFrame = InfoFrameManager(self.__HBox2,self)
+        #self.__infoFrameFrame = gtk.Frame()
+        #self.__HBox2.add2(self.__infoFrameFrame)
+        self.__infoFrame = InfoFrameManager(self.__HBox2, self)
         self.__infoFrame.writeMessage("Load a project to start")
 
         self.window.show_all()

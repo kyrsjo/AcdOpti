@@ -43,7 +43,8 @@ class InfoFrameManager:
         
         self.container = container
         self.frame     = gtk.Frame()
-        self.container.pack_start(self.frame)
+        #self.container.pack_start(self.frame)
+        self.container.add2(self.frame)
         
         self.childStack = []
     

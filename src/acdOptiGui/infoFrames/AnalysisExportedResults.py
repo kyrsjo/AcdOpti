@@ -159,6 +159,7 @@ class AnalysisExportedResults(InfoFrameComponent):
         else:
             try:
                 self.analysis.runAnalysis()
+                self.makePing()
             except AcdOptiException_analysis_runAnalysis as e:
                 mDia = gtk.MessageDialog(self.getBaseWindow(),
                                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,

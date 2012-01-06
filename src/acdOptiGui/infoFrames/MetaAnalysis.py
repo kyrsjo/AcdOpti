@@ -56,6 +56,10 @@ class MetaAnalysis(InfoFrameComponent):
     __varSelectorXEntry = None
     __varSelectorYEntry = None
     
+    __filterBox = None
+    __filterEntry = None
+    __filterValEntry = None
+    
     __runAnaButton = None
     __exportButton = None
     __clearLockdownButton = None
@@ -91,6 +95,16 @@ class MetaAnalysis(InfoFrameComponent):
         
         #self.baseWidget.pack_start(gtk.Label("Meta-language syntax: {GEOM|MESH|ANA}.key([idx]).key([idx]) ..."), expand=False, padding=5)
         self.baseWidget.pack_start(gtk.Label("Meta-language syntax: {GEOM|MESH|ANA}.key.key([idx]) .... For ANA, field[1] is analysis name, field[2] is a name in exportResults"), expand=False, padding=5)
+        self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
+                
+        self.__filterBox = gtk.HBox()
+        self.__filterBox.pack_start(gtk.Label("Filter: "), expand=False)
+        self.__filterEntry = gtk.Entry()
+        self.__filterBox.pack_start(self.__filterEntry)
+        self.__filterBox.pack_start(gtk.Label(" = "),expand=False)
+        self.__filterValEntry = gtk.Entry()
+        self.__filterBox.pack_start(self.__filterValEntry)
+        self.baseWidget.pack_start(self.__filterBox, expand=False,padding=5)
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
         self.__runAnaButton = gtk.Button("Run analysis")
@@ -129,10 +143,15 @@ class MetaAnalysis(InfoFrameComponent):
         #Plot the data
         self.__plotAxis.set_xlabel(self.anaInstance.xVariable)
         self.__plotAxis.set_ylabel(self.anaInstance.yVariable)
+        self.__plotAxis.set_title("Filter: " + self.anaInstance.fVariable + " = " + str(self.anaInstance.fEquals))
         matplotlib.pyplot.plot(self.anaInstance.xArray, self.anaInstance.yArray, "*")
         if self.anaInstance.targetValue != None:
             matplotlib.pyplot.axhline(self.anaInstance.targetValue, color="r", linestyle="--")
-            
+        
+        (xmin,xmax,ymin,ymax) = self.__plotAxis.axis()
+        dx = xmax-xmin; dy = ymax-ymin;
+        self.__plotAxis.axis([xmin-dx*0.05, xmax+dx*0.05, ymin-dy*0.05, ymax+dy*0.05])
+        
 #        matplotlib.pyplot.plot(np.linspace(0,2*np.pi, 100), np.sin(np.linspace(0,2*np.pi, 100))/self.counter) #TEST
 
         
@@ -148,10 +167,18 @@ class MetaAnalysis(InfoFrameComponent):
         self.__varSelectorXEntry.set_text(self.anaInstance.xVariable)
         self.__varSelectorYEntry.set_text(self.anaInstance.yVariable)
     
+        self.__filterEntry.set_text(self.anaInstance.fVariable)
+        if self.anaInstance.fEquals != None:
+            self.__filterValEntry.set_text(str(self.anaInstance.fEquals))
+        else:    
+            self.__filterValEntry.set_text("")
+    
         if self.anaInstance.lockdown:
             self.__targetLineEntry.set_sensitive(False)
             self.__varSelectorXEntry.set_sensitive(False)
             self.__varSelectorYEntry.set_sensitive(False)
+            self.__filterEntry.set_sensitive(False)
+            self.__filterValEntry.set_sensitive(False)
             self.__runAnaButton.set_sensitive(False)
             self.__exportButton.set_sensitive(True)
             self.__clearLockdownButton.set_sensitive(True)
@@ -159,6 +186,8 @@ class MetaAnalysis(InfoFrameComponent):
             self.__targetLineEntry.set_sensitive(True)
             self.__varSelectorXEntry.set_sensitive(True)
             self.__varSelectorYEntry.set_sensitive(True)
+            self.__filterEntry.set_sensitive(True)
+            self.__filterValEntry.set_sensitive(True)
             self.__runAnaButton.set_sensitive(True)
             self.__exportButton.set_sensitive(False)
             self.__clearLockdownButton.set_sensitive(False)
@@ -170,9 +199,15 @@ class MetaAnalysis(InfoFrameComponent):
             self.anaInstance.targetValue = float(self.__targetLineEntry.get_text())
         except:
             self.anaInstance.targetValue = None
-        
+                
         self.anaInstance.xVariable = self.__varSelectorXEntry.get_text()
         self.anaInstance.yVariable = self.__varSelectorYEntry.get_text()
+    
+        self.anaInstance.fVariable = self.__filterEntry.get_text()
+        try:
+            self.anaInstance.fEquals = float(self.__filterValEntry.get_text())
+        except:
+            self.anaInstance.fEquals = None
     
         self.anaInstance.write()
     

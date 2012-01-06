@@ -47,6 +47,11 @@ class AcdOptiMetaAnalysis:
     xVariable = None 
     yVariable = None
     
+    fVariable = None
+    fEquals   = None
+    fLT       = None
+    fGT       = None
+    
     xArray = None 
     yArray = None
     
@@ -77,6 +82,22 @@ class AcdOptiMetaAnalysis:
         self.xVariable = self.__paramfile.dataDict["xVariable"]
         self.yVariable = self.__paramfile.dataDict["yVariable"]
         
+        if len(self.__paramfile.dataDict.getVals("fVariable")) == 0:
+            self.__paramfile.dataDict.pushBack("fVariable", "")
+            self.__paramfile.dataDict.pushBack("fEquals", "")
+            self.__paramfile.dataDict.pushBack("fLT", "")
+            self.__paramfile.dataDict.pushBack("fGT", "")
+            self.__paramfile.write()
+        self.fVariable = self.__paramfile.dataDict["fVariable"]
+        def floatOrNone(strIn):
+            if strIn == "":
+                return None
+            else:
+                return float(strIn)
+        self.fEquals   = floatOrNone(self.__paramfile.dataDict["fEquals"])
+        self.fGT       = floatOrNone(self.__paramfile.dataDict["fGT"])
+        self.fLT       = floatOrNone(self.__paramfile.dataDict["fLT"])
+        
         if len(self.__paramfile.dataDict.getVals("targetValue")) > 0:
             self.targetValue = float(self.__paramfile.dataDict["targetValue"])
         else:
@@ -105,6 +126,16 @@ class AcdOptiMetaAnalysis:
         self.__paramfile.dataDict.setValSingle("xVariable", self.xVariable)
         self.__paramfile.dataDict.setValSingle("yVariable", self.yVariable)
         
+        self.__paramfile.dataDict.setValSingle("fVariable", self.fVariable)
+        def strFromFloatOrNone(fonIn):
+            if fonIn == None:
+                return ""
+            else:
+                return str(fonIn)
+        self.__paramfile.dataDict.setValSingle("fEquals",strFromFloatOrNone(self.fEquals))
+        self.__paramfile.dataDict.setValSingle("fGT",strFromFloatOrNone(self.fGT))
+        self.__paramfile.dataDict.setValSingle("fLT",strFromFloatOrNone(self.fLT))
+        
         if self.targetValue != None:
             if len(self.__paramfile.dataDict.getVals("targetValue")) > 0:
                 self.__paramfile.dataDict.setValSingle("targetValue", str(self.targetValue))
@@ -128,6 +159,8 @@ class AcdOptiMetaAnalysis:
         #Do something...
         xVar = self.xVariable.split(".")
         yVar = self.yVariable.split(".")
+        if self.fEquals != None:
+            fVar = self.fVariable.split(".")
         print "AcdOptiMetaAnalysis::runAnalysis() : xVar='" + str(xVar) + "', yVar='" + str(yVar) + "'"
         
 #        if not xVar[0] in ["GEOM","MESH","ANA"]:
@@ -141,6 +174,13 @@ class AcdOptiMetaAnalysis:
             if len(xData) > 1 and len(yData) > 1:
                 raise AcdOptiException_metaAnalysis_anaFail("Multiple hits for both xData and yData")
             
+            if self.fEquals != None:
+                fData = self.__getData(geom, fVar)
+                if len(xData) > 1 or len(yData) > 1 or len(fData) > 1:
+                    raise AcdOptiException_metaAnalysis_anaFail("Multiple hits when filtering")
+                if fData[0] != self.fEquals:
+                    continue
+
             print xData, yData
             
             if len(xData) > 1:
@@ -276,6 +316,11 @@ class AcdOptiMetaAnalysis:
         
         paramFile.dataDict.pushBack("xVariable", "")
         paramFile.dataDict.pushBack("yVariable", "")
+        
+        paramFile.dataDict.pushBack("fVariable", "")
+        paramFile.dataDict.pushBack("fEquals", "")
+        paramFile.dataDict.pushBack("fLT", "")
+        paramFile.dataDict.pushBack("fGT", "")
         
         paramFile.dataDict.pushBack("anaData", DataDict()) #(key, value) = (x,y)
         

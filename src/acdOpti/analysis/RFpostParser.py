@@ -30,7 +30,7 @@ class RFpostParser():
     that parses the output from acdtool postprocess rf
     """
     
-    def parseData(self, dataString):
+    def parseData(self, dataString, L=-1.0):
         #Split into sections by looking for [NAME]
         sectionNamesList = []
         sectionList = []
@@ -60,7 +60,7 @@ class RFpostParser():
         #Filter through sections to find the interesting results
         retDict = DataDict()
         retDict.pushBack("RoverQ", self.ParseRoverQ(sectionNamesList, sectionList))
-        retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict)) #This depends on RoverQ's results, accessed through retDict
+        retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict,L)) #This depends on RoverQ's results, accessed through retDict
         
         return retDict
 
@@ -110,7 +110,7 @@ class RFpostParser():
         
         return retDict
     
-    def ParseMaxFieldsOnSurface(self,sectionNamesList,sectionList,retDataROQ=None):
+    def ParseMaxFieldsOnSurface(self,sectionNamesList,sectionList,retDataROQ=None,L=-1.0):
         """
         Parses 'maxFieldsOnSurface' sections, returns a DataDict with one entry (another dataDict) for each section found.
         Dependent on output from RoverQ analysis for normalization, which it searches for through "retData". Skipped if not found.
@@ -151,8 +151,10 @@ class RFpostParser():
                             if int(mode["ModeID"]) == int(modID):
                                 Vabs = float(mode["Vabs"])
                         if Vabs != None:
-                            modDict.pushBack("Emax_norm", str(float(Emax)/Vabs))
-                            modDict.pushBack("Hmax_norm", str(float(Hmax)/Vabs))
+                            Ez_ave = Vabs / (L/1000)
+                            modDict.pushBack("Ez_ave", str(Ez_ave))
+                            modDict.pushBack("Emax_norm", str(float(Emax)/Ez_ave))
+                            modDict.pushBack("Hmax_norm", str(float(Hmax)/Ez_ave))
                         else:
                             print "Didn't find a good Vabs"
                     

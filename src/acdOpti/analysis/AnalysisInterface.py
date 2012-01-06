@@ -24,7 +24,7 @@ from acdOpti.AcdOptiExceptions import AcdOptiException
 import os
 #from acdOpti import AcdOptiExceptions
 
-class AnalysisInterface:
+class AnalysisInterface(object): #New-style class so that super() works
     lockdown = None
     
     type     = None #Type of analysis
@@ -190,10 +190,17 @@ class AnalysisInterface:
         Clone an already existing analysis
         of the implementing type.
         """
+        print "AnalysisInterface::createNew_clone()"
         cls.createNew(folder, cloneFrom.instName)
         newAna = cls(folder,cloneFrom.instName,newRunConfig)
         if cloneFrom.settings != None:
-            newAna.settings = cloneFrom.settings.copy()
+            #newAna.settings = cloneFrom.settings.copy()
+            newAna.settings.clear()
+            for (k,v) in cloneFrom.settings:
+                if isinstance(v,DataDict):
+                    newAna.settings.pushBack(k,v.copy())
+                else:
+                    newAna.settings.pushBack(k,v)
             newAna.write()
             
         return newAna

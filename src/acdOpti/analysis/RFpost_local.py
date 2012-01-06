@@ -54,6 +54,8 @@ class RFpost_local(AnalysisInterface, RFpostParser):
     
         #Load RFpost solverManager
         self.localSolver = AcdOptiSolverManager("rfPost.in", os.path.join(folder,name))
+        if self.lockdown:
+            self.localSolver.lockdown = True
     
         #Load the settings
         if len(self.__paramFile.dataDict.getVals("settings")) == 0:
@@ -153,4 +155,16 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         paramFile.dataDict["settings"].pushBack("L","")
         
         paramFile.write()
-    
+
+    @classmethod
+    def createNew_clone(cls, folder,cloneFrom,newRunConfig):
+        print "RFpost_local::createNew_clone()"
+        #Call baseclass createNew_clone(), but don't keep the object:
+        #AnalysisInterface.createNew_clone(folder, cloneFrom, newRunConfig)
+        super(RFpost_local,cls).createNew_clone(folder,cloneFrom,newRunConfig)
+        #Replace the SolverSetup
+        os.unlink(os.path.join(folder,cloneFrom.instName,"rfPost.in.meta"))
+        AcdOptiSolverManager.createNew_clone(os.path.join(folder, cloneFrom.instName),cloneFrom.localSolver)
+        
+        return RFpost_local(folder,cloneFrom.instName,newRunConfig)
+        

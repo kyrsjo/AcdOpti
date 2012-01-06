@@ -545,8 +545,8 @@ class AcdOptiRunConfig:
             print "Add solver " + str(solv)
             newSolv = AcdOptiSolverSetup.createNew_clone(folder, solv,newRC)
             newRC.solverSetups.append(newSolv)
-        #Copy analysis
         
+        #Copy analysis
         for (anaName, ana) in cloneFrom.analysis.iteritems():
             newRC.analysis[anaName] = ana.createNew_clone(os.path.join(folder, "analysis"), ana, newRC)
         

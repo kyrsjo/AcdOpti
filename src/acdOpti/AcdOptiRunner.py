@@ -143,7 +143,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         if self.remoteJobID == "":
             self.remoteJobID = None
         if self.remoteJobID != None and not self.runConfig.status.startswith("remote::"):
-            raise AcdOptiException_optiRunner_loadFail("Found remoteJobID, but status='" + self.runConfig.status + "'")
+            print "WARNING: Found remoteJobID, but status='" + self.runConfig.status + "'"
+            #raise AcdOptiException_optiRunner_loadFail("Found remoteJobID, but status='" + self.runConfig.status + "'")
         elif self.remoteJobID == None and (self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running"):
             raise AcdOptiException_optiRunner_loadFail("Did not find remoteJobID, but status='" + self.runConfig.status + "'")
          
@@ -180,6 +181,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         print "Connected."
         self.__sshClient = client
         return client
+    
     def __SSHkillDir(self, dir, sftp):
         """
         Recursively delete directory dir and its contents using a sftp connection
@@ -498,6 +500,9 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         #Move it to stage folder
         #os.rename(os.path.join(self.folder, "run.pbs"), os.path.join(self.folder, "stage", "run.pbs")) 
     
+    def __del__(self):
+        if self.__sshClient != None:
+            self.__sshClient.close()
     def write(self):
         self.__paramFile.write()
     

@@ -101,3 +101,4 @@ class InfoFrameManager:
                 return True
             self.pop()
         return False
+  

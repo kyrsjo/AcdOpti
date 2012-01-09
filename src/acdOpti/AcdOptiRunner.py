@@ -27,6 +27,8 @@ from AcdOptiExceptions import AcdOptiException_optiRunner_createFail,\
                               AcdOptiException_optiRunner_runError
 
 import paramiko
+from SSHspeedtransfer import SSHspeedtransfer
+
 import os, math, re, tarfile
 
 class AcdOptiRunner:
@@ -131,6 +133,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
     #PBSjobName = None
     remoteJobID = None
     
+    speedSSH = None
+    
     def __init__(self,runConfig):
         
         self.runConfig = runConfig
@@ -147,7 +151,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
             #raise AcdOptiException_optiRunner_loadFail("Found remoteJobID, but status='" + self.runConfig.status + "'")
         elif self.remoteJobID == None and (self.runConfig.status == "remote::queued" or self.runConfig.status == "remote::running"):
             raise AcdOptiException_optiRunner_loadFail("Did not find remoteJobID, but status='" + self.runConfig.status + "'")
-         
+    
+        self.speedSSH = SSHspeedtransfer(self.hostname, AcdOptiSettings().getSetting("hopperUser"))
     
     def getTorqueMeta(self):
         "Returns a pointer to the TorqueMeta data structure"
@@ -231,7 +236,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
             return
         print "Uploading file..."
         remoteFile = remoteScratch + os.path.split(stageFile)[1]
-        sftp.put(stageFile, remoteScratch + os.path.split(stageFile)[1])
+        self.speedSSH.put(stageFile, remoteScratch + os.path.split(stageFile)[1])
+        #sftp.put(stageFile, remoteScratch + os.path.split(stageFile)[1])
         print "Uploading finished."
         
         #Unzip
@@ -398,8 +404,9 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
     def getRemoteData(self):
         assert self.runConfig.status=="remote::finished" or self.runConfig.status=="remote::unclean"
-        #print "self.remoteJobID =", self.remoteJobID
-        assert self.remoteJobID == None
+        #assert self.remoteJobID == None
+        if self.remoteJobID != None and not self.runConfig.status.startswith("remote::"):
+            print "WARNING: Found remoteJobID, but status='" + self.runConfig.status + "'"
         
         finishedLocalPath=os.path.join(self.folder, "finished")
         
@@ -427,7 +434,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
             raise AcdOptiException_optiRunner_remoteProblem("Problem during zipping, see output")
         
         #Download the tarball
-        sftp.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile))
+        self.speedSSH.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile))
+        #sftp.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile))
         
         #client.close()
         sftp.close()

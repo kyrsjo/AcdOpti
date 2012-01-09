@@ -210,12 +210,6 @@ options {
 				single = True
 				default = MP
 			}
-			Solver {
-			 type = string
-			 must = False
-			 single = True
-			 default = Arnoldi
-			}
 		}
 	}//END EigenSolver
 	PostProcess {

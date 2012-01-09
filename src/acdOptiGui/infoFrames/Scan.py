@@ -290,28 +290,34 @@ class Scan(InfoFrameComponent):
                 mDia.destroy()
         self.updateDisplay()
         self.frameManager.mainWindow.updateProjectExplorer()
+        self.makePing()
 
     def event_button_stageScan(self, widget, data=None):
         print "Scan::event_button_stageScan()"
         self.scanInstance.stageAll()#progressCallback=self.frameManager.mainWindow.updateProjectExplorer())
         self.updateDisplay()
         self.frameManager.mainWindow.updateProjectExplorer()
+        self.makePing()
         
     def event_button_runScan(self, widget, data=None):
         print "Scan::event_button_runScan()"
         self.scanInstance.runScan()
         self.updateDisplay()
         self.frameManager.mainWindow.updateProjectExplorer()
+        self.makePing()
     
     def event_button_getData(self, widget, data=None):
         print "Scan::event_button_getData()"
         self.scanInstance.refreshAndDownload()
         self.frameManager.mainWindow.updateProjectExplorer()
+        self.makePing()
 
     def event_button_runAnalysis(self, widget, data=None):
         print "Scan::event_button_runAnalysis()"
         self.scanInstance.runAnalysis()
         self.frameManager.mainWindow.updateProjectExplorer()
+        self.makePing()
+    
     def event_comboChanged_geom(self, widget, data=None):
         print "Scan::event_comboChanged_geom()"
         #self.updateDisplay()

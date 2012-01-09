@@ -460,7 +460,11 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         for jobName, job in jobs:
             command = None
             if DataDict.boolconv(job["aprun"]):
-                nodesThis = int(math.ceil(int(job["tasks"])/float(self.CPUsPerNode)))
+                if job["tasksNode"] == "-1":
+                    nodesThis = int(math.ceil(int(job["tasks"])/float(self.CPUsPerNode)))
+                else:
+                    assert int(job["tasksNode"]) <= self.CPUsPerNode
+                    nodesThis = int(math.ceil(int(job["tasks"])/float(job["tasksNode"])))
                 if nodesThis > numNodes:
                     numNodes = nodesThis
                 def makeOption(optionName, key, optional):
@@ -546,7 +550,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         #Set default torque meta stuff
         torqueMeta = paramFile.dataDict.pushBack("TorqueMeta", DataDict())
         torqueMeta.pushBack("queue", "regular")
-        torqueMeta.pushBack("walltime", "00:30:00")
+        torqueMeta.pushBack("walltime", "00:59:00")
         torqueMeta.pushBack("repo", "m349")
         torqueMeta.pushBack("importVars", "True")
 

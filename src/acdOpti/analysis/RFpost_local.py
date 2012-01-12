@@ -65,7 +65,8 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         self.settings = self.__paramFile.dataDict["settings"]
     
     def runAnalysis(self):
-        print "RFpost_local::runAnalysis()"
+        print "RFpost_local::runAnalysis()"        
+        assert not self.lockdown
         
         #Generate the setup file
         self.lockdown = True

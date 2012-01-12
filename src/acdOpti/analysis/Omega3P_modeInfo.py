@@ -44,6 +44,15 @@ class Omega3P_modeInfo(AnalysisInterface):
 
         self.exportResults = self.__paramFile.dataDict["export"]
     
+        if "modes" in self.exportResults:
+            #Convert to new format
+            print "Converting to new format..."
+            modes = self.exportResults["modes"].copy()
+            self.exportResults.clear()
+            for (k,v) in modes:
+                self.exportResults.pushBack(k,v)
+            self.write()
+    
     def runAnalysis(self):
         finishedFolder = self.runConfig.finishedFolder
         if finishedFolder == None:
@@ -54,7 +63,7 @@ class Omega3P_modeInfo(AnalysisInterface):
         elif os.path.isfile(os.path.join(finishedFolder,"output")):
             outputFilePath = os.path.join(finishedFolder, "output")
         else:
-            self.exportResults.setValSingle("modes", "!!FILE_NOT_FOUND!!")
+            #self.exportResults.setValSingle("modes", "!!FILE_NOT_FOUND!!")
             raise Omega3P_modeInfo_exception("File '" + os.path.join(finishedFolder, "omega3p_results") + "' not found")
             
         outputFile = open(outputFilePath, "r")
@@ -91,19 +100,25 @@ class Omega3P_modeInfo(AnalysisInterface):
         dataParser = AcdOptiFileParser_KVC(data,"s")
         
         for (modeName, mode) in dataParser.dataDict:
-            print mode
+            #print mode
+            if "," in mode["TotalEnergy"]:
+                te = mode["TotalEnergy"]
+                teSplit = te.split(",")
+                mode.delItem("TotalEnergy")
+                mode.pushBack("TotalEnergyReal", teSplit[0].strip())
+                mode.pushBack("TotalEnergyImag", teSplit[1].strip())
             if "," in mode["Frequency"]:
                 freq = mode["Frequency"]
                 freqSplit = freq.split(",")
                 mode.delItem("Frequency")
                 mode.pushBack("FrequencyReal", freqSplit[0].strip())
                 mode.pushBack("FrequencyImag", freqSplit[1].strip())
-        self.exportResults.setValSingle("modes", dataParser.dataDict.copy())
+            self.exportResults.pushBack(modeName,mode.copy())
         
         self.lockdown = True
         self.write()
     def clearLockdown(self):
-        self.exportResults["modes"].clear()
+        self.exportResults.clear()
         self.lockdown = False
         self.write()
     
@@ -117,7 +132,7 @@ class Omega3P_modeInfo(AnalysisInterface):
         paramFile.dataDict.pushBack("fileID", "Analysis::Omega3P_modeInfo")
         paramFile.dataDict.pushBack("lockdown", "False")
         paramFile.dataDict.pushBack("export", DataDict())
-        paramFile.dataDict["export"].pushBack("modes", DataDict())
+        #paramFile.dataDict["export"].pushBack("modes", DataDict())
         paramFile.write()
 
 class Omega3P_modeInfo_exception(AcdOptiException):

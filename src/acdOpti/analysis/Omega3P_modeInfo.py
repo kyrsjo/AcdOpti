@@ -55,6 +55,7 @@ class Omega3P_modeInfo(AnalysisInterface):
             outputFilePath = os.path.join(finishedFolder, "output")
         else:
             self.exportResults.setValSingle("modes", "!!FILE_NOT_FOUND!!")
+            raise Omega3P_modeInfo_exception("File '" + os.path.join(finishedFolder, "omega3p_results") + "' not found")
             
         outputFile = open(outputFilePath, "r")
         #Find the lines with KVC syntax

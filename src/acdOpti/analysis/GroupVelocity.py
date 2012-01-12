@@ -55,9 +55,9 @@ class GroupVelocity(AnalysisInterface):
             raise GroupVelocityException("SurfaceID setting not understood")
         
         try:
-            RFpost   = self.runConfig.analysis[self.settings["RFpostName"]]
+            RFpost = self.runConfig.analysis[self.settings["RFpostName"]]
         except KeyError:
-            raise GroupVelocityException("Key for ModeInfoName not found")
+            raise GroupVelocityException("Key for RFpostName not found")
         if not RFpost.lockdown:
             RFpost.runAnalysis() 
         

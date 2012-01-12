@@ -25,7 +25,8 @@ from AcdOptiExceptions import AcdOptiException_scan_createFail,\
                               AcdOptiException_scan_generateRangeFail,\
                               AcdOptiException_scan_runFail,\
                               AcdOptiException_scan_refreshDownloadFail,\
-                              AcdOptiException_scan_analysisFail
+                              AcdOptiException_scan_analysisFail,\
+                              AcdOptiException_runConfig_stageError
 import os
 
 import numpy as np
@@ -212,7 +213,10 @@ class AcdOptiScan:
                 for rc in mesh.runConfigs.values():
                     if rc.status == "finished":
                         continue #In case of geom reuse
-                    rc.stage()
+                    try:
+                        rc.stage()
+                    except AcdOptiException_runConfig_stageError:
+                        print "Staging of rc failed - skipping to the next one."
                     if progressCallback != None:
                         print "AcdOptiScan::stageAll() : progressCallback()"
                         progressCallback()
@@ -229,8 +233,8 @@ class AcdOptiScan:
         for geom in self.slaveGeoms:
             for mesh in geom.meshInsts.values():
                 for rc in mesh.runConfigs.values():
-                    if rc.status == "finished":
-                        continue #In case of geom reuse
+                    if rc.status != "staged":
+                        continue #In case of geom reuse or nongenerated mesh'es
                     rc.upload()
                     rc.run()
                     
@@ -266,7 +270,8 @@ class AcdOptiScan:
                 for rc in mesh.runConfigs.values():
                     if rc.status.startswith("finished"):
                         for analysis in rc.analysis.values():
-                            analysis.runAnalysis()
+                            if not analysis.lockdown:
+                                analysis.runAnalysis()
     
     @staticmethod
     def createNew(folder):

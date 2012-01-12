@@ -118,6 +118,9 @@ class AnalysisInterface(object): #New-style class so that super() works
         elif dataDict["type"] == "RFpost_local":
             from RFpost_local import RFpost_local
             return RFpost_local(folder, name, runConfig)
+        elif dataDict["type"] == "GroupVelocity":
+            from GroupVelocity import GroupVelocity
+            return GroupVelocity(folder,name,runConfig)
         else:
             raise NotImplementedError("This shoudn't happen?!?")
     
@@ -126,7 +129,7 @@ class AnalysisInterface(object): #New-style class so that super() works
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost", "RFpost_local"]
+        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost", "RFpost_local", "GroupVelocity"]
     
     @staticmethod
     def createAndLoadAnalysis(type, runConfig, folder, name=None):
@@ -175,6 +178,10 @@ class AnalysisInterface(object): #New-style class so that super() works
             from RFpost_local import RFpost_local
             RFpost_local.createNew(folder, name)
             return RFpost_local(folder,name,runConfig)
+        elif type == "GroupVelocity":
+            from GroupVelocity import GroupVelocity
+            GroupVelocity.createNew(folder, name)
+            return GroupVelocity(folder, name, runConfig)
         else:
             raise AnalysisException_createFail("Unknown analysis type '" + type + "'")
     @staticmethod

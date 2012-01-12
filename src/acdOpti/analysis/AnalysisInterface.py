@@ -71,14 +71,14 @@ class AnalysisInterface(object): #New-style class so that super() works
         # - name: Name of the analysis
     
     @staticmethod
-    def getName(type,name=None):
+    def getName(anaType,name=None):
         """
         Gets the name of an analysis without cosntructing it
         """
-        if not type in AnalysisInterface.getTypes():
-            raise ValueError("Invalid type '" + type + "'")
+        if not anaType in AnalysisInterface.getTypes():
+            raise ValueError("Invalid type '" + anaType + "'")
         if name == None:
-            return type
+            return anaType
         else:
             return name
     
@@ -90,7 +90,7 @@ class AnalysisInterface(object): #New-style class so that super() works
         to load and return a specific analysis.
         """
         if not dataDict["type"] in AnalysisInterface.getTypes():
-            raise AnalysisException_loadFail("Type '" + type + "' is not valid")
+            raise AnalysisException_loadFail("Type '" + dataDict["type"] + "' is not valid")
         
         name = dataDict["name"]
         
@@ -132,58 +132,58 @@ class AnalysisInterface(object): #New-style class so that super() works
         return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost", "RFpost_local", "GroupVelocity"]
     
     @staticmethod
-    def createAndLoadAnalysis(type, runConfig, folder, name=None):
+    def createAndLoadAnalysis(anaType, runConfig, folder, name=None):
         """
-        Creates a new analysis of the specified type,
+        Creates a new analysis of the specified anaType,
         with common analysis folder given.
         If name is specified, use this name,
-        else use the default for this analysis type.
+        else use the default for this analysis anaType.
         
         The created analysis is then loaded and returned.
         
         raises AnalysisException_createFail if something goes wrong.  
         """
         
-        if not type in AnalysisInterface.getTypes():
-            raise AnalysisException_createFail("Type '" + type + "' is not valid")
+        if not anaType in AnalysisInterface.getTypes():
+            raise AnalysisException_createFail("Type '" + anaType + "' is not valid")
         
-        name = AnalysisInterface.getName(type, name)
+        name = AnalysisInterface.getName(anaType, name)
         if os.path.exists(os.path.join(folder, name)):
             raise AnalysisException_createFail("Analysis file already created?!?")
         
         import acdOpti.AcdOptiRunConfig
         assert isinstance(runConfig, acdOpti.AcdOptiRunConfig.AcdOptiRunConfig)
         
-        if type == "Dummy":
+        if anaType == "Dummy":
             from Dummy import Dummy
             Dummy.createNew(folder, name)
             return Dummy(folder, name, runConfig)
-        if type == "DummyInput":
+        if anaType == "DummyInput":
             from DummyInput import DummyInput
             DummyInput.createNew(folder, name)
             return DummyInput(folder, name, runConfig)
-        elif type == "FileList":
+        elif anaType == "FileList":
             from FileList import FileList
             FileList.createNew(folder,name)
             return FileList(folder,name,runConfig)
-        elif type == "Omega3P_modeInfo":
+        elif anaType == "Omega3P_modeInfo":
             from Omega3P_modeInfo import Omega3P_modeInfo
             Omega3P_modeInfo.createNew(folder, name)
             return Omega3P_modeInfo(folder,name,runConfig)
-        elif type == "RFpost":
+        elif anaType == "RFpost":
             from RFpost import RFpost
             RFpost.createNew(folder, name)
             return RFpost(folder, name, runConfig)
-        elif type == "RFpost_local":
+        elif anaType == "RFpost_local":
             from RFpost_local import RFpost_local
             RFpost_local.createNew(folder, name)
             return RFpost_local(folder,name,runConfig)
-        elif type == "GroupVelocity":
+        elif anaType == "GroupVelocity":
             from GroupVelocity import GroupVelocity
             GroupVelocity.createNew(folder, name)
             return GroupVelocity(folder, name, runConfig)
         else:
-            raise AnalysisException_createFail("Unknown analysis type '" + type + "'")
+            raise AnalysisException_createFail("Unknown analysis type '" + anaType + "'")
     @staticmethod
     def createNew(folder, name):
         """

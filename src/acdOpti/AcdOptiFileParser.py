@@ -245,6 +245,9 @@ class DataDict():
         return DataDictIter(self)
     def __len__(self):
         return self.length
+    def __contains__(self,item):
+        return item in self.keys
+    
 class DataDictIter:
     """
     Iterator for looping through a dataDict.

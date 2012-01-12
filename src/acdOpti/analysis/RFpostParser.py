@@ -59,7 +59,7 @@ class RFpostParser():
         
         #Filter through sections to find the interesting results
         retDict = DataDict()
-        retDict.pushBack("RoverQ", self.ParseRoverQ(sectionNamesList, sectionList))
+        retDict.pushBack("RoverQ", self.ParseRoverQ(sectionNamesList, sectionList,L))
         retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict,L)) #This depends on RoverQ's results, accessed through retDict
         
         return retDict
@@ -72,7 +72,7 @@ class RFpostParser():
                 ret.append(sectionList[i])
         return ret
     
-    def ParseRoverQ(self,sectionNamesList,sectionList):
+    def ParseRoverQ(self,sectionNamesList,sectionList,L=-1.0):
         "Parses RoverQ sections, returns a DataDict. Assumes there to be only one RoverQ."
         RoQsec =  self.__findMySections(sectionNamesList, sectionList, "RoverQ")
         if len(RoQsec) == 0:
@@ -106,6 +106,7 @@ class RFpostParser():
             ldic.pushBack("Vi", ls.group(4))
             ldic.pushBack("Vabs", ls.group(5))
             ldic.pushBack("RoQ", ls.group(6))
+            ldic.pushBack("RoQ_norm", str(float(ls.group(6))/L))
             retDict.pushBack("mode",ldic)
         
         return retDict
@@ -150,7 +151,7 @@ class RFpostParser():
                         for mode in RoQ.getVals("mode"):
                             if int(mode["ModeID"]) == int(modID):
                                 Vabs = float(mode["Vabs"])
-                        if Vabs != None:
+                        if Vabs != None and L != -1.0:
                             Ez_ave = Vabs / (L/1000)
                             modDict.pushBack("Ez_ave", str(Ez_ave))
                             modDict.pushBack("Emax_norm", str(float(Emax)/Ez_ave))

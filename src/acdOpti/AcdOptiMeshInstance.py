@@ -235,10 +235,12 @@ class AcdOptiMeshInstance:
 
         if badelems > 0:
             self.meshBad = True
+            self.write()
             raise AcdOptiException_meshInstance_generateFail("Mesh had ISOTEs -- not a good mesh! (mesh still generated)")
         else:
             self.meshBad = False
-        
+            self.write()
+            
         return notFound
     
     def addRunConfig(self,name,runnerType, solverTypes=None):

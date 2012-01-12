@@ -1255,7 +1255,7 @@ options
             type = string
             must = True
             single = True
-            default = fieldOnSurface_PBC_hiZ
+            default = fieldOnSurface
          }
          surfaceID
          {

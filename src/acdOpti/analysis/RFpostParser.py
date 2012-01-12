@@ -22,7 +22,7 @@ from acdOpti.AcdOptiFileParser import DataDict
 from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis, AcdOptiException_dataDict_getValsSingle
 
 import re
-redigits = r'-*\d+.\d+e[+-]\d+'
+redigits = r'-?\d+.\d+e[+-]\d+'
 
 class RFpostParser():
     """
@@ -61,6 +61,7 @@ class RFpostParser():
         retDict = DataDict()
         retDict.pushBack("RoverQ", self.ParseRoverQ(sectionNamesList, sectionList,L))
         retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict,L)) #This depends on RoverQ's results, accessed through retDict
+        retDict.pushBack("powerThroughSurface", self.ParsePowerThorughSurface(sectionNamesList, sectionList))
         
         return retDict
 
@@ -120,16 +121,16 @@ class RFpostParser():
         
         retDict = DataDict()
         
-        print mfosSec
+        #print mfosSec
         
         for sec in mfosSec:
             secDict = DataDict()
             surfID_match = re.match("surfaceID :[ ]*([0-9]*)", sec[1].strip())
-            print  sec[1].strip(), surfID_match.groups()
+            #print  sec[1].strip(), surfID_match.groups()
             surfID = surfID_match.group(1)
             secDict.pushBack("surfaceID", surfID)
             for i in xrange(2,len(sec)-1,3):
-                print "*****", i, sec[i], sec[i+1], sec[i+2]
+                #print "*****", i, sec[i], sec[i+1], sec[i+2]
                 modDict = DataDict()
     
                 modID_match = re.match("ModeID :[ ]*([0-9]*)", sec[i].strip())
@@ -164,6 +165,27 @@ class RFpostParser():
                 
                 secDict.pushBack("mode", modDict)
                 
+            retDict.pushBack("surf", secDict)
+        
+        return retDict
+
+    def ParsePowerThorughSurface(self,sectionNamesList,sectionList):
+        """
+        Parses 'powerThroughSurface' sections, returns a DataDict with one entry (another dataDict) for each section found.
+        """
+        ptsSects =  self.__findMySections(sectionNamesList, sectionList, "powerThroughSurface")
+        
+        retDict = DataDict()
+                
+        for sec in ptsSects:
+            secDict = DataDict()
+            secDict.pushBack("surfaceID", re.match(r"surfaceID\s*:\s*(\d+)",sec[1].strip()).group(1))
+            secDict.pushBack("ModeID", re.match(r"ModeID\s*:\s*(\d+)",sec[2].strip()).group(1))
+            
+            pow = re.match(r"Power\s*:\s*\(\s*("+redigits+r"),\s*("+redigits+r")\s*\)\s*\(W\)", sec[3].strip())
+            secDict.pushBack("Power_real", pow.group(1))
+            secDict.pushBack("Power_imag", pow.group(2))
+            
             retDict.pushBack("surf", secDict)
         
         return retDict

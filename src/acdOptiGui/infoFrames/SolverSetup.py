@@ -84,11 +84,11 @@ class SolverSetup(InfoFrameComponent):
         self.baseWidget.pack_start(self.__scrollWindow, expand=True)
     
         self.__buttonHBox = gtk.HBox()
-        self.__copyButton = gtk.Button("Copy current line")
+        self.__copyButton = gtk.Button("C_opy current line")
         self.__copyButton.connect("clicked", self.event_button_copy, None)
         self.__copyButton.set_sensitive(False)
         self.__buttonHBox.pack_start(self.__copyButton)
-        self.__delButton  = gtk.Button("Delete current line")
+        self.__delButton  = gtk.Button("_Delete current line")
         self.__delButton.connect("clicked", self.event_button_del, None)
         self.__delButton.set_sensitive(False)
         self.__buttonHBox.pack_start(self.__delButton)
@@ -97,7 +97,7 @@ class SolverSetup(InfoFrameComponent):
         
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
-        self.__closeButton = gtk.Button("Close")
+        self.__closeButton = gtk.Button("_Close")
         self.__closeButton.connect("clicked", self.event_button_close, None)
         self.baseWidget.pack_start(self.__closeButton,  expand=False)
         

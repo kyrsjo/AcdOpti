@@ -176,6 +176,7 @@ class MainWindow():
         self.__scrolledWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
         self.__scrolledWindow.add_with_viewport(self.__treeView)
         #self.__HBox2.pack_start(self.__scrolledWindow, False)
+        self.__scrolledWindow.set_size_request(300,-1)
         self.__HBox2.add1(self.__scrolledWindow)
         
         #self.__treeModel.append(None, ["Load a project to start",])

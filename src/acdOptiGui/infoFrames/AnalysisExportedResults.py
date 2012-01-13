@@ -75,12 +75,13 @@ class AnalysisExportedResults(InfoFrameComponent):
             
             self.__settingsScroll = gtk.ScrolledWindow()
             self.__settingsScroll.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
+            self.__settingsScroll.set_size_request(-1,125)
             self.__settingsScroll.add_with_viewport(self.__settingsView)
             
             self.baseWidget.pack_start(self.__settingsScroll, expand=False, padding=5)
         
         if self.analysis.localSolver != None:
-            self.__localSolverButton = gtk.Button("Setup local solver...")
+            self.__localSolverButton = gtk.Button("_Setup local solver...")
             self.__localSolverButton.connect("clicked", self.event_button_localSolver, None)
             self.baseWidget.pack_start(self.__localSolverButton, expand=False, padding=5)
         
@@ -104,7 +105,7 @@ class AnalysisExportedResults(InfoFrameComponent):
 
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
-        self.__lockdownRunButton = gtk.Button("Run analysis") #Updated in __updateGui()
+        self.__lockdownRunButton = gtk.Button("_Run analysis") #Updated in __updateGui()
         self.__lockdownRunButton.connect("clicked", self.event_button_lockdownRun, None)
         self.baseWidget.pack_start(self.__lockdownRunButton, expand=False)
 
@@ -131,9 +132,9 @@ class AnalysisExportedResults(InfoFrameComponent):
         
         #Button
         if self.analysis.lockdown:
-            self.__lockdownRunButton.set_label("Clear lockdown")
+            self.__lockdownRunButton.set_label("_Clear lockdown")
         else:
-            self.__lockdownRunButton.set_label("Run analysis")
+            self.__lockdownRunButton.set_label("_Run analysis")
         if self.analysis.runConfig.status == "finished":
             self.__lockdownRunButton.set_sensitive(True)
         else:

@@ -55,19 +55,19 @@ class GroupVelocity(AnalysisInterface):
         try:
             surfID = int(self.settings["SurfaceID"])
         except ValueError:
-            raise GroupVelocityException("SurfaceID setting not understood")
+            raise GroupVelocityException_runAna("SurfaceID setting not understood")
         
         try:
             RFpost = self.runConfig.analysis[self.settings["RFpostName"]]
         except KeyError:
-            raise GroupVelocityException("Key for RFpostName not found")
+            raise GroupVelocityException_runAna("Key for RFpostName not found")
         if not RFpost.lockdown:
             RFpost.runAnalysis() 
         
         try:
             ModeInfo = self.runConfig.analysis[self.settings["ModeInfoName"]] 
         except KeyError:
-            raise GroupVelocityException("Key for ModeInfoName not found")
+            raise GroupVelocityException_runAna("Key for ModeInfoName not found")
         if not ModeInfo.lockdown:
             ModeInfo.runAnalysis()
         
@@ -77,16 +77,16 @@ class GroupVelocity(AnalysisInterface):
         try:
             powerThroughSurface = RFpost.exportResults["powerThroughSurface"]
         except AcdOptiException_dataDict_getValsSingle:
-            raise GroupVelocityException("Couldn't find powerThroughSurface data")
+            raise GroupVelocityException_runAna("Couldn't find powerThroughSurface data")
         if len(powerThroughSurface) == 0:
-            raise GroupVelocityException("powerThroughSurface data empty")
+            raise GroupVelocityException_runAna("powerThroughSurface data empty")
         
         for (key, val) in powerThroughSurface:
             assert key == "surf"
             if val["surfaceID"] == str(surfID):
                 power = float(val["Power_real"])
         if power == None:
-            raise GroupVelocityException("Surface " + str(surfID) + " not found")
+            raise GroupVelocityException_runAna("Surface " + str(surfID) + " not found")
         
         #length = None
         length = float(RFpost.settings["L"])/1000.0 #mm->meters
@@ -94,13 +94,13 @@ class GroupVelocity(AnalysisInterface):
         energy = None
         modes = ModeInfo.exportResults.getVals("Mode")
         if len(modes) == 0:
-            raise GroupVelocityException("No mode found")
+            raise GroupVelocityException_runAna("No mode found")
         if "TotalEnergyReal" in modes[0]:
             energy = float(modes[0]["TotalEnergyReal"])
         elif "TotalEnergy" in modes[0]:
             energy = float(modes[0]["TotalEnergyReal"])
         else:
-            raise GroupVelocityException("Total energy not found")
+            raise GroupVelocityException_runAna("Total energy not found")
         assert energy != None
         
         #print "L =", length

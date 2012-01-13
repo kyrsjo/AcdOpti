@@ -18,7 +18,9 @@
 
 from AnalysisInterface import AnalysisInterface
 from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple
-from acdOpti.AcdOptiExceptions import AcdOptiException
+from acdOpti.AcdOptiExceptions import AcdOptiException,\
+                                      AcdOptiException_analysis,\
+                                      AcdOptiException_analysis_runAnalysis
 
 import os
 
@@ -88,5 +90,7 @@ class DummyInput(AnalysisInterface):
 #        newDummy = Dummy.createNew(folder, cloneFrom.name)
 #        return Dummy(folder,cloneFrom.name,newRunConfig)
 
-class DummyInputException(AcdOptiException):
-        pass
+class DummyInputException(AcdOptiException_analysis):
+    pass
+class DummyInputException_runAna(AcdOptiException_analysis_runAnalysis):
+    pass

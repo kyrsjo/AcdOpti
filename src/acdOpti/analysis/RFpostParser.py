@@ -19,7 +19,9 @@
 
 from acdOpti.AcdOptiFileParser import DataDict
 
-from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis, AcdOptiException_dataDict_getValsSingle
+from acdOpti.AcdOptiExceptions import AcdOptiException_analysis,\
+                                      AcdOptiException_analysis_runAnalysis,\
+                                      AcdOptiException_dataDict_getValsSingle
 
 import re
 redigits = r'-?\d+.\d+e[+-]\d+'
@@ -79,7 +81,7 @@ class RFpostParser():
         if len(RoQsec) == 0:
             return(DataDict())
         elif len(RoQsec) > 1:
-            raise RFpostException("More than one RoverQ section encountered in input file '" + self.fname + "'")
+            raise RFpostException_runAna("More than one RoverQ section encountered in input file '" + self.fname + "'")
         RoQsec = RoQsec[0]
         
         loi = [] #Lines of interest
@@ -106,6 +108,8 @@ class RFpostParser():
             ldic.pushBack("Vr", ls.group(3))
             ldic.pushBack("Vi", ls.group(4))
             ldic.pushBack("Vabs", ls.group(5))
+            if L != -1.0:
+                ldic.pushBack("Ez_ave", str(float(ldic["Vabs"])/(L/1000.0)))
             ldic.pushBack("RoQ", ls.group(6))
             ldic.pushBack("RoQ_norm", str(float(ls.group(6))/L))
             retDict.pushBack("mode",ldic)
@@ -148,17 +152,18 @@ class RFpostParser():
                 if retDataROQ != None:
                     try:
                         RoQ = retDataROQ["RoverQ"]
-                        Vabs = None
+                        Ez_ave = None
                         for mode in RoQ.getVals("mode"):
                             if int(mode["ModeID"]) == int(modID):
-                                Vabs = float(mode["Vabs"])
-                        if Vabs != None and L != -1.0:
-                            Ez_ave = Vabs / (L/1000)
+                                #Vabs = float(mode["Vabs"])
+                                assert Ez_ave == None
+                                Ez_ave = float(mode["Ez_ave"])
+                        if Ez_ave != None and L != -1.0:
                             modDict.pushBack("Ez_ave", str(Ez_ave))
                             modDict.pushBack("Emax_norm", str(float(Emax)/Ez_ave))
                             modDict.pushBack("Hmax_norm", str(float(Hmax)/Ez_ave))
                         else:
-                            print "Didn't find a good Vabs"
+                            print "Didn't find Ez_ave"
                     
                     except AcdOptiException_dataDict_getValsSingle:
                         print "No normalization found, skipping"
@@ -190,5 +195,7 @@ class RFpostParser():
         
         return retDict
 
-class RFpostException(AcdOptiException_analysis_runAnalysis):
+class RFpostException(AcdOptiException_analysis):
+    pass
+class RFpostException_runAna(AcdOptiException_analysis_runAnalysis):
     pass

@@ -18,7 +18,10 @@
 
 from AnalysisInterface import AnalysisInterface
 from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple
-from acdOpti.AcdOptiExceptions import AcdOptiException, AcdOptiException_dataDict_getValsSingle
+from acdOpti.AcdOptiExceptions import AcdOptiException,\
+                                      AcdOptiException_dataDict_getValsSingle,\
+                                      AcdOptiException_analysis,\
+                                      AcdOptiException_analysis_runAnalysis
 
 import os
 
@@ -136,5 +139,7 @@ class GroupVelocity(AnalysisInterface):
         
         paramFile.write()
 
-class GroupVelocityException(AcdOptiException):
-        pass
+class GroupVelocityException(AcdOptiException_analysis_runAnalysis):
+    pass
+class GroupVelocityException_runAna(AcdOptiException_analysis_runAnalysis):
+    pass

@@ -22,7 +22,7 @@ from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple, AcdOpt
 from acdOpti.AcdOptiSolverManager import AcdOptiSolverManager
 import acdOpti.AcdOptiAcdtoolWrapper as AcdOptiAcdtoolWrapper
 
-from RFpostParser import RFpostParser, RFpostException
+from RFpostParser import RFpostParser, RFpostException, RFpostException_runAna
 
 
 import os, shutil

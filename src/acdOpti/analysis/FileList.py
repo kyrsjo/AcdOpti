@@ -18,7 +18,9 @@
 
 from AnalysisInterface import AnalysisInterface
 from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple
-from acdOpti.AcdOptiExceptions import AcdOptiException
+from acdOpti.AcdOptiExceptions import AcdOptiException,\
+                                      AcdOptiException_analysis,\
+                                      AcdOptiException_analysis_runAnalysis
 
 import os
 
@@ -46,7 +48,7 @@ class FileList(AnalysisInterface):
     def runAnalysis(self):
         finishedFolder = self.runConfig.finishedFolder
         if finishedFolder == None:
-            raise FileListException("No data to analyse")
+            raise FileListException_runAna("No data to analyse")
         self.__recursiveDirList(self.exportResults["files"], finishedFolder)
         self.lockdown = True
         self.write()
@@ -85,9 +87,7 @@ class FileList(AnalysisInterface):
 #        newFileList = FileList.createNew(folder, cloneFrom.name)
 #        return FileList(folder,cloneFrom.name,newRunConfig)
     
-class FileListException(AcdOptiException):
-        pass
-    
-    
-    
-    
+class FileListException(AcdOptiException_analysis):
+    pass
+class FileListException_runAna(AcdOptiException_analysis_runAnalysis):
+    pass    

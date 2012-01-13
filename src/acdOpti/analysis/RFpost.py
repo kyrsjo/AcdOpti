@@ -23,6 +23,7 @@ from acdOpti.AcdOptiExceptions import AcdOptiException_dataDict_getValsSingle,\
                                       AcdOptiException_analysis_runAnalysis
 
 import os
+from acdOpti.analysis.RFpostParser import RFpostException_runAna
 
 class RFpost(AnalysisInterface, RFpostParser):
     """
@@ -50,10 +51,10 @@ class RFpost(AnalysisInterface, RFpostParser):
     
     def runAnalysis(self):
         if self.settings["RFpost_LogFileName"] == "":
-            raise RFpostException("Input file not set")
+            raise RFpostException_runAna("Input file not set")
         self.fname = fname = os.path.join(self.runConfig.finishedFolder, self.settings["RFpost_LogFileName"])
         if not os.path.isfile(fname):
-            raise RFpostException("Could not find input file '" + fname + "'")
+            raise RFpostException_runAna("Could not find input file '" + fname + "'")
         
         ifile = open(fname, 'r')
         fileData = ifile.read()

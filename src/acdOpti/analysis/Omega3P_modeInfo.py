@@ -19,7 +19,9 @@
 
 from AnalysisInterface import AnalysisInterface
 from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple, AcdOptiFileParser_KVC
-from acdOpti.AcdOptiExceptions import AcdOptiException
+from acdOpti.AcdOptiExceptions import AcdOptiException,\
+                                      AcdOptiException_analysis,\
+                                      AcdOptiException_analysis_runAnalysis
 
 import os
 
@@ -56,7 +58,7 @@ class Omega3P_modeInfo(AnalysisInterface):
     def runAnalysis(self):
         finishedFolder = self.runConfig.finishedFolder
         if finishedFolder == None:
-            raise Omega3P_modeInfo_exception("No data to analyze")
+            raise Omega3P_modeInfo_exception_runAna("No data to analyze")
         
         if os.path.isdir(os.path.join(finishedFolder, "omega3p_results")):
             outputFilePath = os.path.join(finishedFolder, "omega3p_results", "omega3p.out")
@@ -64,7 +66,7 @@ class Omega3P_modeInfo(AnalysisInterface):
             outputFilePath = os.path.join(finishedFolder, "output")
         else:
             #self.exportResults.setValSingle("modes", "!!FILE_NOT_FOUND!!")
-            raise Omega3P_modeInfo_exception("File '" + os.path.join(finishedFolder, "omega3p_results") + "' not found")
+            raise Omega3P_modeInfo_exception_runAna("File '" + os.path.join(finishedFolder, "omega3p_results") + "' not found")
             
         outputFile = open(outputFilePath, "r")
         #Find the lines with KVC syntax
@@ -135,5 +137,7 @@ class Omega3P_modeInfo(AnalysisInterface):
         #paramFile.dataDict["export"].pushBack("modes", DataDict())
         paramFile.write()
 
-class Omega3P_modeInfo_exception(AcdOptiException):
-        pass
+class Omega3P_modeInfo_exception(AcdOptiException_analysis):
+    pass
+class Omega3P_modeInfo_exception_runAna(AcdOptiException_analysis_runAnalysis):
+    pass

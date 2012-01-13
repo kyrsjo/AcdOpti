@@ -275,7 +275,7 @@ class AcdOptiScan:
                                 try:
                                     analysis.runAnalysis()
                                 except AcdOptiException_analysis_runAnalysis as e:
-                                    print "Error in analysis: '" + str(e.args) + "', skipping"
+                                    print "Error in analysis '" + analysis.instName + "': '" + str(e.args) + "', skipping!"
     @staticmethod
     def createNew(folder):
         #Construct the instance name from folder

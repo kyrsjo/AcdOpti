@@ -121,6 +121,9 @@ class AnalysisInterface(object): #New-style class so that super() works
         elif dataDict["type"] == "GroupVelocity":
             from GroupVelocity import GroupVelocity
             return GroupVelocity(folder,name,runConfig)
+        elif dataDict["type"] == "ScMax":
+            from ScMax import ScMax
+            return ScMax(folder, name, runConfig)
         else:
             raise NotImplementedError("This shoudn't happen?!?")
     
@@ -129,7 +132,7 @@ class AnalysisInterface(object): #New-style class so that super() works
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost", "RFpost_local", "GroupVelocity"]
+        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost", "RFpost_local", "GroupVelocity", "ScMax"]
     
     @staticmethod
     def createAndLoadAnalysis(anaType, runConfig, folder, name=None):
@@ -182,6 +185,10 @@ class AnalysisInterface(object): #New-style class so that super() works
             from GroupVelocity import GroupVelocity
             GroupVelocity.createNew(folder, name)
             return GroupVelocity(folder, name, runConfig)
+        elif anaType == "ScMax":
+            from ScMax import ScMax
+            ScMax.createNew(folder, name)
+            return ScMax(folder, name, runConfig)
         else:
             raise AnalysisException_createFail("Unknown analysis type '" + anaType + "'")
     @staticmethod

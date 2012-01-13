@@ -30,6 +30,7 @@ from AcdOptiExceptions import AcdOptiException_scan_createFail,\
 import os
 
 import numpy as np
+from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis
 
 class AcdOptiScan:
     """
@@ -271,8 +272,10 @@ class AcdOptiScan:
                     if rc.status.startswith("finished"):
                         for analysis in rc.analysis.values():
                             if not analysis.lockdown:
-                                analysis.runAnalysis()
-    
+                                try:
+                                    analysis.runAnalysis()
+                                except AcdOptiException_analysis_runAnalysis as e:
+                                    print "Error in analysis: '" + str(e.args) + "', skipping"
     @staticmethod
     def createNew(folder):
         #Construct the instance name from folder

@@ -50,6 +50,7 @@ class MeshInstance(InfoFrameComponent):
     __meshBadIndicator = None
     
     __clearLockdownButton = None
+    __cloneButton = None
     __runConfigButton = None
     __exportButton   = None
     __paraviewButton = None
@@ -76,10 +77,14 @@ class MeshInstance(InfoFrameComponent):
         
 
         self.__meshTemplateNameLabel = gtk.Label("Name of mesh template: \"" + self.meshInstance.meshTemplate.instName + "\"")
+        
         self.__meshBadIndicator = gtk.Label("Mesh bad (ISOTEs): " + str(self.meshInstance.meshBad))        
 
         self.__clearLockdownButton = gtk.Button(label="Clear lockdown")
         self.__clearLockdownButton.connect("clicked", self.event_button_clearLockdown, None)
+        
+        self.__cloneButton = gtk.Button(label="Clone this mesh instance (deep copy)")
+        self.__cloneButton.connect("clicked", self.event_button_clone, None)
         
         self.__runConfigButton = gtk.Button(label="Attach a runconfig...")
         self.__runConfigButton.connect("clicked", self.event_button_runConfig, None)
@@ -106,6 +111,7 @@ class MeshInstance(InfoFrameComponent):
         self.baseWidget.pack_start(self.__meshBadIndicator,      expand=False)
         self.baseWidget.pack_start(self.__scrolledWindow,        expand=True)
         self.baseWidget.pack_start(self.__clearLockdownButton,   expand=False)
+        self.baseWidget.pack_start(self.__cloneButton,           expand=False)
         self.baseWidget.pack_start(self.__runConfigButton,       expand=False)
         self.baseWidget.pack_start(self.__exportButton,          expand=False)
         self.baseWidget.pack_start(self.__paraviewButton,        expand=False)
@@ -412,3 +418,49 @@ class MeshInstance(InfoFrameComponent):
         print "MeshInstance::event_button_paraview()"
         paraViewPath = AcdOptiSettings().getSetting("paraviewpath")
         AcdOptiCommandWrapper.runProgramInFolder(paraViewPath, self.meshInstance.folder)
+        
+    def event_button_clone(self, widget, data=None):
+        print "MeshInstance::event_button_clone()"
+        #Ask for the new geomInstance name
+        dia = gtk.Dialog("Please enter name of new mesh instance:", self.getBaseWindow(),
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                          gtk.STOCK_OK, gtk.RESPONSE_OK))
+        dia.set_default_response(gtk.RESPONSE_OK)
+        nameBox = gtk.Entry()
+        nameBox.set_text(self.meshInstance.instName + "_clone")
+        
+        dia.vbox.pack_start(nameBox)
+        dia.show_all()
+        response = dia.run()
+        cloneName = nameBox.get_text()
+        dia.destroy()
+            
+        if response == gtk.RESPONSE_OK:
+            #Check for whitespace
+            if " " in cloneName:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name cannot contain whitespace")
+                mDia.run()
+                mDia.destroy()
+            elif cloneName == "":
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name cannot be empty")
+                mDia.run()
+                mDia.destroy()
+            elif cloneName in self.meshInstance.geometryInstance.meshInsts:
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name already in use")
+                mDia.run()
+                mDia.destroy()
+            #Everything OK: Try to attach the MeshInstance!
+            else:    
+                #self.geomInstance.template.cloneGeomInstance(self.geomInstance.instName, cloneName)        
+                self.meshInstance.geometryInstance.cloneMeshInstance(self.meshInstance,cloneName)
+                self.frameManager.mainWindow.updateProjectExplorer()

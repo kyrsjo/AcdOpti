@@ -334,6 +334,16 @@ class AcdOptiGeometryInstance():
         
         newInstance.write()
         return newInstance
+    def cloneMeshInstance(self, oldObject, newName):
+        """
+        Clone a mesh object into a new name and attach it to the current geometryInstance
+        """
+        print "AcdOptiGeometryInstance::cloneMeshInstance()"
+        assert not newName in self.meshInsts
+        
+        newMesh = AcdOptiMeshInstance.createNew_clone(os.path.join(self.folder, self.meshInstanceFolderName, newName), oldObject, self)
+        self.meshInsts[newName] = newMesh
+        self.write()
 
     #Object variables
     lockdown    = False #Write-protected?

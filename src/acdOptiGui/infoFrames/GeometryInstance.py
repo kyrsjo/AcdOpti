@@ -236,7 +236,7 @@ class GeometryInstance(InfoFrameComponent):
     def event_button_clone(self, widget,data=None):
         print "GeometryInstance::event_button_clone()"
         #Ask for the new geomInstance name
-        dia = gtk.Dialog("Please enter name of new mesh instance:", self.getBaseWindow(),
+        dia = gtk.Dialog("Please enter name of new geometry instance:", self.getBaseWindow(),
                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                          (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                           gtk.STOCK_OK, gtk.RESPONSE_OK))

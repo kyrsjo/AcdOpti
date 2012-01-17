@@ -17,11 +17,12 @@
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from AcdOptiExceptions import AcdOptiException_metaAnalysisCollection_loadFail
+from AcdOptiExceptions import AcdOptiException_metaAnalysisCollection_loadFail, AcdOptiException_metaAnalysis_anaFail
 from AcdOptiFileParser import AcdOptiFileParser_simple
 from AcdOptiMetaAnalysis import AcdOptiMetaAnalysis
 
 import os
+from acdOpti.AcdOptiExceptions import AcdOptiException_metaAnalysis_anaFail
 
 
 class AcdOptiMetaAnalysisCollection:
@@ -72,4 +73,15 @@ class AcdOptiMetaAnalysisCollection:
         paramFile = AcdOptiFileParser_simple(os.path.join(folder,"paramFile.set"), 'w')
         paramFile.dataDict.pushBack("fileID", "AcdOptiMetaAnalysisCollection")
         paramFile.write()
-        
+    
+    def rerunEverything(self):
+        """
+        Rerun all meta-analysis that IS in lockdown
+        """
+        for (anaName, ana) in self.metaAnalysis.iteritems():
+            if ana.lockdown:
+                ana.clearLockdown()
+                try:
+                    ana.runAnalysis()
+                except AcdOptiException_metaAnalysis_anaFail as e:
+                    print "Analysis '" + anaName + "' failed with error message '" + str(e.args) + "'. Skipping!"

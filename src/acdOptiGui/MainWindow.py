@@ -48,6 +48,7 @@ from infoFrames.MeshTemplate import MeshTemplate
 from infoFrames.AnalysisExportedResults import AnalysisExportedResults
 from infoFrames.Scan import Scan
 from infoFrames.MetaAnalysis import MetaAnalysis
+from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
 
 import os
 
@@ -526,7 +527,8 @@ class MainWindow():
             self.__infoFrame.push(Scan(self.__infoFrame, row[-1]))
         elif isinstance(row[-1], AcdOptiMetaAnalysisCollection):
             print "MainWindow::event_treeView_rowActivated() : Meta analysis collection"
-            self.__infoFrame.writeMessage("Meta-analysis collection")
+            #self.__infoFrame.writeMessage("Meta-analysis collection")
+            self.__infoFrame.push(MetaAnalysisCollection(self.__infoFrame, self.activeProject.metaAnalysisCollection))
         elif isinstance(row[-1], AcdOptiMetaAnalysis):
             print "MainWindow::event_treeView_rowActivated() : Meta analysis, name='" + row[0] + "'"
             self.__infoFrame.push(MetaAnalysis(self.__infoFrame,row[-1]))

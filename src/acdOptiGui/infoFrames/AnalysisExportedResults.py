@@ -92,10 +92,12 @@ class AnalysisExportedResults(InfoFrameComponent):
         
         self.__treeRenders.append(gtk.CellRendererText())
         self.__treeCols.append(gtk.TreeViewColumn("Key", self.__treeRenders[-1], text=0))
+        self.__treeRenders[-1].set_property("editable", True)
         self.__treeView.append_column(self.__treeCols[-1])
         
         self.__treeRenders.append(gtk.CellRendererText())
         self.__treeCols.append(gtk.TreeViewColumn("Value", self.__treeRenders[-1], text=1))
+        self.__treeRenders[-1].set_property("editable", True)
         self.__treeView.append_column(self.__treeCols[-1])
          
         self.__scrollWindow = gtk.ScrolledWindow()
@@ -162,6 +164,7 @@ class AnalysisExportedResults(InfoFrameComponent):
                 self.analysis.runAnalysis()
                 self.makePing()
             except AcdOptiException_analysis_runAnalysis as e:
+                self.makePing()
                 mDia = gtk.MessageDialog(self.getBaseWindow(),
                                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                          gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,

@@ -17,14 +17,15 @@
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from AcdOptiGeometryCollection     import AcdOptiGeometryCollection
-from AcdOptiMeshTemplateCollection import AcdOptiMeshTemplateCollection
-from AcdOptiScanCollection         import AcdOptiScanCollection
-from AcdOptiMetaAnalysisCollection import AcdOptiMetaAnalysisCollection
+from AcdOptiGeometryCollection      import AcdOptiGeometryCollection
+from AcdOptiMeshTemplateCollection  import AcdOptiMeshTemplateCollection
+from AcdOptiScanCollection          import AcdOptiScanCollection
+from AcdOptiMetaAnalysisCollection  import AcdOptiMetaAnalysisCollection
+from AcdOptiDataExtractorCollection import AcdOptiDataExtractorCollection
 #import AcdOptiGeometryInstance
 
 import AcdOptiFileParser
-from AcdOptiExceptions import *
+from AcdOptiExceptions import AcdOptiException_project_loadFail
 
 import os
 
@@ -42,11 +43,12 @@ class AcdOptiProject():
     projectDescription_file = None
     
     geomCollection          = None
-    meshTemplateCollection  = None
+    meshTemplateCollection  = None    
     
     scanCollection = None
     
     metaAnalysisCollection = None
+    dataExtractorCollection = None
     
     def __init__(self, projectFolder_name):
         """
@@ -86,6 +88,11 @@ class AcdOptiProject():
         #Load the metaAnalysisCollection
         self.metaAnalysisCollection = AcdOptiMetaAnalysisCollection(os.path.join(self.projectFolder_name, "metaAnalysis"), self)
         
+        #Load the dataExtractorCollection (create if missing)
+        if not os.path.isdir(os.path.join(self.projectFolder_name, "dataExtractor")):
+            AcdOptiDataExtractorCollection.createNew(os.path.join(self.projectFolder_name, "dataExtractor"))
+        self.dataExtractorCollection = AcdOptiDataExtractorCollection(os.path.join(self.projectFolder_name, "dataExtractor"), self)
+        
     #END __init__()
         
     @staticmethod
@@ -121,7 +128,7 @@ class AcdOptiProject():
         #Meta-analysis collection
         AcdOptiMetaAnalysisCollection.createNew(os.path.join(folder, "metaAnalysis"))
 
-    
-
+        #DataExtractor collection
+        AcdOptiDataExtractorCollection.createNew(os.path.join(folder, "dataExtractor"))
     
     

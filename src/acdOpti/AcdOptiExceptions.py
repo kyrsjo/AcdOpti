@@ -164,7 +164,21 @@ class AcdOptiException_metaAnalysis_loadFail(AcdOptiException):
     pass
 class AcdOptiException_metaAnalysis_anaFail(AcdOptiException):
     pass
+
+#AcdOptiAnalysis
 class AcdOptiException_analysis(AcdOptiException):
     pass
 class AcdOptiException_analysis_runAnalysis(AcdOptiException):
+    pass
+
+#AcdOptiDataExtractorCollection
+class AcdOptiException_dataExtractorCollection_createFail(AcdOptiException):
+    pass
+class AcdOptiException_dataExtractorCollection_loadFail(AcdOptiException):
+    pass
+
+#AcdOptiDataExtractor
+class AcdOptiException_dataExtractor_createFail(AcdOptiException):
+    pass
+class AcdOptiException_dataExtractor_loadFail(AcdOptiException):
     pass

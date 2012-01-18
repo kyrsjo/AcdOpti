@@ -18,13 +18,13 @@
 
 
 import pygtk
-from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis
 pygtk.require('2.0')
 import gtk
 
 from InfoFrameComponent import InfoFrameComponent
 from SolverSetup import SolverSetup
 
+from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis
 from acdOpti.analysis.AnalysisInterface import AnalysisInterface
 
 class AnalysisExportedResults(InfoFrameComponent):

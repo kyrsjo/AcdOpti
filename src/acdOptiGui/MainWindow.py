@@ -33,6 +33,8 @@ from acdOpti.AcdOptiScanCollection import AcdOptiScanCollection
 from acdOpti.AcdOptiScan import AcdOptiScan
 from acdOpti.AcdOptiMetaAnalysisCollection import AcdOptiMetaAnalysisCollection
 from acdOpti.AcdOptiMetaAnalysis import AcdOptiMetaAnalysis
+from acdOpti.AcdOptiDataExtractorCollection import AcdOptiDataExtractorCollection
+from acdOpti.AcdOptiDataExtractor import AcdOptiDataExtractor
 
 from acdOpti.AcdOptiExceptions import *
 from AcdOptiGuiExceptions import *
@@ -49,6 +51,7 @@ from infoFrames.AnalysisExportedResults import AnalysisExportedResults
 from infoFrames.Scan import Scan
 from infoFrames.MetaAnalysis import MetaAnalysis
 from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
+from infoFrames.DataExtractor import DataExtractor
 
 import os
 
@@ -61,7 +64,7 @@ class MainWindow():
     """
     
     #Fields: GUI components
-    window          = None
+    window            = None
     __VBox1           = None
     __HBox2           = None
     __infoFrame       = None
@@ -73,6 +76,7 @@ class MainWindow():
     __meshTemplateNewButton   = None
     __scanNewButton           = None
     __metaAnalysisNewButton   = None
+    __dataExtractorButton     = None
 
     __scrolledWindow  = None
     __treeModel       = None
@@ -142,6 +146,14 @@ class MainWindow():
         self.__metaAnalysisNewButton.set_sensitive(False)
         self.__toolbar.insert(self.__metaAnalysisNewButton, -1)
 
+        self.__dataExtractorButton = gtk.ToolButton(icon_widget=gtk.image_new_from_file(\
+                os.path.join(acdOptiGuiPath,"pix", "32x32", "system-search.png")), label="Add data extractor")
+        #self.__dataExtractorButton = gtk.ToolButton(label="Add data extractor")
+        #self.__dataExtractorButton.set_stock_id(gtk.STOCK_CONVERT)
+        self.__dataExtractorButton.connect("clicked", self.event_toolbutton_dataExtractor, None)
+        self.__dataExtractorButton.set_sensitive(False)
+        self.__toolbar.insert(self.__dataExtractorButton, -1)
+
         self.__VBox1.pack_start(self.__toolbar, False)
 
         #Sidebar/maindisplay HBox
@@ -153,6 +165,7 @@ class MainWindow():
         self.__meshIcon       = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "24x24", "mesh.png"))
         self.__geomIcon       = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "24x24", "geom.png"))
         self.__graphIcon      = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "16x16", "chart_curve.png"))
+        self.__deIcon         = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "16x16", "system-search.png"))
         
         # tree store stores object name, icon, background color, and the object itself
         self.__treeModel      = gtk.TreeStore(str, gtk.gdk.Pixbuf, str, object)
@@ -485,7 +498,59 @@ class MainWindow():
             #Response cancel or close
             else:
                 break
+    
+    def event_toolbutton_dataExtractor(self, widget, data=None):
+        print "event_toolbutton_dataExtractor()"
+        
+        name = ""
+        while True:
+            dia = gtk.Dialog("Please enter name of new data extractor :", self.window,
+                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                             (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                              gtk.STOCK_OK, gtk.RESPONSE_OK))
+            dia.set_default_response(gtk.RESPONSE_OK)
+            nameBox = gtk.Entry()
+            nameBox.set_text(name)
+            nameBox.show()
+            dia.vbox.pack_start(nameBox)
+            dia.show_all()
+    
+            response = dia.run()
+            name = nameBox.get_text()
+    
+            dia.destroy()
             
+            if response == gtk.RESPONSE_OK:
+                #Check for whitespace
+                print "got: \"" + name + "\""
+                if " " in name:
+                    mDia = gtk.MessageDialog(self.window,
+                                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                             gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                             "Name cannot contain whitespace")
+                    mDia.run()
+                    mDia.destroy()
+                #OK, try to make the folder..
+                else:
+                    try:
+                        self.activeProject.dataExtractorCollection.add(name)
+                        self.updateProjectExplorer()
+                        break #Done!
+                    except AcdOptiException_dataExtractor_createFail:
+                        #Nope, try again
+                        print "got: \"" + name + "\""
+                        mDia = gtk.MessageDialog(self.window,
+                                                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                                 gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                                 "Name already in use")
+                        mDia.run()
+                        mDia.destroy()
+                        continue;
+            #Response cancel or close
+            else:
+                break
+        
+        
     def event_treeView_rowActivated(self,widget,path,column,data=None):
         print "MainWindow::event_treeView_rowActivated(), path =", path
         
@@ -533,6 +598,14 @@ class MainWindow():
             print "MainWindow::event_treeView_rowActivated() : Meta analysis, name='" + row[0] + "'"
             self.__infoFrame.push(MetaAnalysis(self.__infoFrame,row[-1]))
             #self.__infoFrame.writeMessage("Meta-analysis, name='" + row[0] + "'='" + row[-1].instName)
+        elif isinstance(row[-1], AcdOptiDataExtractorCollection):
+            print "MainWindow::event_treeView_rowActivated() : Data extractor collection, name='" + row[0] + "'"
+            #self.__infoFrame.push(MetaAnalysis(self.__infoFrame,row[-1]))
+            self.__infoFrame.writeMessage("Data extractor collection, name='" + row[0] + "'")
+        elif isinstance(row[-1], AcdOptiDataExtractor):
+            print "MainWindow::event_treeView_rowActivated() : Data extractor, name='" + row[0] + "'"
+            self.__infoFrame.push(DataExtractor(self.__infoFrame,row[-1]))
+            #self.__infoFrame.writeMessage("Data extractor collection, name='" + row[0] + "'")
         else:
             raise NotImplementedError("Unknown class encountered in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
             
@@ -560,6 +633,7 @@ class MainWindow():
         self.__meshTemplateNewButton.set_sensitive(True)
         self.__scanNewButton.set_sensitive(True)
         self.__metaAnalysisNewButton.set_sensitive(True)
+        self.__dataExtractorButton.set_sensitive(True)
 
     def updateProjectExplorer(self):
         """
@@ -621,6 +695,17 @@ class MainWindow():
             else:
                 color = "yellow"
             maIter = self.__treeModel.append(macIter,[metAnaName, self.__graphIcon, color, metAna])
+
+        #DataExtractorCollection
+        decIter = self.__treeModel.append(projIter, ["DataExtractor", self.__graphIcon, "white", self.activeProject.dataExtractorCollection])
+        #DataExtractor
+        for (deName, de) in self.activeProject.dataExtractorCollection.dataExtractors.iteritems():
+            if de.lockdown:
+                color = "green"
+            else:
+                color = "yellow"
+            deIter = self.__treeModel.append(decIter,[deName, self.__deIcon, color, de])
+
 
         self.__treeView.expand_all()
 

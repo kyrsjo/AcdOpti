@@ -99,7 +99,7 @@ class MainWindow():
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title("AcdOpti GUI")
         self.window.set_border_width(5)
-        self.window.set_default_size(800,600)
+        self.window.set_default_size(1024,768)
         self.window.connect("delete_event", self.event_delete)
         
         #Top level VBox

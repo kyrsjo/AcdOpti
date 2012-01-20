@@ -94,6 +94,10 @@ class DataDict():
         
         return val
     
+    def getKeys(self):
+        "Returns a copy of the list of keys, including duplicates"
+        return list(self.keys)
+    
     def getVals(self, key):
         """
         Returns a list with all values associated with a given key,

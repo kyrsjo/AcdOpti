@@ -149,7 +149,7 @@ class RunConfig(InfoFrameComponent):
 
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
-        self.__addAnalysisButton = gtk.Button("Add analysis")
+        self.__addAnalysisButton = gtk.Button("_Add analysis")
         self.__addAnalysisButton.connect("clicked", self.event_button_addAnalysis, None)
         self.baseWidget.pack_start(self.__addAnalysisButton, expand=False)
         
@@ -367,6 +367,7 @@ class RunConfig(InfoFrameComponent):
             self.runConfig.upload()
         elif self.runConfig.status == "remote::unclean" or self.runConfig.status == "remote::finished":
             self.runConfig.getRemote()
+        self.makePing()
         self.updateDisplay()
     def event_button_refreshStatus(self, widget, data=None):
         print "RunConfig::event_button_refreshStatus()"
@@ -391,6 +392,7 @@ class RunConfig(InfoFrameComponent):
         if self.runConfig.status == "initialized":
             try:
                 self.runConfig.stage()
+                self.makePing()
             except AcdOptiException_runConfig_stageError as e:
                 mDia = gtk.MessageDialog(self.getBaseWindow(),
                                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -443,7 +445,7 @@ class RunConfig(InfoFrameComponent):
                 mDia = gtk.MessageDialog(self.getBaseWindow(),
                                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                          gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                         "Error when creating analysis:\n" + str(e.args()))
+                                         "Error when creating analysis:\n" + str(e.args))
                 mDia.run()
                 mDia.destroy()
             self.updateDisplay()

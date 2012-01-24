@@ -66,7 +66,7 @@ class AcdOptiDataExtractorCollection:
         
         anaFolder = os.path.join(self.folder, name)
         AcdOptiDataExtractor.createNew(anaFolder)
-        self.metaAnalysis[name] = AcdOptiDataExtractor(anaFolder, self) 
+        self.dataExtractors[name] = AcdOptiDataExtractor(anaFolder, self) 
     
     @staticmethod
     def createNew(folder):

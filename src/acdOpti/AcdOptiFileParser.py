@@ -175,6 +175,12 @@ class DataDict():
         self.vals[ii] = val
         return ret
     
+    def __setitem__(self,key,val):
+        """
+        Alias for setValSingle
+        """
+        self.setValSingle(key, val)
+    
     def clear(self):
         """
         Deletes all keys/values stored

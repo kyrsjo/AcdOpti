@@ -17,6 +17,7 @@
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
 from AcdOptiFileParser import AcdOptiFileParser_simple, DataDict
+from AcdOptiDataExtractorFilter import AcdOptiDataExtractorFilter
 from acdOpti.AcdOptiExceptions import AcdOptiException_dataExtractor_createFail,\
                                       AcdOptiException_dataExtractor_loadFail
 
@@ -27,7 +28,8 @@ class AcdOptiDataExtractor:
     This class extracts data from analysis, geoms etc.
     This is presented in a FLAT table.
     """
-    
+
+    instName = None    
     folder = None
     collection = None
     __paramfile = None
@@ -69,6 +71,7 @@ class AcdOptiDataExtractor:
         self.dataExtracted = []
         for (k,v) in self.__paramfile.dataDict["extractedData"]:
             assert k == "dataPoint"
+            assert isinstance(v,DataDict)
             pb = {}
             for (k,v) in v:
                 pb[k] = v
@@ -77,25 +80,79 @@ class AcdOptiDataExtractor:
             self.dataExtracted.append(pb)
         
         #Find, load, and attach filters 
-    
-    def runExtractor(self, folder, collection):
+        self.filters = []
+        for (k,v) in self.__paramfile.dataDict["filters"]:
+            self.filters.append(AcdOptiDataExtractorFilter.getFilterClass(k,v))
+        
+            
+    def runExtractor(self):
         assert self.lockdown == False
+        #self.dataExtracted = []
+        #self.keyNames = []
+        
+        #Reset filter counters
+        for f in self.filters:
+            f.numFiltered = 0
         
         #Run Loop over all runconfigs and for each extract one row in the table
-        #geomCollection = self.collection.project.... 
-        for geom in geomCollection.geomInstances.iterValues():
-            for mesh in geom.meshInsts.iterValues():
-                meshTemplateName = mesh.meshTemplate.instName
-                #for rc in runconfigs...:
-                    #Extract toward root
-                    #Extract from RC
+        geomCollection = self.collection.project.geomCollection
+        for geom in geomCollection.geomInstances.itervalues():
+            geomData = {}
+            geomOverrideList = geom.templateOverrides_getKeys()
+            for key in geomCollection.paramDefaults_getKeys():
+                geomKey = "GEOM."+key
+                if key in geomOverrideList:
+                    geomData[geomKey] = geom.templateOverrides_get(key)
+                else:
+                    geomData[geomKey] = geomCollection.paramDefaults_get(key)
+                if not geomKey in self.keyNames:
+                    self.keyNames.append(geomKey)
+            
+            for mesh in geom.meshInsts.itervalues():
+                meshData = {}
+                meshOverrideList = mesh.templateOverrides_getKeys()
+                for key in mesh.meshTemplate.paramDefaults_getKeys():
+                    meshKey = "MESH." + mesh.meshTemplate.instName + "." + key
+                    if key in meshOverrideList:
+                        meshData[meshKey] = mesh.templateOverrides_get(key)
+                    else:
+                        meshData[meshKey] = mesh.meshTemplate.paramDefaults_get(key)
+                    if not meshKey in self.keyNames:
+                        self.keyNames.append(meshKey)
+                    
+                for rc in mesh.runConfigs.itervalues():
+                    pb = {}
+                    #Extract toward root: Geom and mesh data
+                    pb.update(geomData)
+                    pb.update(meshData)
+                    
+                    #Extract data in RC
+                    #TODO
+                    
                     #Extract from analysis
-        
-        #Fill keyNames
-        
-        #Run filters
-        
+                    for (anaName,anaObj)  in rc.analysis.iteritems():
+                        #Recursively dig through keys in analysis
+                        def anaDigger(exportedDict,nameSoFar):
+                            keys = set(exportedDict.getKeys())
+                            for k in keys:
+                                vals = exportedDict.getVals(k)
+                                for vIdx in xrange(len(vals)):
+                                    anaKey = nameSoFar + k + "["+str(vIdx)+"]"
+                                    if type(vals[vIdx]) == str:
+                                        pb[anaKey] = vals[vIdx]
+                                        if not anaKey in self.keyNames:
+                                            self.keyNames.append(anaKey)
+                                    else:
+                                        anaDigger(vals[vIdx],anaKey+".")
+                        #END anaDigger
+                        anaDigger(anaObj.exportResults,"ANA." + anaName + ".")
+                    
+                    #Filter and store result
+                    if reduce(lambda a,b: a and b, map(lambda f: f.filterRow(pb), self.filters) + [True]):
+                        self.dataExtracted.append(pb)
+                        
         self.lockdown = True
+        self.write()
         
     
     def clearLockdown(self):
@@ -106,6 +163,25 @@ class AcdOptiDataExtractor:
     
     def write(self):
         self.__paramfile.dataDict.setValSingle("lockdown", str(self.lockdown))
+        
+        knfile = self.__paramfile.dataDict["keyNames"]
+        knfile.clear()
+        for kn in self.keyNames:
+            knfile.pushBack("keyName", kn)
+        
+        edfile = self.__paramfile.dataDict["extractedData"]
+        edfile.clear()
+        for row in self.dataExtracted:
+            rowDict = DataDict()
+            for (colKey,col) in row.iteritems():
+                rowDict.pushBack(colKey, col)
+            edfile.pushBack("dataPoint",rowDict)
+        
+        fifile = self.__paramfile.dataDict["filters"]
+        fifile.clear()
+        for f in self.filters:
+            f.settingsDict["numFiltered"] = str(f.numFiltered)
+            fifile.pushBack(f.filterType, f.settingsDict)
         
         self.__paramfile.write()
             
@@ -126,7 +202,9 @@ class AcdOptiDataExtractor:
         paramFile.dataDict.pushBack("instName", instName)
         
         paramFile.dataDict.pushBack("keyNames", DataDict())
-        paramFile.dataDict.pushBack("extractedData", DataDict()) #(key, value) = (x,y)
+        paramFile.dataDict.pushBack("extractedData", DataDict())
+        
+        paramFile.dataDict.pushBack("filters", DataDict())
         
         paramFile.dataDict.pushBack("lockdown", "False")
         

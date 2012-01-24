@@ -21,6 +21,8 @@ pygtk.require('2.0')
 import gtk
 
 from InfoFrameComponent import InfoFrameComponent
+from DataExtractorFilters import DataExtractorFilters
+
 from acdOpti.AcdOptiDataExtractor import AcdOptiDataExtractor
 
 class DataExtractor(InfoFrameComponent):
@@ -76,12 +78,53 @@ class DataExtractor(InfoFrameComponent):
     
     def __updateGui(self):
         if self.dataExtractor.lockdown:
+            #self.__filterButton.set_sensitive(False)
+            self.__exportButton.set_sensitive(True)
             self.__lockdownRunButton.set_label("_Clear lockdown")
+            
+            #Create the data view
+            numCols = len(self.dataExtractor.keyNames)
+            assert numCols > 0
+            #self.__dataModel = eval("gtk.ListStore(" + "str,"*(numCols-1) + "str)", globals(), locals())
+            self.__dataModel = gtk.ListStore(*[str]*numCols)
+            self.__dataView = gtk.TreeView(self.__dataModel)
+            
+            self.__dataRenders = []
+            self.__dataCols = []
+            
+            for (colName,idx) in zip(self.dataExtractor.keyNames,xrange(numCols)):
+                self.__dataRenders.append(gtk.CellRendererText())
+                self.__dataCols.append(gtk.TreeViewColumn(colName,self.__dataRenders[-1],text=idx))
+                self.__dataView.append_column(self.__dataCols[-1])
+            
+            self.__dataScroll.add(self.__dataView)
+            self.__dataView.show()
+            
+            #Populate the data view
+            for row in self.dataExtractor.dataExtracted:
+                rl = []
+                for colName in self.dataExtractor.keyNames:
+                    try:
+                        rl.append(str(row[colName]))
+                    except KeyError:
+                        rl.append("")
+                self.__dataModel.append(rl)
+            
         else:
+            self.__filterButton.set_sensitive(True)
+            self.__exportButton.set_sensitive(False)
             self.__lockdownRunButton.set_label("_Run")
+            
+            #Kill the data view
+            if self.__dataView != None: #Empty on first run
+                self.__dataScroll.remove(self.__dataView)
+                self.__dataView    = None
+                self.__dataModel   = None
+                self.__dataCols    = None
+                self.__dataRenders = None
     
     def event_button_filter(self,widget,data=None):
-        pass
+        self.frameManager.push(DataExtractorFilters(self.frameManager, self.dataExtractor,self.dataExtractor.lockdown))
     
     def event_button_addPlot(self,widget,data=None):
         pass
@@ -91,9 +134,9 @@ class DataExtractor(InfoFrameComponent):
     
     def event_button_lockdownRun(self,widget,data=None):
         if self.dataExtractor.lockdown:
-            pass
+            self.dataExtractor.clearLockdown()
         else:
-            pass
+            self.dataExtractor.runExtractor()
         
         self.__updateGui()
         

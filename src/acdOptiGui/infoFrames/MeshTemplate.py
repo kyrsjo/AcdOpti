@@ -134,7 +134,7 @@ class MeshTemplate(InfoFrameComponent):
             self.__tableWidget.resize(numEntries+2,3)
 
         #Create and attach the table entries
-        for (k,i) in zip(self.meshTemplate.paramDefaults_getKeys(),
+        for (k,i) in zip(sorted(self.meshTemplate.paramDefaults_getKeys()),
                          xrange(numEntries)):
             
             self.__labelCollection[k]=lab=gtk.Label(k)

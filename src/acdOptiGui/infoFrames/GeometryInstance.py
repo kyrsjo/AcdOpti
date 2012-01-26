@@ -136,7 +136,7 @@ class GeometryInstance(InfoFrameComponent):
             self.__checkCollection.clear()
         
         #Create and attach the table entries
-        for (k,i) in zip(self.geomInstance.template.paramDefaults_getKeys(),
+        for (k,i) in zip(sorted(self.geomInstance.template.paramDefaults_getKeys()),
                          xrange(numEntries)):
             
             self.__labelCollection[k]=lab=gtk.Label(k)

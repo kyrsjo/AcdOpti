@@ -155,7 +155,7 @@ class Scan(InfoFrameComponent):
         geomSelectedName = None
         if self.scanInstance.baseGeomInstance !=  None:
             geomSelectedName = self.scanInstance.baseGeomInstance.instName 
-        for geom in self.scanInstance.scanCollection.project.geomCollection.geomInstances.iterkeys():
+        for geom in sorted(self.scanInstance.scanCollection.project.geomCollection.geomInstances.iterkeys()):
             self.__geomCombo.append_text(geom)
             if geom == geomSelectedName:
                 self.__geomCombo.set_active(idx)

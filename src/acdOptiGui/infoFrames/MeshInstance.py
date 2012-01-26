@@ -159,7 +159,7 @@ class MeshInstance(InfoFrameComponent):
             self.__checkCollection.clear()
 
         #Create and attach the table entries
-        for (k,i) in zip(self.meshInstance.meshTemplate.paramDefaults_getKeys(),
+        for (k,i) in zip(sorted(self.meshInstance.meshTemplate.paramDefaults_getKeys()),
                          xrange(numEntries)):
             
             self.__labelCollection[k]=lab=gtk.Label(k)

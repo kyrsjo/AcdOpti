@@ -129,7 +129,7 @@ class GeometryCollection(InfoFrameComponent):
             self.__tableWidget.resize(numEntries+2,3)
 
         #Create and attach the table entries
-        for (k,i) in zip(self.geomCollection.paramDefaults_getKeys(),
+        for (k,i) in zip(sorted(self.geomCollection.paramDefaults_getKeys()),
                          xrange(numEntries)):
             
             self.__labelCollection[k]=lab=gtk.Label(k)

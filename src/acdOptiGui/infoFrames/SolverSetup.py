@@ -80,7 +80,7 @@ class SolverSetup(InfoFrameComponent):
     
         self.__scrollWindow = gtk.ScrolledWindow()
         self.__scrollWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
-        self.__scrollWindow.add_with_viewport(self.__dynamicTable)
+        self.__scrollWindow.add(self.__dynamicTable)
         self.baseWidget.pack_start(self.__scrollWindow, expand=True)
     
         self.__buttonHBox = gtk.HBox()

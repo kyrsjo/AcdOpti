@@ -76,7 +76,7 @@ class AnalysisExportedResults(InfoFrameComponent):
             self.__settingsScroll = gtk.ScrolledWindow()
             self.__settingsScroll.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
             self.__settingsScroll.set_size_request(-1,125)
-            self.__settingsScroll.add_with_viewport(self.__settingsView)
+            self.__settingsScroll.add(self.__settingsView)
             
             self.baseWidget.pack_start(self.__settingsScroll, expand=False, padding=5)
         
@@ -102,7 +102,7 @@ class AnalysisExportedResults(InfoFrameComponent):
          
         self.__scrollWindow = gtk.ScrolledWindow()
         self.__scrollWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
-        self.__scrollWindow.add_with_viewport(self.__treeView)
+        self.__scrollWindow.add(self.__treeView)
         self.baseWidget.pack_start(self.__scrollWindow, expand=True, padding=5)
 
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)

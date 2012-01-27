@@ -643,7 +643,7 @@ class MainWindow():
         color = "white"
         
         #Main project
-        projIter = self.__treeModel.append(None, [self.activeProject.projectName_name,\
+        projIter = self.__treeModel.append(None, ["Project info: " + self.activeProject.projectName_name,\
                                                   self.__treeView.render_icon(gtk.STOCK_OPEN, gtk.ICON_SIZE_MENU),\
                                                   "white", self.activeProject])
         
@@ -652,7 +652,7 @@ class MainWindow():
             color = "green"
         else:
             color = "yellow"
-        gcIter = self.__treeModel.append(projIter, ["Geometries", self.__geomIcon, color, self.activeProject.geomCollection])
+        gcIter = self.__treeModel.append(None, ["Geometries", self.__geomIcon, color, self.activeProject.geomCollection])
         
         #All geomInstances *not* belonging to a scanInstance
         geomColMap = {}
@@ -661,8 +661,10 @@ class MainWindow():
                 geomColMap[k] = v
         self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, gcIter)
 
+        self.__treeView.expand_row(self.__treeModel.get_path(gcIter),False)
+
         #Mesh template collection
-        mcIter = self.__treeModel.append(projIter, ["Mesh templates", self.__meshIcon, "white", self.activeProject.meshTemplateCollection])
+        mcIter = self.__treeModel.append(None, ["Mesh templates", self.__meshIcon, "white", self.activeProject.meshTemplateCollection])
         #Mesh templates
         for (mtName,mt) in self.activeProject.meshTemplateCollection.meshTemplates.iteritems():
             if mt.lockdown:
@@ -670,9 +672,11 @@ class MainWindow():
             else:
                 color = "yellow"
             mtIter = self.__treeModel.append(mcIter, [mtName, self.__meshIcon, color, mt])
+        self.__treeView.expand_row(self.__treeModel.get_path(mcIter),False)
+        
 
         #Scan collection
-        scIter = self.__treeModel.append(projIter, ["Scans", self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), "white", self.activeProject.scanCollection])
+        scIter = self.__treeModel.append(None, ["Scans", self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), "white", self.activeProject.scanCollection])
         #Scans
         for (scanName, scan) in self.activeProject.scanCollection.scans.iteritems():
             if scan.lockdown:
@@ -685,9 +689,10 @@ class MainWindow():
                 if scan in v.scanInstances:
                     geomColMap[k] = v
             self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, sIter)
+        self.__treeView.expand_row(self.__treeModel.get_path(scIter),False)
         
         #Meta-analysis-collection
-        macIter = self.__treeModel.append(projIter, ["Meta-analysis", self.__graphIcon, "white", self.activeProject.metaAnalysisCollection])
+        macIter = self.__treeModel.append(None, ["Meta-analysis", self.__graphIcon, "white", self.activeProject.metaAnalysisCollection])
         #Meta analysis
         for (metAnaName, metAna) in self.activeProject.metaAnalysisCollection.metaAnalysis.iteritems():
             if metAna.lockdown:
@@ -695,9 +700,11 @@ class MainWindow():
             else:
                 color = "yellow"
             maIter = self.__treeModel.append(macIter,[metAnaName, self.__graphIcon, color, metAna])
+        self.__treeView.expand_row(self.__treeModel.get_path(macIter),False)
+
 
         #DataExtractorCollection
-        decIter = self.__treeModel.append(projIter, ["DataExtractor", self.__graphIcon, "white", self.activeProject.dataExtractorCollection])
+        decIter = self.__treeModel.append(None, ["DataExtractor", self.__graphIcon, "white", self.activeProject.dataExtractorCollection])
         #DataExtractor
         for (deName, de) in self.activeProject.dataExtractorCollection.dataExtractors.iteritems():
             if de.lockdown:
@@ -705,9 +712,10 @@ class MainWindow():
             else:
                 color = "yellow"
             deIter = self.__treeModel.append(decIter,[deName, self.__deIcon, color, de])
+        self.__treeView.expand_row(self.__treeModel.get_path(decIter),False)
 
 
-        self.__treeView.expand_all()
+        #self.__treeView.expand_all()
 
     def __updateProjectExplorer_helper_geomInstancesWithChildren(self,geomInstancesMap,baseTreeIter):
         # GeomInstances
@@ -728,6 +736,7 @@ class MainWindow():
                 else:
                     color = "yellow"
                 miIter = self.__treeModel.append(giIter,[miName, self.__meshIcon, color, mi])
+                self.__treeView.expand_row(self.__treeModel.get_path(miIter),False)
 
                 # RunCollections
                 for (rcName, rc) in mi.runConfigs.iteritems():

@@ -685,7 +685,9 @@ class MainWindow():
             color = "yellow"
         gcIter = self.__searchIter(self.activeProject.geomCollection)
         if not gcIter:
-            gcIter = self.__treeModel.append(None, ["Geometries", self.__geomIcon, color, self.activeProject.geomCollection])  
+            gcIter = self.__treeModel.append(None, ["Geometries", self.__geomIcon, color, self.activeProject.geomCollection])
+        else:
+            self.__treeModel[gcIter][-2] = color  
         #All geomInstances *not* belonging to a scanInstance
         geomColMap = {}
         for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
@@ -705,8 +707,11 @@ class MainWindow():
                 color = "green"
             else:
                 color = "yellow"
-            if not self.__searchIter(mt,self.__treeModel.iter_children(mcIter)):
+            mtIter = self.__searchIter(mt,self.__treeModel.iter_children(mcIter))
+            if not mtIter:
                 self.__treeModel.append(mcIter, [mtName, self.__meshIcon, color, mt])
+            else:
+                self.__treeModel[mtIter][-2] = color
         if newProjectNow:
             self.__treeView.expand_row(self.__treeModel.get_path(mcIter),False)
         
@@ -723,6 +728,8 @@ class MainWindow():
             sIter = self.__searchIter(scan,self.__treeModel.iter_children(scIter))
             if not sIter:
                 sIter = self.__treeModel.append(scIter,[scanName, self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), color, scan])
+            else:
+                self.__treeModel[sIter][-2] = color
             geomColMap = {}
             for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
                 if scan in v.scanInstances:
@@ -735,6 +742,8 @@ class MainWindow():
         macIter = self.__searchIter(self.activeProject.metaAnalysisCollection)
         if not macIter:
             macIter = self.__treeModel.append(None, ["Meta-analysis", self.__graphIcon, "white", self.activeProject.metaAnalysisCollection])
+        else:
+            self.__treeModel[macIter][-2] = color
         #Meta analysis
         for (metAnaName, metAna) in self.activeProject.metaAnalysisCollection.metaAnalysis.iteritems():
             if metAna.lockdown:
@@ -744,6 +753,8 @@ class MainWindow():
             maIter = self.__searchIter(metAna, self.__treeModel.iter_children(macIter))
             if not maIter:
                 maIter = self.__treeModel.append(macIter,[metAnaName, self.__graphIcon, color, metAna])
+            else:
+                self.__treeModel[maIter][-2] = color
         if newProjectNow:
             self.__treeView.expand_row(self.__treeModel.get_path(macIter),False)
 
@@ -761,6 +772,8 @@ class MainWindow():
             deIter = self.__searchIter(de, self.__treeModel.iter_children(decIter))
             if not deIter:
                 deIter = self.__treeModel.append(decIter,[deName, self.__deIcon, color, de])
+            else:
+                self.__treeModel[deIter][-2] = color
         if newProjectNow:
             self.__treeView.expand_row(self.__treeModel.get_path(decIter),False)
 
@@ -776,6 +789,8 @@ class MainWindow():
             giIter = self.__searchIter(gi, self.__treeModel.iter_children(baseTreeIter))
             if not giIter:
                 giIter = self.__treeModel.append(baseTreeIter, [giName, self.__geomIcon, color, gi])
+            else:
+                self.__treeModel[giIter][-2] = color
 
             #  MeshInstances:
             for (miName, mi) in gi.meshInsts.iteritems():
@@ -789,7 +804,8 @@ class MainWindow():
                 miIter = self.__searchIter(mi, self.__treeModel.iter_children(giIter))
                 if not miIter:
                     miIter = self.__treeModel.append(giIter,[miName, self.__meshIcon, color, mi])
-                #self.__treeView.expand_row(self.__treeModel.get_path(miIter),False)
+                else:
+                    self.__treeModel[miIter][-2] = color
 
                 # RunCollections
                 for (rcName, rc) in mi.runConfigs.iteritems():
@@ -808,6 +824,8 @@ class MainWindow():
                     rcIter = self.__searchIter(rc, self.__treeModel.iter_children(miIter))
                     if not rcIter:
                         rcIter = self.__treeModel.append(miIter, [rcName, self.__treeView.render_icon(gtk.STOCK_PROPERTIES, gtk.ICON_SIZE_MENU), color, rc])
+                    else:
+                        self.__treeModel[rcIter][-2] = color
                     
                     #Analysis
                     for (anaName,ana) in rc.analysis.iteritems():
@@ -820,6 +838,8 @@ class MainWindow():
                         anaIter = self.__searchIter(ana, self.__treeModel.iter_children(rcIter))
                         if not anaIter:
                             anaIter = self.__treeModel.append(rcIter, [anaName, self.__treeView.render_icon(gtk.STOCK_INFO, gtk.ICON_SIZE_MENU), color, ana])
+                        else:
+                            self.__treeModel[anaIter][-2] = color
         
     
     def addMesh(self,name):

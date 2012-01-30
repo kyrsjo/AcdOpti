@@ -723,7 +723,6 @@ class MainWindow():
             sIter = self.__searchIter(scan,self.__treeModel.iter_children(scIter))
             if not sIter:
                 sIter = self.__treeModel.append(scIter,[scanName, self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), color, scan])
-            print "sITER = " + str(sIter)# + ", DATA = " + str(self.__treeModel[sIter])
             geomColMap = {}
             for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
                 if scan in v.scanInstances:

@@ -153,7 +153,39 @@ class AcdOptiDataExtractor:
                         
         self.lockdown = True
         self.write()
+    
+    def export(self,fname,useKeys=None):
+        """
+        Export the data as a CSV file suitable for import to R, spreadsheet etc.
+        The useKeys argument lets you specify which columns you want to use.
+        """
+        ofile = open(fname,"w")
+
+        if useKeys==None:
+            keys = self.keyNames
+        else:
+            keys = useKeys
+
+        #Write header
+        hline = ""
+        for k in keys:
+            hline += k + ", "
+        ofile.write(hline[:-2] + "\n")
         
+        #Data
+        for row in self.dataExtracted:
+            rline = ""
+            for k in keys:
+                try:
+                    #ofile.write(row[k] + ", ")
+                    rline += row[k] + ", "
+                except KeyError:
+                    #ofile.write(" , ")
+                    rline += ", "
+            #ofile.write("\n")
+            ofile.write(rline[:-2] + "\n")
+        
+        ofile.close()
     
     def clearLockdown(self):
         self.dataExtracted = []

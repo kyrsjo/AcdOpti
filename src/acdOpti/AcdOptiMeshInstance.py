@@ -162,12 +162,11 @@ class AcdOptiMeshInstance:
             if not os.path.isdir(dAbs):
                 #Skip files etc.
                 continue
-            try:
-                self.runConfigs[d] = \
-                    AcdOptiRunConfig(dAbs,self)
-            except AcdOptiException_runConfig_loadFail as e:
-                raise AcdOptiException_meshInstance_loadFail(\
-                    "Problem loading assumed runConfig folder \"" + d + "\"", e)
+            #try:
+            self.runConfigs[d] = AcdOptiRunConfig(dAbs,self)
+            #except AcdOptiException_runConfig_loadFail as e:
+            #    raise AcdOptiException_meshInstance_loadFail(\
+            #        "Problem loading assumed runConfig folder \"" + d + "\"", e)
         
     def generatePattern(self):
         """

@@ -105,11 +105,11 @@ class AcdOptiGeometryInstance():
             if not os.path.isdir(dAbs):
                 #Skip files etc.
                 continue
-            try:
-                self.meshInsts[d] = AcdOptiMeshInstance(dAbs, self, self.template.project.meshTemplateCollection)
-            except AcdOptiException_meshInstance_loadFail as e:
-                raise AcdOptiException_geomCollection_loadFail(\
-                    "Problem loading mesh instance \"" + dAbs + "\", got error \"" + str(e) + "\"")
+            #try:
+            self.meshInsts[d] = AcdOptiMeshInstance(dAbs, self, self.template.project.meshTemplateCollection)
+            #except AcdOptiException_meshInstance_loadFail as e:
+            #    raise AcdOptiException_geomCollection_loadFail(\
+            #        "Problem loading mesh instance \"" + dAbs + "\", got error \"" + str(e) + "\"")
         
         #Scan instance name
         #self.scanInstance_name = self.__paramFile.dataDict["scanInstance_name"]  

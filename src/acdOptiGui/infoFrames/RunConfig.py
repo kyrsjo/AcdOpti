@@ -132,7 +132,7 @@ class RunConfig(InfoFrameComponent):
         self.__statusButton.connect("clicked", self.event_button_refreshStatus, None)
         self.baseWidget.pack_start(self.__statusButton, expand=False)
 
-        stageRunCancelBox = gtk.HBox()
+        stageRunCancelBox = gtk.HBox(homogeneous=True)
         self.__stageOrLockdownButton = gtk.Button("Clear lockdown") #Refreshed by updateDisplay()
         self.__stageOrLockdownButton.connect("clicked", self.event_button_stageOrClearLockdown, None)
         stageRunCancelBox.pack_start(self.__stageOrLockdownButton)

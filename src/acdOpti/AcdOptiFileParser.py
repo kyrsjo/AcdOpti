@@ -29,6 +29,7 @@ import re
 
 #whitespace = (" ", "\n", "\t") #What is regarded as whitespace?
 
+parserPrint = False #Set this to True to print method names during execution
 parserDebug = False #Set this to True to print extra stuff for debugging, False to disable
 parserInfo  = False #Set this to True to print info-messages
 
@@ -304,7 +305,8 @@ class AcdOptiFileParser():
     dataDict = None
     
     def __init__(self,dataDict=None):
-        print "AcdOptiFileParser::__init__()"
+        if parserPrint:
+            print "AcdOptiFileParser::__init__()"
         """
         Baseclass does the same as children,
         but can't do file IO. This constructor
@@ -317,7 +319,8 @@ class AcdOptiFileParser():
         This functions is usefull for converting between formats.
         Also used for initializing the dataDict.
         """
-        print "AcdOptiFileParser::importDataDict()"
+        if parserPrint:
+            print "AcdOptiFileParser::importDataDict()"
         if self.dataDict == None:
             self.dataDict = DataDict()
         if dataDict_in != None:
@@ -330,7 +333,8 @@ class AcdOptiFileParser():
         If mode="w" or "rw", truncate and write to the specified file,
         else raise exception AcdOptiExceptions.AcdOptiException_fileParser_invalidMode
         """
-        print "AcdOptiFileParser::write()"
+        if parserPrint:
+            print "AcdOptiFileParser::write()"
         
         if self.mode != "w" and self.mode != "rw":
             raise AcdOptiException_fileParser_invalidMode(\
@@ -372,7 +376,8 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
     mode = None
     
     def __init__(self,data,mode):
-        print "AcdOptiFileParser_simple::__init__()"
+        if parserPrint:
+            print "AcdOptiFileParser_simple::__init__()"
         self.mode = mode
         
         if mode == "s":
@@ -402,7 +407,8 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         Creates and returns a string in the "simple" syntax
         in the same format as interpreted by parseString
         """
-        print "AcdOptiFileParser_simple::__repr__()"
+        if parserPrint:
+            print "AcdOptiFileParser_simple::__repr__()"
         return AcdOptiFileParser_simple.repr_lifter(self.dataDict)
             
 
@@ -412,7 +418,8 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         """
         Combines preprocess() and dictify() to generate a single DataDict.
         """
-        print "AcdOptiFileParser_simple::parse()"
+        if parserPrint:
+            print "AcdOptiFileParser_simple::parse()"
         tokenLines = AcdOptiFileParser_simple.preprocess(str_in)
         if parserDebug:
             AcdOptiFileParser_simple.tokenLinesPrettyPrint(tokenLines)
@@ -424,7 +431,8 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
     
     @staticmethod
     def tokenLinesPrettyPrint(tokenLines):
-        print "AcdOptiFileParser_simple::tokenLinesPrettyPrint()"
+        if parserPrint:
+            print "AcdOptiFileParser_simple::tokenLinesPrettyPrint()"
         print '"""'
         for idx in xrange(len(tokenLines)):
             print idx, "\t:\t", tokenLines[idx]
@@ -448,7 +456,8 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         Example2: "key{" and "key\n{" is returned as ["key", "{"]
         Example3: "}" is returned as ["}"]    
         """
-        print "AcdOptiFileParser_simple::preprocess()"
+        if parserPrint:
+            print "AcdOptiFileParser_simple::preprocess()"
         
         #Strip comments, leading/trailing whitespace, and blank/comment lines
         str_in_strippedlines = []
@@ -594,7 +603,8 @@ class AcdOptiFileParser_simple(AcdOptiFileParser):
         split into a separate function in order to be able to use it
         from *_Lua and *_KVC modules
         """
-        print "AcdOptiFileParser_simple::repr_lifter()"
+        if parserPrint:
+            print "AcdOptiFileParser_simple::repr_lifter()"
     
         retrs = ""
         d = 0; #Which depth are we operating in
@@ -686,7 +696,8 @@ class AcdOptiFileParser_KVC(AcdOptiFileParser):
     }
     """
     def __init__(self,data,mode):
-        print "AcdOptiFileParser_KVC::__init__(), mode=", mode
+        if parserPrint:
+            print "AcdOptiFileParser_KVC::__init__(), mode=", mode
         self.mode = mode
         
         if mode == "s":
@@ -712,7 +723,8 @@ class AcdOptiFileParser_KVC(AcdOptiFileParser):
             raise AcdOptiException_fileParser_invalidMode
     
     def __repr__(self):
-        print "AcdOptiFileParser_KVC::__repr__()"
+        if parserPrint:
+            print "AcdOptiFileParser_KVC::__repr__()"
         simpleRepr = AcdOptiFileParser_simple.repr_lifter(self.dataDict)
         return AcdOptiFileParser_KVC.changeFromSimple(simpleRepr)
         

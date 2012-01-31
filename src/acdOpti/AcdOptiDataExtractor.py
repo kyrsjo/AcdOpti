@@ -94,10 +94,17 @@ class AcdOptiDataExtractor:
         for f in self.filters:
             f.numFiltered = 0
         
+        self.keyNames.append("META.GeomInstName")
+        self.keyNames.append("META.MeshInstName")
+        self.keyNames.append("META.rcInstName")
+        
         #Run Loop over all runconfigs and for each extract one row in the table
         geomCollection = self.collection.project.geomCollection
         for geom in geomCollection.geomInstances.itervalues():
             geomData = {}
+
+            geomData["META.GeomInstName"] = geom.instName
+
             geomOverrideList = geom.templateOverrides_getKeys()
             for key in geomCollection.paramDefaults_getKeys():
                 geomKey = "GEOM."+key
@@ -110,6 +117,9 @@ class AcdOptiDataExtractor:
             
             for mesh in geom.meshInsts.itervalues():
                 meshData = {}
+                
+                meshData["META.MeshInstName"] = mesh.instName
+
                 meshOverrideList = mesh.templateOverrides_getKeys()
                 for key in mesh.meshTemplate.paramDefaults_getKeys():
                     meshKey = "MESH." + mesh.meshTemplate.instName + "." + key
@@ -122,6 +132,9 @@ class AcdOptiDataExtractor:
                     
                 for rc in mesh.runConfigs.itervalues():
                     pb = {}
+                    
+                    pb["META.rcInstName"] = rc.instName
+                                    
                     #Extract toward root: Geom and mesh data
                     pb.update(geomData)
                     pb.update(meshData)

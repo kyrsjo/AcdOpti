@@ -95,8 +95,18 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         postFile.write()
         
         #Run AcdTool!
-        AcdOptiAcdtoolWrapper.rfPost("rfPost.in", os.path.join(self.folder, self.instName))
+        try:
+            AcdOptiAcdtoolWrapper.rfPost("rfPost.in", os.path.join(self.folder, self.instName))
+        except:
+            self.localSolver.metaSetup['RFField']['children']['ResultDir'].setValSingle("value", origResultDir)
+            self.localSolver.write()
         
+            shutil.copy(os.path.join(self.folder, self.instName, "postprocess.in.bak"),\
+                        os.path.join(dataPath2, "VECTOR", "postprocess.in"))
+            os.unlink(dataPath)
+            
+            raise
+
         #Restore stuff
         self.localSolver.metaSetup['RFField']['children']['ResultDir'].setValSingle("value", origResultDir)
         self.localSolver.write()

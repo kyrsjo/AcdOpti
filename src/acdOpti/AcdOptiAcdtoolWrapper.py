@@ -116,3 +116,22 @@ def rfPost(inputFileName, folder):
     
     print acdoutput
     print "Done."
+
+def eigentomode(jobname, folder):
+    """
+    Runs acdtool postprocess eigentomode <jobname>
+    """
+    
+    initAcdTool()
+    
+    cmdline = acdtoolpath + " postprocess eigentomode " + jobname
+    print "AcdOptiToolWrapper.rfPost(): Running command '%s' -- please wait for result..." % cmdline
+    cwd = os.getcwd()
+    os.chdir(folder)
+    try:
+        acdoutput = subprocess.check_output(cmdline, bufsize=-1, shell=True) #Warning: Insecure mechanism (shell=True)
+    finally:
+        os.chdir(cwd)
+    
+    print acdoutput
+    print "Done."

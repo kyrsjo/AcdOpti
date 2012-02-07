@@ -130,8 +130,8 @@ class DataExtractor(InfoFrameComponent):
         pass
     
     def event_button_export(self,widget,data=None):
-        self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv", ["GEOM.idw", "GEOM.eow", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].Hmax_norm[0]"])
-        self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellDataRaw.csv")
+        #self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv", ["GEOM.idw", "GEOM.eow", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].Hmax_norm[0]"])
+        self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv")
     
     def event_button_lockdownRun(self,widget,data=None):
         if self.dataExtractor.lockdown:

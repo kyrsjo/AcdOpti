@@ -64,7 +64,17 @@ install_exception_hook()
 ## END exception hook
 ##
 
-mainWindow = MainWindow()
+import sys, os
+
+if len(sys.argv) > 1:
+    loadDir = sys.argv[1]
+    if os.path.isdir(loadDir):
+        mainWindow = MainWindow(loadDir)
+    else:
+        print "Usage: acdOptiGui.py <loadDir>"
+        exit()
+else:
+    mainWindow = MainWindow()
 
 gtk.main()
 

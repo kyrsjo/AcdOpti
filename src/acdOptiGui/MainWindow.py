@@ -17,9 +17,9 @@
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pygtk #@UnresolvedImport
+import pygtk 
 pygtk.require('2.0')
-import gtk #@UnresolvedImport
+import gtk 
 
 from acdOpti.AcdOptiProject import AcdOptiProject
 from acdOpti.AcdOptiGeometryCollection import AcdOptiGeometryCollection
@@ -67,6 +67,7 @@ class MainWindow():
     window            = None
     __VBox1           = None
     __HBox2           = None
+    __VBox3           = None
     __infoFrame       = None
     
     __toolbar                 = None
@@ -85,16 +86,19 @@ class MainWindow():
     __cellRender      = None
     __cellRenderIcon  = None
 
+    __expandTreeButton = None
+
     __meshIcon  = None
     __geomIcon  = None
     __graphIcon = None
 
     #Fields: Logic
     activeProject = None
+    __hasExpanded = False
 
 
     #Methods
-    def __init__(self):
+    def __init__(self, loadDir = None):
         #Setup the main window
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title("AcdOpti GUI")
@@ -160,6 +164,7 @@ class MainWindow():
         #self.__HBox2 = gtk.HBox(False, 5)
         self.__HBox2 = gtk.HPaned()
         self.__VBox1.pack_start(self.__HBox2)
+        self.__VBox3 = gtk.VBox()
         
         #Tree view in left part of screen
         self.__meshIcon       = gtk.gdk.pixbuf_new_from_file(os.path.join(acdOptiGuiPath, "pix", "24x24", "mesh.png"))
@@ -188,10 +193,16 @@ class MainWindow():
 
         self.__scrolledWindow = gtk.ScrolledWindow()
         self.__scrolledWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
-        self.__scrolledWindow.add_with_viewport(self.__treeView)
+        self.__scrolledWindow.add(self.__treeView)
         #self.__HBox2.pack_start(self.__scrolledWindow, False)
         self.__scrolledWindow.set_size_request(300,-1)
-        self.__HBox2.add1(self.__scrolledWindow)
+        self.__VBox3.pack_start(self.__scrolledWindow, expand=True)
+        #self.__HBox2.add1(self.__scrolledWindow)
+        self.__HBox2.add1(self.__VBox3)
+        
+        self.__expandTreeButton = gtk.Button("Expand tree")
+        self.__expandTreeButton.connect("clicked", self.event_button_expand, None)
+        self.__VBox3.pack_start(self.__expandTreeButton, expand=False)
         
         #self.__treeModel.append(None, ["Load a project to start",])
         
@@ -203,8 +214,9 @@ class MainWindow():
 
         self.window.show_all()
 
-        #Lazy me...
-        #self.loadProject("../pillbox")
+        if loadDir != None:
+            self.loadProject(loadDir)
+
     #END __init__()
 
     def event_delete(self, widget, event, data=None):
@@ -549,8 +561,17 @@ class MainWindow():
             #Response cancel or close
             else:
                 break
-        
-        
+    
+    def event_button_expand(self, widget, data=None):
+        if self.__hasExpanded:
+            self.__treeView.collapse_all()
+            self.__expandTreeButton.set_label("Expand tree")
+            self.__hasExpanded = False
+        else:
+            self.__treeView.expand_all()
+            self.__expandTreeButton.set_label("Collapse tree")
+            self.__hasExpanded = True
+
     def event_treeView_rowActivated(self,widget,path,column,data=None):
         print "MainWindow::event_treeView_rowActivated(), path =", path
         
@@ -777,7 +798,6 @@ class MainWindow():
         if newProjectNow:
             self.__treeView.expand_row(self.__treeModel.get_path(decIter),False)
 
-        #self.__treeView.expand_all()
 
     def __updateProjectExplorer_helper_geomInstancesWithChildren(self,geomInstancesMap,baseTreeIter):
         # GeomInstances

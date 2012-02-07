@@ -359,6 +359,7 @@ class GeometryInstance(InfoFrameComponent):
         try:
             self.geomInstance.generateGeometry()
         except AcdOptiException_cubitTemplateFile_CUBITerror as e:
+            self.makePing()
             md = gtk.MessageDialog(self.getBaseWindow(),
                                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                                    gtk.BUTTONS_CLOSE, "Error during execution of CUBIT script, offending command:\n" + str(e.args[2]))

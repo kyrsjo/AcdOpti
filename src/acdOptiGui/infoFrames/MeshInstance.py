@@ -305,12 +305,14 @@ class MeshInstance(InfoFrameComponent):
         try:
             self.meshInstance.generateMesh()
         except AcdOptiException_cubitTemplateFile_CUBITerror as e:
+            self.makePing()
             md = gtk.MessageDialog(self.getBaseWindow(),
                                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                                    gtk.BUTTONS_CLOSE, "Error during execution of CUBIT script, offending command:\n" + str(e.args[2]))
             md.run()
             md.destroy()
         except AcdOptiException_meshInstance_generateFail as e:
+            self.makePing()
             md = gtk.MessageDialog(self.getBaseWindow(),
                                    gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
                                    gtk.BUTTONS_CLOSE, "There was a problem generating the mesh:\n" + str(e.args[0]))

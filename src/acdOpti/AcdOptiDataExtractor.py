@@ -95,6 +95,7 @@ class AcdOptiDataExtractor:
             f.numFiltered = 0
         
         self.keyNames.append("META.GeomInstName")
+        self.keyNames.append("META.ScanInstNames")
         self.keyNames.append("META.MeshInstName")
         self.keyNames.append("META.rcInstName")
         
@@ -104,7 +105,12 @@ class AcdOptiDataExtractor:
             geomData = {}
 
             geomData["META.GeomInstName"] = geom.instName
-
+            if len(geom.scanInstances) > 0:
+                siString = ""
+                for si in geom.scanInstances:
+                    siString += si.instName + " "
+                geomData["META.ScanInstNames"] = siString[:-1]
+                
             geomOverrideList = geom.templateOverrides_getKeys()
             for key in geomCollection.paramDefaults_getKeys():
                 geomKey = "GEOM."+key
@@ -163,7 +169,22 @@ class AcdOptiDataExtractor:
                     #Filter and store result
                     if reduce(lambda a,b: a and b, map(lambda f: f.filterRow(pb), self.filters) + [True]):
                         self.dataExtracted.append(pb)
-                        
+        
+        #Sort keyName, first as as {META < GEOM < MESH < ANA}, then alphabetically after the first "." (but sort commands must be reversed)
+        def sort1(s):
+            if s.startswith("META."):
+                return 1
+            elif s.startswith("GEOM."):
+                return 2
+            elif s.startswith("MESH."):
+                return 3
+            elif s.startswith("ANA."):
+                return 4
+            else:
+                raise KeyError
+        self.keyNames.sort(key=lambda s: s.split(".",1)[1])
+        self.keyNames.sort(key=sort1)
+                  
         self.lockdown = True
         self.write()
     

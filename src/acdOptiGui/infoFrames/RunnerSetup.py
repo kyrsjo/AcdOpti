@@ -149,7 +149,7 @@ class RunnerSetup_Hopper(InfoFrameComponent):
         
         self.__scrollWindow = gtk.ScrolledWindow()
         self.__scrollWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
-        self.__scrollWindow.add_with_viewport(self.__tasksList)
+        self.__scrollWindow.add(self.__tasksList)
         self.baseWidget.pack_start(self.__scrollWindow, expand=True)
         
         self.__populateTasksList()
@@ -159,10 +159,10 @@ class RunnerSetup_Hopper(InfoFrameComponent):
         self.__tasksMoveUpButton = gtk.Button("Move entry up")
         self.__tasksButtonsBox.pack_start(self.__tasksMoveUpButton)
         self.__tasksMoveUpButton.connect("clicked", self.event_button_moveUp, None)
-        self.__tasksAddButton = gtk.Button("Add new task")
+        self.__tasksAddButton = gtk.Button("_Add new task")
         self.__tasksButtonsBox.pack_start(self.__tasksAddButton)
         self.__tasksAddButton.connect("clicked", self.event_button_add, None)
-        self.__tasksDelButton = gtk.Button("Delete task")
+        self.__tasksDelButton = gtk.Button("_Delete task")
         self.__tasksButtonsBox.pack_start(self.__tasksDelButton)
         self.__tasksDelButton.connect("clicked", self.event_button_del, None)
         self.__tasksMoveDownButton = gtk.Button("Move entry down")
@@ -172,7 +172,7 @@ class RunnerSetup_Hopper(InfoFrameComponent):
         self.baseWidget.pack_start(self.__tasksButtonsBox, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False,padding=10)
-        self.__closeButton = gtk.Button("Close")
+        self.__closeButton = gtk.Button("_Close")
         self.__closeButton.connect("clicked", self.event_button_close, None)
         self.baseWidget.pack_start(self.__closeButton, expand=False)
         

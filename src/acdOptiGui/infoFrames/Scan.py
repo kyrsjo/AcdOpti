@@ -53,6 +53,14 @@ class Scan(InfoFrameComponent):
     __rangeStepEntry = None
     __previewRangeButton = None
     
+    __predictTable = None
+    __predictVariableEntry = None
+    __predictTargetEntry = None
+    __fitDisplays = None
+    __fitButton = None
+    __createPointButton = None
+    
+    
     __createScanButton = None
     __stageScanButton = None
     __runScanButton = None
@@ -103,7 +111,47 @@ class Scan(InfoFrameComponent):
         self.__previewRangeButton.connect("clicked", self.event_button_previewRange, None)
         self.baseWidget.pack_start(self.__previewRangeButton, expand=False)
         
-        self.baseWidget.pack_start(gtk.HSeparator(), expand=True, padding=10) #Take up space!
+        self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
+        
+        #Value prediction
+        self.baseWidget.pack_start(gtk.Label("Value prediction"))
+        self.__predictTable = gtk.Table(rows=6,columns=2,homogeneous=False)
+        self.__predictTable.attach(gtk.Label("Analysis variable:"),0,1,0,1, xoptions=gtk.FILL)
+        self.__predictVariableEntry = gtk.Entry()
+        self.__predictTable.attach(self.__predictVariableEntry,1,2,0,1, xoptions=gtk.FILL|gtk.EXPAND)
+        self.__predictTable.attach(gtk.Label("Target value:"),0,1,1,2, xoptions=gtk.FILL)
+        self.__predictTargetEntry = gtk.Entry()
+        self.__predictTable.attach(self.__predictTargetEntry,1,2,1,2, xoptions=gtk.FILL|gtk.EXPAND)
+        
+        self.__fitButton = gtk.Button("Fit linear function")
+        self.__fitButton.connect("clicked", self.event_button_fit, None) 
+        self.__predictTable.attach(self.__fitButton, 0,2,2,3, xoptions=gtk.FILL)
+        
+        self.__predictTable.attach(gtk.Label("Fit:"),0,1,3,4, xoptions=gtk.FILL)
+        fitHbox = gtk.HBox()
+        fitHbox.pack_start(gtk.Label("Y = "))
+        self.__fitDisplays = []
+        self.__fitDisplays.append(gtk.Entry())
+        fitHbox.pack_start(self.__fitDisplays[-1])
+        fitHbox.pack_start(gtk.Label("* X + "))
+        self.__fitDisplays.append(gtk.Entry())
+        fitHbox.pack_start(self.__fitDisplays[-1])
+        fitHbox.pack_start(gtk.Label(" ; sqrt(R2) = "))
+        self.__fitDisplays.append(gtk.Entry())
+        fitHbox.pack_start(self.__fitDisplays[-1])
+        self.__predictTable.attach(fitHbox,1,2,3,4, xoptions=gtk.FILL|gtk.EXPAND)
+        self.__predictTable.attach(gtk.Label("Predicted X:"),0,1,4,5, xoptions=gtk.FILL)
+        self.__fitDisplays.append(gtk.Entry())
+        self.__predictTable.attach(self.__fitDisplays[-1],1,2,4,5, xoptions=gtk.FILL|gtk.EXPAND)
+        map(lambda entry: entry.set_sensitive(False), self.__fitDisplays)
+        
+        self.__createPointButton = gtk.Button("Create new point at predicted X")
+        self.__createPointButton.connect("clicked", self.event_button_createPoint)
+        self.__predictTable.attach(self.__createPointButton, 0,2,5,6)
+        
+        self.baseWidget.pack_start(self.__predictTable,expand=True, padding=5)
+        
+        self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
         
         #Buttons
         self.__createScanButton   = gtk.Button("Create scan")
@@ -183,7 +231,15 @@ class Scan(InfoFrameComponent):
             self.__rangeMinEntry.set_text(str(self.scanInstance.scanParameter_range_min))
             self.__rangeMaxEntry.set_text(str(self.scanInstance.scanParameter_range_max))
             self.__rangeStepEntry.set_text(str(self.scanInstance.scanParameter_range_step))
-            
+        
+        self.__predictVariableEntry.set_text(self.scanInstance.predict_anaVariable)
+        self.__predictTargetEntry.set_text(self.scanInstance.predict_targetValue)
+        
+        self.__fitDisplays[0].set_text(self.scanInstance.predict_a)
+        self.__fitDisplays[1].set_text(self.scanInstance.predict_b)
+        self.__fitDisplays[2].set_text(self.scanInstance.predict_r)
+        self.__fitDisplays[3].set_text(self.scanInstance.predict_x)
+        
         #Lockdown
         if self.scanInstance.lockdown == True:
             self.__geomCombo.set_sensitive(False)
@@ -252,7 +308,10 @@ class Scan(InfoFrameComponent):
                 self.scanInstance.scanParameter_range_min = float(self.__rangeMinEntry.get_text())
                 self.scanInstance.scanParameter_range_max = float(self.__rangeMaxEntry.get_text())
                 self.scanInstance.scanParameter_range_step = float(self.__rangeStepEntry.get_text())
-                
+        
+        self.scanInstance.predict_anaVariable = self.__predictVariableEntry.get_text()
+        self.scanInstance.predict_targetValue = self.__predictTargetEntry.get_text()
+        
         self.scanInstance.write()
         return False #Return value as expected from event_delete()
     
@@ -275,6 +334,53 @@ class Scan(InfoFrameComponent):
                                      "Could not generate range, got error '" + e.args[0] + "'")
             mDia.run()
             mDia.destroy()
+    
+    def event_button_fit(self, widget, data=None):
+        self.saveToScan()
+        self.scanInstance.predictCorrectValue()
+        self.updateDisplay()
+    
+    def event_button_createPoint(self, widget, data=None):
+        if not self.scanInstance.lockdown:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Please create the scan first")
+            mDia.run()
+            mDia.destroy()
+            return
+        
+        dia = gtk.Dialog("New value of '" + self.scanInstance.scanParameter_name + "':",
+                         self.getBaseWindow(),
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                          gtk.STOCK_OK, gtk.RESPONSE_OK))
+        dia.set_default_response(gtk.RESPONSE_OK)
+        valueBox = gtk.Entry()
+        if self.scanInstance.predict_x != "":
+            valueBox.set_text(str(self.scanInstance.predict_x))
+        
+        dia.vbox.pack_start(valueBox)
+        dia.show_all()
+        while True:
+            if dia.run() != gtk.RESPONSE_OK:
+                return
+            try:
+                newVal = float(valueBox.get_text())
+            except ValueError:
+                mDia = gtk.MessageDialog(dia,gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Couldn't convert entered value to a float")
+                mDia.run()
+                mDia.destroy()
+            else:
+                dia.destroy()
+                break
+
+        self.scanInstance.addPoint(newVal) 
+        self.frameManager.mainWindow.updateProjectExplorer()
+        self.makePing()
+        
     
     def event_button_createScan(self, widget, data=None):
         print "Scan::event_button_createScan()"

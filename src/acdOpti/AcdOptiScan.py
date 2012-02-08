@@ -26,11 +26,13 @@ from AcdOptiExceptions import AcdOptiException_scan_createFail,\
                               AcdOptiException_scan_runFail,\
                               AcdOptiException_scan_refreshDownloadFail,\
                               AcdOptiException_scan_analysisFail,\
-                              AcdOptiException_runConfig_stageError
-import os
+                              AcdOptiException_runConfig_stageError,\
+                              AcdOptiException_analysis_runAnalysis,\
+                              AcdOptiException_dataDict_getValsSingle
 
+import os
 import numpy as np
-from acdOpti.AcdOptiExceptions import AcdOptiException_analysis_runAnalysis
+import re
 
 class AcdOptiScan:
     """
@@ -60,7 +62,13 @@ class AcdOptiScan:
 
     scanParameter_range = None #List with wanted values of the scan
     
+    predict_anaVariable = None
+    predict_targetValue = None
     
+    predict_a = None #y=ax+b
+    predict_b = None
+    predict_x = None #predicted x s.t. y=target
+    predict_r = None #sqrt(R^2)
     
     def __init__(self, folder, scanCollection):
         self.folder = folder
@@ -104,6 +112,32 @@ class AcdOptiScan:
             
             self.generateRange()
         
+        try:
+            self.predict_anaVariable = self.__paramfile.dataDict["predict_anaVariable"]
+            self.predict_targetValue = self.__paramfile.dataDict["predict_targetValue"]
+        except AcdOptiException_dataDict_getValsSingle:
+            self.predict_anaVariable = ""
+            self.predict_targetValue = ""
+            self.__paramfile.dataDict.pushBack("predict_anaVariable", "")
+            self.__paramfile.dataDict.pushBack("predict_targetValue", "")
+            self.__paramfile.write()
+        
+        try:
+            self.predict_a = self.__paramfile.dataDict["predict_a"]
+            self.predict_b = self.__paramfile.dataDict["predict_b"]
+            self.predict_x = self.__paramfile.dataDict["predict_x"]
+            self.predict_r = self.__paramfile.dataDict["predict_r"]
+        except AcdOptiException_dataDict_getValsSingle:
+            self.predict_a = 0.0
+            self.predict_b = 0.0
+            self.predict_x = 0.0
+            self.predict_r = 0.0
+            self.__paramfile.dataDict.pushBack("predict_a", "")
+            self.__paramfile.dataDict.pushBack("predict_b", "")
+            self.__paramfile.dataDict.pushBack("predict_x", "")
+            self.__paramfile.dataDict.pushBack("predict_r", "")
+            self.__paramfile.write()
+            
         for (geomName, nothingOfInterest) in self.slaveGeomsDict:
             #Mutal referencing
             self.slaveGeoms.append(self.scanCollection.project.geomCollection.geomInstances[geomName])
@@ -150,6 +184,15 @@ class AcdOptiScan:
         self.__paramfile.dataDict.setValSingle("staged"  , str(self.staged))
         self.__paramfile.dataDict.setValSingle("run"     , str(self.run))
         
+        self.__paramfile.dataDict.setValSingle("predict_anaVariable", self.predict_anaVariable)
+        self.__paramfile.dataDict.setValSingle("predict_targetValue", self.predict_targetValue)
+        
+        self.__paramfile.dataDict.setValSingle("predict_a", self.predict_a)
+        self.__paramfile.dataDict.setValSingle("predict_b", self.predict_b)
+        self.__paramfile.dataDict.setValSingle("predict_x", self.predict_x)
+        self.__paramfile.dataDict.setValSingle("predict_r", self.predict_r)
+        
+        
         self.__paramfile.write()
     
     def getValidParamNames(self):
@@ -182,22 +225,23 @@ class AcdOptiScan:
             raise AcdOptiException_scan_scanFail("No (valid) geomInstance selected")
         
         for val in self.scanParameter_range:
-            oldName = self.baseGeomInstance.instName
-            newName = oldName + "--scan--" + self.scanParameter_name + str(val) #Separators  messes things up..
-            #Check if this already exists:
-            newGeom = None
-            if newName in self.scanCollection.project.geomCollection.geomInstances:
-                #It's already there!
-                newGeom = self.scanCollection.project.geomCollection.geomInstances[newName]
-                newGeom.scanInstances.append(self)
-                #TODO: Now assuming that the name is an unique identifier for a configuration.
-                # This might not be safe - maybe add some kind of lockdown?
-            else:
-                newGeom = self.scanCollection.project.geomCollection.cloneGeomInstance(oldName,newName)
-                newGeom.templateOverrides_insert(self.scanParameter_name, str(val))
-                newGeom.scanInstances.append(self)
-                newGeom.write()
-            self.slaveGeoms.append(newGeom)
+            self.addPoint(val)
+#            oldName = self.baseGeomInstance.instName
+#            newName = oldName + "--scan--" + self.scanParameter_name + str(val) #Separators  messes things up..
+#            #Check if this already exists:
+#            newGeom = None
+#            if newName in self.scanCollection.project.geomCollection.geomInstances:
+#                #It's already there!
+#                newGeom = self.scanCollection.project.geomCollection.geomInstances[newName]
+#                newGeom.scanInstances.append(self)
+#                #TODO: Now assuming that the name is an unique identifier for a configuration.
+#                # This might not be safe - maybe add some kind of lockdown?
+#            else:
+#                newGeom = self.scanCollection.project.geomCollection.cloneGeomInstance(oldName,newName)
+#                newGeom.templateOverrides_insert(self.scanParameter_name, str(val))
+#                newGeom.scanInstances.append(self)
+#                newGeom.write()
+#            self.slaveGeoms.append(newGeom)
         
         self.lockdown = True
         self.write()
@@ -276,6 +320,120 @@ class AcdOptiScan:
                                     analysis.runAnalysis()
                                 except AcdOptiException_analysis_runAnalysis as e:
                                     print "Error in analysis '" + analysis.instName + "': '" + str(e.args) + "', skipping!"
+    
+    def predictCorrectValue(self):
+        """
+        Fit the some analysis result versus the scanned parameter,
+        and predict the value of this parameter that yields
+        the analysis result equals a target value.
+        
+        Returns: predicted parameter value, sum of squared residuals in fit.
+        """
+        
+        anaVariable = self.predict_anaVariable
+        targetValue = float(self.predict_targetValue)
+        
+        #Get fit data
+        x = []
+        y = []
+        
+        anaVarSplit = anaVariable.split(".")
+        
+        for geom in self.slaveGeoms:
+            assert self.scanParameter_name in geom.templateOverrides_getKeys()
+            thisX=float(geom.templateOverrides_get(self.scanParameter_name))
+            for mesh in geom.meshInsts.itervalues():
+                for rc in mesh.runConfigs.itervalues():
+                    for ana in rc.analysis.itervalues():
+                        if ana.instName == anaVarSplit[0]:
+                            #Recursive function to find the analysis result
+                            #Uses the usual key.key[idx].key.... syntax
+                            #If not [idx] present, assume idx=0
+                            #If not found, return None
+                            def dictRecDig(avsRemaining, dictBranch):
+                                avsParsed = re.match(r'(\w)+[(\d+)]',avsRemaining[0])
+                                if avsParsed != None:
+                                    nextName = avsParsed.group(1)
+                                    nextNumber = int(avsParsed.group(2))
+                                else:
+                                    nextName = avsRemaining[0]
+                                    nextNumber = 0
+
+                                try:
+                                    nextBranch = dictBranch.getVals(nextName)[nextNumber]
+                                except IndexError:
+                                    print "WARNING in dictRecDig(): Key '" + avsRemaining[0] + "' not found"
+                                    return None
+                                
+                                if isinstance(nextBranch,DataDict):
+                                    if len(avsRemaining) == 1:
+                                        print "WARNING in dictRecDig(): More depth than keys"
+                                        return None
+                                    return dictRecDig(avsRemaining[1:],nextBranch)
+                                else:
+                                    if len(avsRemaining) > 1:
+                                        print "WARNING in dictRecDig(): More keys than depth"
+                                        return None
+                                    return float(nextBranch)
+
+                            thisY = dictRecDig(anaVarSplit[1:],ana.exportResults)
+                            if thisY != None:
+                                x.append(thisX)
+                                y.append(thisY)
+        print "X=", x
+        print "Y=", y
+        
+        #Fit function y = ax+b
+        obs = len(y)
+        H = np.ones([obs,2])
+        for i in xrange(obs):
+            H[i,1] = x[i]
+        project = np.dot(np.linalg.inv(np.dot(H.transpose(),H)), H.transpose())
+        
+        y = np.asarray(y)
+        theta = np.dot(project,y)
+        print "THETA=(y0,dy/dx)=", theta
+        self.predict_a=str(theta[1])
+        self.predict_b=str(theta[0])
+        
+        
+        #Find x such that y=target
+        x_predicted = (targetValue-theta[0])/theta[1]
+        print "X_PREDICTED=",x_predicted
+        self.predict_x = str(x_predicted)
+        
+        #Calculate R^2
+        R2 = 0.0
+        for i in xrange(obs):
+            yhat = theta[0] + theta[1]*x[i]
+            print "Y YHAT = ", y[i], yhat, yhat-y[i] 
+            R2 += (yhat-y[i])**2
+        print "sqrt(R**2)=", np.sqrt(R2)
+        self.predict_r = str(np.sqrt(R2))
+        
+        self.write()
+        
+    def addPoint(self,parameterValue):
+        """
+        Add a point to the scan with the given parameter value
+        """
+        oldName = self.baseGeomInstance.instName
+        newName = oldName + "--scan--" + self.scanParameter_name + str(parameterValue) #Separators  messes things up..
+        #Check if this already exists:
+        newGeom = None
+        if newName in self.scanCollection.project.geomCollection.geomInstances:
+            #It's already there!
+            newGeom = self.scanCollection.project.geomCollection.geomInstances[newName]
+            newGeom.scanInstances.append(self)
+            #TODO: Now assuming that the name is an unique identifier for a configuration.
+            # This might not be safe - maybe add some kind of lockdown?
+        else:
+            newGeom = self.scanCollection.project.geomCollection.cloneGeomInstance(oldName,newName)
+            newGeom.templateOverrides_insert(self.scanParameter_name, str(parameterValue))
+            newGeom.scanInstances.append(self)
+            newGeom.write()
+        self.slaveGeoms.append(newGeom)
+    
     @staticmethod
     def createNew(folder):
         #Construct the instance name from folder
@@ -304,5 +462,12 @@ class AcdOptiScan:
         paramFile.dataDict.pushBack("scanParameter_min","")
         paramFile.dataDict.pushBack("scanParameter_step","")
         
+        paramFile.dataDict.pushBack("predict_anaVariable", "")
+        paramFile.dataDict.pushBack("predict_targetValue", "")
+        
+        paramFile.dataDict.pushBack("predict_a", "")
+        paramFile.dataDict.pushBack("predict_b", "")
+        paramFile.dataDict.pushBack("predict_x", "")
+        paramFile.dataDict.pushBack("predict_r", "")
         
         paramFile.write()

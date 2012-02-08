@@ -114,7 +114,11 @@ class Omega3P_modeInfo(AnalysisInterface):
                 freqSplit = freq.split(",")
                 mode.delItem("Frequency")
                 mode.pushBack("FrequencyReal", freqSplit[0].strip())
+                mode.pushBack("FrequencyReal_GHz", str(float(freqSplit[0].strip())/1e9))
                 mode.pushBack("FrequencyImag", freqSplit[1].strip())
+                mode.pushBack("FrequencyImag_GHz", str(float(freqSplit[1].strip())/1e9))
+            else:
+                mode.pushBack("Frequency_GHz", str(float(mode["Frequency"])/1e9))
             self.exportResults.pushBack(modeName,mode.copy())
         
         self.lockdown = True

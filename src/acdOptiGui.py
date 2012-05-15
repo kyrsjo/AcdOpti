@@ -58,7 +58,7 @@ def install_exception_hook(dialog=ExceptionDialog):
     new_hook.old_hook = old_hook
     sys.excepthook = new_hook
 
-install_exception_hook()
+#install_exception_hook() ## NOPE! Just makes for a hard-to-find pop-under, only works once...
 
 ##
 ## END exception hook
@@ -76,6 +76,6 @@ if len(sys.argv) > 1:
 else:
     mainWindow = MainWindow()
 
-gtk.main()
+gtk.main()#
 
 print "Bye!"

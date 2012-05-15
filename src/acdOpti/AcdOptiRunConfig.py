@@ -234,11 +234,15 @@ class AcdOptiRunConfig:
         for solver in self.solverSetups:
             solverString += solver.name + "-"
         solverString = solverString[:-5]
-        self.stageName = "AcdOpti-stage--" + project.projectName_name + "-"\
-                 + geomInstance.instName + "-" + meshTemplate.instName + "--"\
-                 + meshInstance.instName + "--"\
-                 + self.instName + "-" + self.runner.type + "-" + solverString + "--"\
-                 +  datetime.now().isoformat().replace(":","-") #Avoid ":" at all cost: ACD doesn't like them in their (auto-generated) input files
+#        self.stageName = "AcdOpti-stage--" + project.projectName_name + "-"\
+#                 + geomInstance.instName + "-" + meshTemplate.instName + "--"\
+#                 + meshInstance.instName + "--"\
+#                 + self.instName + "-" + self.runner.type + "-" + solverString + "--"\
+#                 +  datetime.now().isoformat().replace(":","-") #Avoid ":" at all cost: ACD doesn't like them in their (auto-generated) input files
+        self.stageName = project.projectName_name + "-"\
+                  + geomInstance.instName + "-"\
+                  + meshInstance.instName + "--"\
+                  +  datetime.now().isoformat().replace(":","-") #Avoid ":" at all cost: ACD doesn't like them in their (auto-generated) input files
         self.stageFolder = os.path.join(self.folder,"stage",self.stageName)
         os.mkdir(self.stageFolder)
         

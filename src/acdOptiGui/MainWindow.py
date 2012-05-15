@@ -41,6 +41,7 @@ from AcdOptiGuiExceptions import *
 import exceptions, errno
 
 from infoFrames.InfoFrameManager import InfoFrameManager
+from infoFrames.InfoFrameComponent import InfoFrameComponent
 from infoFrames.ProjectInfo import ProjectInfo
 from infoFrames.GeometryCollection import GeometryCollection
 from infoFrames.GeometryInstance import GeometryInstance
@@ -86,6 +87,10 @@ class MainWindow():
     __cellRender      = None
     __cellRenderIcon  = None
 
+    __stageUploadRunCheckDownloadButton = None
+    __runAnaButton = None
+
+    __expandSelectedButton = None
     __expandTreeButton = None
 
     __meshIcon  = None
@@ -191,6 +196,8 @@ class MainWindow():
 
         self.__treeView.connect("row-activated", self.event_treeView_rowActivated, None)
 
+        self.__treeView.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+
         self.__scrolledWindow = gtk.ScrolledWindow()
         self.__scrolledWindow.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
         self.__scrolledWindow.add(self.__treeView)
@@ -200,9 +207,22 @@ class MainWindow():
         #self.__HBox2.add1(self.__scrolledWindow)
         self.__HBox2.add1(self.__VBox3)
         
-        self.__expandTreeButton = gtk.Button("Expand tree")
+        self.__stageUploadRunCheckDownloadButton = gtk.Button("Stage/Upload/Run/Check/Download")
+        self.__stageUploadRunCheckDownloadButton.connect("clicked", self.event_button_stageUploadRunCheckDownload, None)
+        self.__VBox3.pack_start(self.__stageUploadRunCheckDownloadButton, expand=False)
+        
+        self.__runAnaButton = gtk.Button("Run selected analysis")
+        self.__runAnaButton.connect("clicked", self.event_button_runAna, None)
+        self.__VBox3.pack_start(self.__runAnaButton,expand=False)
+        
+        expandBox = gtk.HBox(homogeneous=True)
+        self.__expandSelectedButton = gtk.Button("Expand selected")
+        self.__expandSelectedButton.connect("clicked", self.event_button_expandSelected, None)
+        expandBox.pack_start(self.__expandSelectedButton)
+        self.__expandTreeButton = gtk.Button("Expand _tree")
         self.__expandTreeButton.connect("clicked", self.event_button_expand, None)
-        self.__VBox3.pack_start(self.__expandTreeButton, expand=False)
+        expandBox.pack_start(self.__expandTreeButton)
+        self.__VBox3.pack_start(expandBox, expand=False)
         
         #self.__treeModel.append(None, ["Load a project to start",])
         
@@ -562,15 +582,67 @@ class MainWindow():
             else:
                 break
     
+    def event_button_stageUploadRunCheckDownload(self,widget,data=None):
+        #print "MainWindow::event_button_stageUploadRunCheckDownload()"
+        
+        #Try to clear the __infoFrame
+        if self.__infoFrame.clear():
+            #Returned True - some widget was not ready.
+            return
+        
+        selRowPaths = self.__treeView.get_selection().get_selected_rows()[1]
+        for path in selRowPaths:
+            rowObj =  self.__treeModel[path][-1]
+            if isinstance(rowObj, AcdOptiRunConfig):
+                #Always fall check next state!
+                if rowObj.status == "initialized":
+                    try:
+                        rowObj.stage()
+                    except AcdOptiException_runConfig_stageError:
+                        print "Staging of rc failed - skipping to the next one."
+                if rowObj.status == "staged":
+                    rowObj.upload()
+                if rowObj.status == "remote::uploaded":
+                    rowObj.run()
+                if rowObj.status == "remote::running" or rowObj.status == "remote::queued":
+                    rowObj.refreshStatus()
+                if rowObj.status == "remote::finished":
+                    rowObj.getRemote()
+                    
+        self.updateProjectExplorer()
+        InfoFrameComponent.makePing()
+        
+    
+    def event_button_runAna(self,widget,data=None):
+        #Try to clear the __infoFrame
+        if self.__infoFrame.clear():
+            #Returned True - some widget was not ready.
+            return
+        
+        selRowPaths = self.__treeView.get_selection().get_selected_rows()[1]
+        for path in selRowPaths:
+            rowObj =  self.__treeModel[path][-1]
+            if isinstance(rowObj, AnalysisInterface):
+                if not rowObj.lockdown:
+                    rowObj.runAnalysis()
+        self.updateProjectExplorer()
+        InfoFrameComponent.makePing()
+
+    
     def event_button_expand(self, widget, data=None):
         if self.__hasExpanded:
             self.__treeView.collapse_all()
-            self.__expandTreeButton.set_label("Expand tree")
+            self.__expandTreeButton.set_label("Expand _tree")
             self.__hasExpanded = False
         else:
             self.__treeView.expand_all()
-            self.__expandTreeButton.set_label("Collapse tree")
+            self.__expandTreeButton.set_label("Collapse _tree")
             self.__hasExpanded = True
+
+    def event_button_expandSelected(self,widget,data=None):
+        selRowPaths = self.__treeView.get_selection().get_selected_rows()[1]
+        for path in selRowPaths:
+            self.__treeView.expand_row(path,True)
 
     def event_treeView_rowActivated(self,widget,path,column,data=None):
         print "MainWindow::event_treeView_rowActivated(), path =", path
@@ -655,6 +727,10 @@ class MainWindow():
         self.__scanNewButton.set_sensitive(True)
         self.__metaAnalysisNewButton.set_sensitive(True)
         self.__dataExtractorButton.set_sensitive(True)
+
+        #Set window title
+        self.window.set_title("AcdOpti GUI -- " + self.activeProject.projectName_name)
+
 
     def __searchIter(self, searchObject,baseIter=None):
         if baseIter == None:

@@ -26,7 +26,8 @@ import os
 from InfoFrameComponent import InfoFrameComponent
 
 from acdOpti.AcdOptiExceptions import AcdOptiException_scan_scanFail,\
-                                      AcdOptiException_scan_generateRangeFail
+                                      AcdOptiException_scan_generateRangeFail,\
+                                      AcdOptiException_scan_predictFail
 
 class Scan(InfoFrameComponent):
     """
@@ -139,7 +140,11 @@ class Scan(InfoFrameComponent):
         fitHbox.pack_start(gtk.Label(" ; sqrt(R2) = "))
         self.__fitDisplays.append(gtk.Entry())
         fitHbox.pack_start(self.__fitDisplays[-1])
+        fitHbox.pack_start(gtk.Label(" , ndof = "))
+        self.__fitDisplays.append(gtk.Entry())
+        fitHbox.pack_start(self.__fitDisplays[-1])
         self.__predictTable.attach(fitHbox,1,2,3,4, xoptions=gtk.FILL|gtk.EXPAND)
+        
         self.__predictTable.attach(gtk.Label("Predicted X:"),0,1,4,5, xoptions=gtk.FILL)
         self.__fitDisplays.append(gtk.Entry())
         self.__predictTable.attach(self.__fitDisplays[-1],1,2,4,5, xoptions=gtk.FILL|gtk.EXPAND)
@@ -238,7 +243,8 @@ class Scan(InfoFrameComponent):
         self.__fitDisplays[0].set_text(self.scanInstance.predict_a)
         self.__fitDisplays[1].set_text(self.scanInstance.predict_b)
         self.__fitDisplays[2].set_text(self.scanInstance.predict_r)
-        self.__fitDisplays[3].set_text(self.scanInstance.predict_x)
+        self.__fitDisplays[3].set_text(self.scanInstance.predict_ndof)
+        self.__fitDisplays[4].set_text(self.scanInstance.predict_x)
         
         #Lockdown
         if self.scanInstance.lockdown == True:
@@ -337,7 +343,15 @@ class Scan(InfoFrameComponent):
     
     def event_button_fit(self, widget, data=None):
         self.saveToScan()
-        self.scanInstance.predictCorrectValue()
+        try:
+            self.scanInstance.predictCorrectValue()
+        except AcdOptiException_scan_predictFail as e:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Prediction failed, error: '" + e.args[0] + "'")
+            mDia.run()
+            mDia.destroy()
         self.updateDisplay()
     
     def event_button_createPoint(self, widget, data=None):

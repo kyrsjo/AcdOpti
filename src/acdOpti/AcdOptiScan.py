@@ -26,6 +26,7 @@ from AcdOptiExceptions import AcdOptiException_scan_createFail,\
                               AcdOptiException_scan_runFail,\
                               AcdOptiException_scan_refreshDownloadFail,\
                               AcdOptiException_scan_analysisFail,\
+                              AcdOptiException_scan_predictFail,\
                               AcdOptiException_runConfig_stageError,\
                               AcdOptiException_analysis_runAnalysis,\
                               AcdOptiException_dataDict_getValsSingle
@@ -69,6 +70,7 @@ class AcdOptiScan:
     predict_b = None
     predict_x = None #predicted x s.t. y=target
     predict_r = None #sqrt(R^2)
+    predict_ndof = None
     
     def __init__(self, folder, scanCollection):
         self.folder = folder
@@ -128,16 +130,22 @@ class AcdOptiScan:
             self.predict_x = self.__paramfile.dataDict["predict_x"]
             self.predict_r = self.__paramfile.dataDict["predict_r"]
         except AcdOptiException_dataDict_getValsSingle:
-            self.predict_a = 0.0
-            self.predict_b = 0.0
-            self.predict_x = 0.0
-            self.predict_r = 0.0
+            self.predict_a = ""
+            self.predict_b = ""
+            self.predict_x = ""
+            self.predict_r = ""
             self.__paramfile.dataDict.pushBack("predict_a", "")
             self.__paramfile.dataDict.pushBack("predict_b", "")
             self.__paramfile.dataDict.pushBack("predict_x", "")
             self.__paramfile.dataDict.pushBack("predict_r", "")
             self.__paramfile.write()
-            
+        try:
+            self.predict_ndof=self.__paramfile.dataDict["predict_ndof"]
+        except AcdOptiException_dataDict_getValsSingle:
+            self.predict_ndof = ""
+            self.__paramfile.dataDict.pushBack("predict_ndof","")
+            self.__paramfile.write()
+             
         for (geomName, nothingOfInterest) in self.slaveGeomsDict:
             #Mutal referencing
             self.slaveGeoms.append(self.scanCollection.project.geomCollection.geomInstances[geomName])
@@ -191,6 +199,7 @@ class AcdOptiScan:
         self.__paramfile.dataDict.setValSingle("predict_b", self.predict_b)
         self.__paramfile.dataDict.setValSingle("predict_x", self.predict_x)
         self.__paramfile.dataDict.setValSingle("predict_r", self.predict_r)
+        self.__paramfile.dataDict.setValSingle("predict_ndof", self.predict_ndof)
         
         
         self.__paramfile.write()
@@ -339,8 +348,33 @@ class AcdOptiScan:
         
         anaVarSplit = anaVariable.split(".")
         
-        for geom in self.slaveGeoms:
-            assert self.scanParameter_name in geom.templateOverrides_getKeys()
+        #for geom in self.slaveGeoms:
+        for geom in self.scanCollection.project.geomCollection.geomInstances.itervalues():
+            #skip geometries which differs in more than one parameter
+            goodGeom = True
+            for param in self.scanCollection.project.geomCollection.paramDefaults_getKeys():
+                if param == self.scanParameter_name:
+                    continue
+                
+                if param in self.baseGeomInstance.templateOverrides_getKeys():
+                    paramVal = self.baseGeomInstance.templateOverrides_get(param)
+                else:
+                    paramVal = self.scanCollection.project.geomCollection.paramDefaults_get(param)
+                
+                if param in geom.templateOverrides_getKeys():
+                    paramVal2 = geom.templateOverrides_get(param)
+                else:
+                    paramVal2 = self.scanCollection.project.geomCollection.paramDefaults_get(param)
+                if paramVal != paramVal2:
+                    goodGeom = False
+                    break
+            if not goodGeom:
+                continue #Skip this geometry
+            
+            #Baseline geom may be included; just skip'it (including it makes it neccessary to rewrite the code below)
+            if not self.scanParameter_name in geom.templateOverrides_getKeys():
+                continue
+            
             thisX=float(geom.templateOverrides_get(self.scanParameter_name))
             for mesh in geom.meshInsts.itervalues():
                 for rc in mesh.runConfigs.itervalues():
@@ -385,6 +419,11 @@ class AcdOptiScan:
         
         #Fit function y = ax+b
         obs = len(y)
+        ndof = obs-2
+        if ndof < 0:
+            raise AcdOptiException_scan_predictFail("ndof = " + str(ndof) + " < 0")
+        self.predict_ndof=str(ndof)
+        
         H = np.ones([obs,2])
         for i in xrange(obs):
             H[i,1] = x[i]
@@ -469,5 +508,6 @@ class AcdOptiScan:
         paramFile.dataDict.pushBack("predict_b", "")
         paramFile.dataDict.pushBack("predict_x", "")
         paramFile.dataDict.pushBack("predict_r", "")
+        paramFile.dataDict.pushBack("predict_ndof", "")
         
         paramFile.write()

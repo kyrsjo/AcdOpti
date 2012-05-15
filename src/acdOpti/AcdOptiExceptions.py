@@ -152,6 +152,8 @@ class AcdOptiException_scan_refreshDownloadFail(AcdOptiException):
     pass
 class AcdOptiException_scan_analysisFail(AcdOptiException):
     pass
+class AcdOptiException_scan_predictFail(AcdOptiException):
+    pass
 
 #AcdOptiMetaAnalysisCollection
 class AcdOptiException_metaAnalysisCollection_loadFail(AcdOptiException):

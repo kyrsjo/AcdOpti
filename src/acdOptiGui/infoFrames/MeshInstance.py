@@ -320,6 +320,7 @@ class MeshInstance(InfoFrameComponent):
             md.destroy()
         
         self.updateTable()
+        self.makePing()
         
     def event_check_toggled(self, widget, data):
         print "MeshInstance::event_check_toggled(), data =", data

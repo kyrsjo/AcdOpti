@@ -127,6 +127,9 @@ class AnalysisInterface(object): #New-style class so that super() works
         elif dataDict["type"] == "ModeFileRecalc":
             from ModeFileRecalc import ModeFileRecalc
             return ModeFileRecalc(folder, name, runConfig)
+        elif dataDict["type"] == "Metadata":
+            from Metadata import Metadata
+            return Metadata(folder,name,runConfig)
         else:
             raise NotImplementedError("This shoudn't happen?!?")
     
@@ -135,7 +138,10 @@ class AnalysisInterface(object): #New-style class so that super() works
         """
         Returns a list of the currently valid analysis types
         """
-        return ["Dummy", "DummyInput", "FileList", "Omega3P_modeInfo", "RFpost", "RFpost_local", "GroupVelocity", "ScMax", "ModeFileRecalc"]
+        return ["Dummy", "DummyInput", "FileList",\
+                "Omega3P_modeInfo", "RFpost", "RFpost_local",\
+                "GroupVelocity", "ScMax", "ModeFileRecalc",\
+                "Metadata"]
     
     @staticmethod
     def createAndLoadAnalysis(anaType, runConfig, folder, name=None):
@@ -196,6 +202,10 @@ class AnalysisInterface(object): #New-style class so that super() works
             from ModeFileRecalc import ModeFileRecalc
             ModeFileRecalc.createNew(folder, name)
             return ModeFileRecalc(folder, name, runConfig)
+        elif anaType == "Metadata":
+            from Metadata import Metadata
+            Metadata.createNew(folder, name)
+            return Metadata(folder,name,runConfig)
         else:
             raise AnalysisException_createFail("Unknown analysis type '" + anaType + "'")
     @staticmethod

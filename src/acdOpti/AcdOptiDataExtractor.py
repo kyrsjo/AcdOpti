@@ -19,7 +19,8 @@
 from AcdOptiFileParser import AcdOptiFileParser_simple, DataDict
 from AcdOptiDataExtractorFilter import AcdOptiDataExtractorFilter
 from acdOpti.AcdOptiExceptions import AcdOptiException_dataExtractor_createFail,\
-                                      AcdOptiException_dataExtractor_loadFail
+                                      AcdOptiException_dataExtractor_loadFail,\
+                                      AcdOptiException_dataDict_getValsSingle
 
 import os
 
@@ -34,6 +35,7 @@ class AcdOptiDataExtractor:
     collection = None
     __paramfile = None
     
+    extractFname = None
     
     dataExtracted = None
     keyNames = None
@@ -61,6 +63,14 @@ class AcdOptiDataExtractor:
         
         self.lockdown = DataDict.boolconv(self.__paramfile.dataDict.getValSingle("lockdown"))
     
+        try:
+            self.extractFname = self.__paramfile.dataDict["extractFname"]
+        except AcdOptiException_dataDict_getValsSingle:
+            print "AcdOptiDataExtractor::__init__(): Adding extractFname to paramFile"
+            self.__paramfile.dataDict.pushBack("extractFname", "")
+            self.__paramfile.write()
+            self.extractFname = ""
+
         #Parse keyNames
         self.keyNames = []
         for (k,v) in self.__paramfile.dataDict["keyNames"]:
@@ -188,11 +198,15 @@ class AcdOptiDataExtractor:
         self.lockdown = True
         self.write()
     
-    def export(self,fname,useKeys=None):
+    def export(self,fname=None,useKeys=None):
         """
         Export the data as a CSV file suitable for import to R, spreadsheet etc.
         The useKeys argument lets you specify which columns you want to use.
         """
+        if fname == None:
+            fname = self.extractFname
+        print "AcdOptiDataExtractor::export(), fname='" + fname + "'"
+        
         ofile = open(fname,"w")
 
         if useKeys==None:
@@ -230,6 +244,8 @@ class AcdOptiDataExtractor:
     def write(self):
         self.__paramfile.dataDict.setValSingle("lockdown", str(self.lockdown))
         
+        self.__paramfile.dataDict.setValSingle("extractFname", self.extractFname)
+        
         knfile = self.__paramfile.dataDict["keyNames"]
         knfile.clear()
         for kn in self.keyNames:
@@ -266,6 +282,8 @@ class AcdOptiDataExtractor:
         paramFile = AcdOptiFileParser_simple(os.path.join(folder, "paramFile.set"), 'w')
         paramFile.dataDict.pushBack("fileID", "AcdOptiDataExtractor")
         paramFile.dataDict.pushBack("instName", instName)
+        
+        paramFile.dataDict.pushBack("extractFname", "")
         
         paramFile.dataDict.pushBack("keyNames", DataDict())
         paramFile.dataDict.pushBack("extractedData", DataDict())

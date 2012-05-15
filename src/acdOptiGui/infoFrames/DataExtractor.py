@@ -38,6 +38,7 @@ class DataExtractor(InfoFrameComponent):
     __dataCols    = None
     __dataRenders = None
     
+    __extractFnameEntry = None
     __filterButton = None
     __addPlotButton = None
     __exportButton = None
@@ -57,6 +58,12 @@ class DataExtractor(InfoFrameComponent):
         self.__dataScroll.set_policy(gtk.POLICY_AUTOMATIC,gtk.POLICY_AUTOMATIC)
         self.baseWidget.pack_start(self.__dataScroll,expand=True, padding=5)
         
+        fnameEntryBox = gtk.HBox()
+        fnameEntryBox.pack_start(gtk.Label("Export to filename:"), padding=5,expand=False)
+        self.__extractFnameEntry = gtk.Entry()
+        fnameEntryBox.pack_start(self.__extractFnameEntry)
+        self.baseWidget.pack_start(fnameEntryBox,expand=False)
+        
         self.__filterButton = gtk.Button("_Filters...")
         self.__filterButton.connect("clicked", self.event_button_filter,None)
         self.baseWidget.pack_start(self.__filterButton, expand=False)
@@ -65,7 +72,7 @@ class DataExtractor(InfoFrameComponent):
         self.__addPlotButton.connect("clicked", self.event_button_addPlot,None)
         self.baseWidget.pack_start(self.__addPlotButton, expand=False)
         
-        self.__exportButton = gtk.Button("_Export...")
+        self.__exportButton = gtk.Button("E_xport...")
         self.__exportButton.connect("clicked", self.event_button_export,None)
         self.baseWidget.pack_start(self.__exportButton, expand=False)
         
@@ -77,6 +84,9 @@ class DataExtractor(InfoFrameComponent):
         self.baseWidget.show_all()
     
     def __updateGui(self):
+        
+        self.__extractFnameEntry.set_text(self.dataExtractor.extractFname)
+
         if self.dataExtractor.lockdown:
             #self.__filterButton.set_sensitive(False)
             self.__exportButton.set_sensitive(True)
@@ -130,8 +140,13 @@ class DataExtractor(InfoFrameComponent):
         pass
     
     def event_button_export(self,widget,data=None):
+        fname = self.__extractFnameEntry.get_text()
+        if fname != self.dataExtractor.extractFname:
+            self.dataExtractor.extractFname = fname
+            self.dataExtractor.write()
         #self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv", ["GEOM.idw", "GEOM.eow", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].Hmax_norm[0]"])
-        self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv")
+        #self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv")
+        self.dataExtractor.export()
     
     def event_button_lockdownRun(self,widget,data=None):
         if self.dataExtractor.lockdown:

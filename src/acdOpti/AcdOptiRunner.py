@@ -173,7 +173,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         if self.__sshClient != None:
             print "Found an old client"
             if self.__sshClient.get_transport() == None or self.__sshClient.get_transport().is_active() != True:
-                 print "Old client not active."
+                print "Old client not active."
             else:
                 "Old client OK!"
                 return self.__sshClient

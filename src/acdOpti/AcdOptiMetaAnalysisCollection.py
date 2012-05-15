@@ -85,3 +85,4 @@ class AcdOptiMetaAnalysisCollection:
                     ana.runAnalysis()
                 except AcdOptiException_metaAnalysis_anaFail as e:
                     print "Analysis '" + anaName + "' failed with error message '" + str(e.args) + "'. Skipping!"
+                    

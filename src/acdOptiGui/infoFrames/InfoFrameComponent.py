@@ -56,11 +56,14 @@ class InfoFrameComponent:
         print "delete_event in InfoFrameComponent"
         return False
   
-    def makePing(self):
+    @staticmethod
+    def makePing():
         "Play a short sound (finished notification etc.)"
         try:
             from pygame import mixer
             mixer.init()
             mixer.Sound("/usr/share/sounds/gnome/default/alerts/drip.ogg").play()
         except ImportError:
-            pass #If it didn't work, no sound for you".
+            #If it didn't work, no sound for you".
+            print "makePing(): No sound available :("
+            

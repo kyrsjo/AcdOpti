@@ -118,7 +118,7 @@ class RunConfig(InfoFrameComponent):
         self.__jobSetupEditButton.connect("clicked", self.event_button_jobSetupEdit, None)
         self.__jobSetupChangeButton = gtk.Button(label="Switch type of job setup...")
         self.__jobSetupChangeButton.connect("clicked", self.event_button_jobSetupChange, None)
-        self.__jobSetupBox = gtk.HBox()
+        self.__jobSetupBox = gtk.HBox(homogeneous=True)
         self.__jobSetupBox.pack_start(self.__jobSetupEditButton)
         self.__jobSetupBox.pack_start(self.__jobSetupChangeButton)
         self.baseWidget.pack_start(self.__jobSetupBox, expand=False)
@@ -128,22 +128,22 @@ class RunConfig(InfoFrameComponent):
         #Status control
         self.__statusLabel = gtk.Label("Current status: " + self.runConfig.status) #Refreshed by updateDisplay()
         self.baseWidget.pack_start(self.__statusLabel, expand=False, padding=10)
-        self.__statusButton = gtk.Button("Refresh remote status") #Refreshed by updateDisplay()
+        self.__statusButton = gtk.Button("_Refresh remote status") #Refreshed by updateDisplay()
         self.__statusButton.connect("clicked", self.event_button_refreshStatus, None)
         self.baseWidget.pack_start(self.__statusButton, expand=False)
 
         stageRunCancelBox = gtk.HBox(homogeneous=True)
-        self.__stageOrLockdownButton = gtk.Button("Clear lockdown") #Refreshed by updateDisplay()
+        self.__stageOrLockdownButton = gtk.Button("_Clear lockdown") #Refreshed by updateDisplay()
         self.__stageOrLockdownButton.connect("clicked", self.event_button_stageOrClearLockdown, None)
         stageRunCancelBox.pack_start(self.__stageOrLockdownButton)
         
-        self.__uploadDownloadButton = gtk.Button("Upload  data") #Refreshed by updateDisplay
+        self.__uploadDownloadButton = gtk.Button("_Upload  data") #Refreshed by updateDisplay
         self.__uploadDownloadButton.connect("clicked", self.event_button_uploadDownload, None)
         stageRunCancelBox.pack_start(self.__uploadDownloadButton)
         
         self.baseWidget.pack_start(stageRunCancelBox, expand=False)
         
-        self.__runCancelButton =  gtk.Button("Run job") #Refreshed by updateDisplay()
+        self.__runCancelButton =  gtk.Button("_Run job") #Refreshed by updateDisplay()
         self.__runCancelButton.connect("clicked", self.event_button_runCancel, None)
         self.baseWidget.pack_start(self.__runCancelButton, expand=False)
 
@@ -187,7 +187,7 @@ class RunConfig(InfoFrameComponent):
             self.event_solverSetupTreeView_cursorChanged(None, None)
         elif status == "initialized":
             self.__statusButton.set_sensitive(False)
-            self.__stageOrLockdownButton.set_label("Stage data")
+            self.__stageOrLockdownButton.set_label("_Stage data")
             self.__stageOrLockdownButton.set_sensitive(True)
             self.__uploadDownloadButton.set_label("Upload data")
             self.__uploadDownloadButton.set_sensitive(False)
@@ -197,9 +197,9 @@ class RunConfig(InfoFrameComponent):
             self.event_solverSetupTreeView_cursorChanged(None, None)
         elif status == "staged":
             self.__statusButton.set_sensitive(False)
-            self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging")
+            self.__stageOrLockdownButton.set_label("_Clear lockdown, delete staging")
             self.__stageOrLockdownButton.set_sensitive(True)
-            self.__uploadDownloadButton.set_label("Upload data")
+            self.__uploadDownloadButton.set_label("_Upload data")
             self.__uploadDownloadButton.set_sensitive(True)
             self.__runCancelButton.set_label("Run")
             self.__runCancelButton.set_sensitive(False)
@@ -210,11 +210,11 @@ class RunConfig(InfoFrameComponent):
             self.__solverSetupDelButton.set_sensitive(False)
             if status == "remote::uploaded":
                 self.__statusButton.set_sensitive(False)
-                self.__stageOrLockdownButton.set_label("Delete remote data")
+                self.__stageOrLockdownButton.set_label("D_elete remote data")
                 self.__stageOrLockdownButton.set_sensitive(True)
                 self.__uploadDownloadButton.set_label("Download data")
                 self.__uploadDownloadButton.set_sensitive(False)
-                self.__runCancelButton.set_label("Run")
+                self.__runCancelButton.set_label("_Run")
                 self.__runCancelButton.set_sensitive(True)
             elif status == "remote::queued" or status == "remote::running":
                 self.__statusButton.set_sensitive(True)
@@ -222,21 +222,21 @@ class RunConfig(InfoFrameComponent):
                 self.__stageOrLockdownButton.set_sensitive(False)
                 self.__uploadDownloadButton.set_label("Download data")
                 self.__uploadDownloadButton.set_sensitive(False)
-                self.__runCancelButton.set_label("Cancel")
+                self.__runCancelButton.set_label("_Cancel")
                 self.__runCancelButton.set_sensitive(True)
             elif status == "remote::unclean":
                 self.__statusButton.set_sensitive(False)
-                self.__stageOrLockdownButton.set_label("Delete remote data")
+                self.__stageOrLockdownButton.set_label("D_elete remote data")
                 self.__stageOrLockdownButton.set_sensitive(True)
-                self.__uploadDownloadButton.set_label("Download data")
+                self.__uploadDownloadButton.set_label("_Download data")
                 self.__uploadDownloadButton.set_sensitive(True)
                 self.__runCancelButton.set_label("Cancel")
                 self.__runCancelButton.set_sensitive(False)
             elif status == "remote::finished":
                 self.__statusButton.set_sensitive(False)
-                self.__stageOrLockdownButton.set_label("Delete remote data")
+                self.__stageOrLockdownButton.set_label("D_elete remote data")
                 self.__stageOrLockdownButton.set_sensitive(True)
-                self.__uploadDownloadButton.set_label("Download data")
+                self.__uploadDownloadButton.set_label("_Download data")
                 self.__uploadDownloadButton.set_sensitive(True)
                 self.__runCancelButton.set_label("Cancel")
                 self.__runCancelButton.set_sensitive(False)
@@ -250,7 +250,7 @@ class RunConfig(InfoFrameComponent):
             self.__solverSetupAddButton.set_sensitive(False)
             self.__solverSetupDelButton.set_sensitive(False)
             self.__statusButton.set_sensitive(False)
-            self.__stageOrLockdownButton.set_label("Clear lockdown, delete staging and solution")
+            self.__stageOrLockdownButton.set_label("_Clear lockdown, delete staging and solution")
             self.__stageOrLockdownButton.set_sensitive(True)
             self.__uploadDownloadButton.set_label("Download data")
             self.__uploadDownloadButton.set_sensitive(False)

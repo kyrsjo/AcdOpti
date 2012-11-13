@@ -62,8 +62,9 @@ class RFpostParser():
         #Filter through sections to find the interesting results
         retDict = DataDict()
         retDict.pushBack("RoverQ", self.ParseRoverQ(sectionNamesList, sectionList,L))
-        retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict,L)) #This depends on RoverQ's results, accessed through retDict
+        retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict)) #This depends on RoverQ's results, accessed through retDict
         retDict.pushBack("powerThroughSurface", self.ParsePowerThorughSurface(sectionNamesList, sectionList))
+        retDict.pushBack("fieldSurfPlaneIntersect", self.ParseFieldSurfPlaneIntersect(sectionNamesList, sectionList, retDict)) #Depends on RoverQ
         
         return retDict
 
@@ -116,7 +117,7 @@ class RFpostParser():
         
         return retDict
     
-    def ParseMaxFieldsOnSurface(self,sectionNamesList,sectionList,retDataROQ=None,L=-1.0):
+    def ParseMaxFieldsOnSurface(self,sectionNamesList,sectionList,retDataROQ=None):
         """
         Parses 'maxFieldsOnSurface' sections, returns a DataDict with one entry (another dataDict) for each section found.
         Dependent on output from RoverQ analysis for normalization, which it searches for through "retData". Skipped if not found.
@@ -155,7 +156,6 @@ class RFpostParser():
                         Ez_ave = None
                         for mode in RoQ.getVals("mode"):
                             if int(mode["ModeID"]) == int(modID):
-                                #Vabs = float(mode["Vabs"])
                                 assert Ez_ave == None
                                 Ez_ave = float(mode["Ez_ave"])
                         if Ez_ave != None and L != -1.0:
@@ -194,7 +194,55 @@ class RFpostParser():
             retDict.pushBack("surf", secDict)
         
         return retDict
+    
+    def ParseFieldSurfPlaneIntersect(self,sectionNamesList,sectionList, retDataROQ=None):
+        """
+        Parses 'fieldSurfPlaneIntersect' sections, returns a DataDict with one entry (another dataDict) for each section found.
+        Dependent on output from RoverQ analysis for normalization, which it searches for through "retData". Skipped if not found.
+        """
+        
+        ptsSects =  self.__findMySections(sectionNamesList, sectionList, "fieldSurfPlaneIntersect")
 
+        retDict = DataDict()
+        
+        for sec in ptsSects:
+            secDict = DataDict()
+            
+            #secDict.pushBack("filename", re.match(r"filename\s*:\s*("))
+            secDict.pushBack("surfaceID", re.match(r"surfaceID\s*:\s*(\d+)",sec[2].strip()).group(1))
+            modID = re.match(r"ModeID\s*:\s*(\d+)",sec[3].strip()).group(1); secDict.pushBack("ModeID", modID)
+            secDict.pushBack("z0", re.match(r"z0\s*:\s*("+redigits+")",sec[4].strip()).group(1))
+            
+            Ematch = re.match(r"Emax\s*:\s*(" + redigits + r")\s*\[V/m\]\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)",sec[5].strip())
+            Emax = Ematch.group(1); secDict.pushBack("Emax", Emax)
+            Bmatch = re.match(r"Bmax\s*:\s*(" + redigits + r")\s*\[T\]\s*=\s*(" + redigits + r")\s*\[A/m\]\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)",sec[6].strip())
+            Bmax = Bmatch.group(1); secDict.pushBack("Bmax", Bmax)
+            Hmax = Bmatch.group(2); secDict.pushBack("Hmax", Hmax)
+            
+            if retDataROQ != None:
+                try:
+                    RoQ = retDataROQ["RoverQ"]
+                    Ez_ave = None
+                    for mode in RoQ.getVals("mode"):
+                        if int(mode["ModeID"]) == int(modID):
+                            assert Ez_ave == None
+                            Ez_ave = float(mode["Ez_ave"])
+                    if Ez_ave != None:
+                        secDict.pushBack("Ez_ave", str(Ez_ave))
+                        secDict.pushBack("Emax_norm", str(float(Emax)/Ez_ave))
+                        secDict.pushBack("Bmax_norm", str(float(Bmax)/Ez_ave))
+                        secDict.pushBack("Hmax_norm", str(float(Hmax)/Ez_ave))
+                    else:
+                        print "Didn't find Ez_ave"
+                    
+                except AcdOptiException_dataDict_getValsSingle:
+                    print "No normalization found, skipping"
+                
+            
+            retDict.pushBack("surf", secDict)
+            
+        return retDict
+        
 class RFpostException(AcdOptiException_analysis):
     pass
 class RFpostException_runAna(AcdOptiException_analysis_runAnalysis):

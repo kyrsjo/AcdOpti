@@ -1373,4 +1373,49 @@ options
          }
       }
    }
+   fieldSurfPlaneIntersect
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+         {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         filename
+         {
+            type = string
+            must = True
+            single = True
+            default = NOFILE
+         }
+         surfaceID
+         {
+            type = int
+            must = True
+            single = True
+            default = 6
+         }
+         z0
+         {
+            type = float
+            must = True
+            single = True
+            default = 0.00000
+         }
+         output
+         {
+            type = string
+            must = True
+            single = True
+            default = amplitude
+         }
+      }
+   }
 }

@@ -23,6 +23,7 @@ from AcdOptiScanCollection          import AcdOptiScanCollection
 from AcdOptiMetaAnalysisCollection  import AcdOptiMetaAnalysisCollection
 from AcdOptiDataExtractorCollection import AcdOptiDataExtractorCollection
 #import AcdOptiGeometryInstance
+from parameterScan.ParameterScanCollection import ParameterScanCollection
 
 import AcdOptiFileParser
 from AcdOptiExceptions import AcdOptiException_project_loadFail
@@ -45,9 +46,10 @@ class AcdOptiProject():
     geomCollection          = None
     meshTemplateCollection  = None    
     
-    scanCollection = None
+    scanCollection          = None #Old style
+    parameterScanCollection = None #New style
     
-    metaAnalysisCollection = None
+    metaAnalysisCollection  = None
     dataExtractorCollection = None
     
     def __init__(self, projectFolder_name):
@@ -93,6 +95,12 @@ class AcdOptiProject():
             AcdOptiDataExtractorCollection.createNew(os.path.join(self.projectFolder_name, "dataExtractor"))
         self.dataExtractorCollection = AcdOptiDataExtractorCollection(os.path.join(self.projectFolder_name, "dataExtractor"), self)
         
+        #Load the new-style parameterScanCollection
+        if not os.path.isdir(os.path.join(self.projectFolder_name, "ParameterScanCollection")):
+            ParameterScanCollection.createNew(os.path.join(self.projectFolder_name, "ParameterScanCollection"))
+        self.parameterScanCollection = ParameterScanCollection(os.path.join(self.projectFolder_name, "ParameterScanCollection"),self)
+            
+        
     #END __init__()
         
     @staticmethod
@@ -122,7 +130,7 @@ class AcdOptiProject():
         #Geometry instance folder
         AcdOptiGeometryCollection.createNew(os.path.join(folder, "geomInstances"))
         
-        #Scan collection
+        #Scan collection (old-style)
         AcdOptiScanCollection.createNew(os.path.join(folder, "scans"))
         
         #Meta-analysis collection
@@ -131,4 +139,5 @@ class AcdOptiProject():
         #DataExtractor collection
         AcdOptiDataExtractorCollection.createNew(os.path.join(folder, "dataExtractor"))
     
-    
+        #Parameter scan collection (new style)
+        ParameterScanCollection.createNew(os.path.join(folder, "ParameterScanCollection"))

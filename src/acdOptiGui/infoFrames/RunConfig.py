@@ -264,71 +264,14 @@ class RunConfig(InfoFrameComponent):
     def event_delete(self):
         print "RunConfig::event_delete()"
         self.runConfig.write()
-    
-    def __getTypeAndNameDialog(self,types,diaTitle):
-        """
-        Helper method for creating a dialog asking for a type and a name.
-        Input:
-         - types: List of strings describing the types
-         - diaTitle: Title of dialog box
-        Returns:
-        (type, name, response)
-         - type: One of the items in types
-         - name: The name typed in by the user, or None if nothing entered 
-         - response: Response code of the dialog (one of the gtk.RESPONSE_??? constants)
-        """
-        dia = gtk.Dialog(diaTitle, self.getBaseWindow(),
-                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                          gtk.STOCK_OK, gtk.RESPONSE_OK))
-        dia.set_default_response(gtk.RESPONSE_OK)
-
-        #Setup the listModel        
-        diaListModel = gtk.ListStore(str)
-        for type in types:
-            diaListModel.append([type,])
         
-        diaTreeView = gtk.TreeView(diaListModel)
-        diaCellRender = gtk.CellRendererText()
-        diaTreeViewCol = gtk.TreeViewColumn("Solver types", diaCellRender,text=0)
-        diaTreeView.set_headers_visible(False)
-        diaTreeView.append_column(diaTreeViewCol)
-        #diaTreeView.set_headers_visible(True)
-        dia.vbox.pack_start(diaTreeView, padding = 5)
-        
-        dia.vbox.pack_start(gtk.HSeparator(), padding=10)
-        
-        diaEntry = gtk.Entry()
-        diaEntry.set_text("Name...")
-        diaCheck = gtk.CheckButton(label="Use default name")
-        diaCheck.connect("toggled", lambda widget,data=None: diaEntry.set_sensitive(not widget.get_active()), None)
-        diaCheck.set_active(True)
-        dia.vbox.pack_start(diaCheck)
-        dia.vbox.pack_start(diaEntry)
-        
-        dia.show_all()
-        response = dia.run()
-        
-        #Get the answers
-        (path,column) = diaTreeView.get_cursor()
-        type = diaListModel[path][0]
-        defaultName = diaCheck.get_active()
-        name = None
-        if not defaultName:
-            name = diaEntry.get_text() 
-        
-        #Delete the dialog
-        dia.destroy()
-        
-        return (type, name, response)
-    
     def event_button_solverSetupAdd(self, widget, data=None):
         print "RunConfig::event_button_solverSetupAdd()"
         
-        (type,name,response) = self.__getTypeAndNameDialog(AcdOptiSolverSetup.getTypes(), "Select solver type")
+        (typ,name,response) = self.getTypeAndNameDialog_currentBase(AcdOptiSolverSetup.getTypes(), "Select solver type")
         if response == gtk.RESPONSE_OK:
             try:
-                newSS_name = AcdOptiSolverSetup.createNew(type, self.runConfig.folder, name)
+                newSS_name = AcdOptiSolverSetup.createNew(typ, self.runConfig.folder, name)
             except AcdOptiException_solverSetup_createFail_nameTaken as e:
                 mDia = gtk.MessageDialog(self.getBaseWindow(),
                                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -437,10 +380,10 @@ class RunConfig(InfoFrameComponent):
     
     def event_button_addAnalysis(self,widget,data=None):
         print "RunConfig::event_button_addAnalysis()"
-        (type,name,response) = self.__getTypeAndNameDialog(AnalysisInterface.getTypes(), "Select analysis type")
+        (typ,name,response) = self.getTypeAndNameDialog_currentBase(AnalysisInterface.getTypes(), "Select analysis type")
         if response == gtk.RESPONSE_OK:
             try:
-                self.runConfig.addAnalysis(type,name)
+                self.runConfig.addAnalysis(typ,name)
             except AnalysisException_createFail as e:
                 mDia = gtk.MessageDialog(self.getBaseWindow(),
                                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,

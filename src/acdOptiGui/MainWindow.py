@@ -36,6 +36,9 @@ from acdOpti.AcdOptiMetaAnalysis import AcdOptiMetaAnalysis
 from acdOpti.AcdOptiDataExtractorCollection import AcdOptiDataExtractorCollection
 from acdOpti.AcdOptiDataExtractor import AcdOptiDataExtractor
 
+from acdOpti.parameterScan.ParameterScanInterface import ParameterScanInterface
+from acdOpti.parameterScan.ParameterScanCollection import ParameterScanCollection
+
 from acdOpti.AcdOptiExceptions import *
 from AcdOptiGuiExceptions import *
 import exceptions, errno
@@ -50,6 +53,7 @@ from infoFrames.RunConfig import RunConfig
 from infoFrames.MeshTemplate import MeshTemplate
 from infoFrames.AnalysisExportedResults import AnalysisExportedResults
 from infoFrames.Scan import Scan
+from infoFrames.DummySubscanFrame import DummySubscanFrame 
 from infoFrames.MetaAnalysis import MetaAnalysis
 from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
 from infoFrames.DataExtractor import DataExtractor
@@ -433,53 +437,41 @@ class MainWindow():
     def event_toolbutton_scanNewButton(self, widget,data=None):
         print "MainWindow::event_toolbutton_scanNewButton()"
 
-        name = ""
-        while True:
-            dia = gtk.Dialog("Please enter name of new parameter scan:", self.window,
-                             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                             (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                              gtk.STOCK_OK, gtk.RESPONSE_OK))
-            dia.set_default_response(gtk.RESPONSE_OK)
-            nameBox = gtk.Entry()
-            nameBox.set_text(name)
-            nameBox.show()
-            dia.vbox.pack_start(nameBox)
-            dia.show_all()
-    
-            response = dia.run()
-            name = nameBox.get_text()
-    
-            dia.destroy()
-            
-            if response == gtk.RESPONSE_OK:
-                #Check for whitespace
-                print "got: \"" + name + "\""
-                if " " in name:
+        (typ, name, response) = InfoFrameComponent.getTypeAndNameDialog(["old-style"] + map(lambda s: s.split("::")[1], ParameterScanCollection.parameterScanTypes),\
+                                                                         "Select type and name of new parameter scan", self.window, True)
+        if response == gtk.RESPONSE_OK:
+            print "got name: \"" + name + "\""
+            #Check for whitespace
+            if " " in name:
+                mDia = gtk.MessageDialog(self.window,
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "Name cannot contain whitespace")
+                mDia.run()
+                mDia.destroy()
+                return
+            #OK, try to make the folder..
+            if typ == "old-style":
+                try:
+                    self.activeProject.scanCollection.add(name)
+                    self.updateProjectExplorer()
+                except AcdOptiException_scan_createFail:
                     mDia = gtk.MessageDialog(self.window,
                                              gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                              gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                             "Name cannot contain whitespace")
+                                             "Name already in use")
                     mDia.run()
                     mDia.destroy()
-                #OK, try to make the folder..
-                else:
-                    try:
-                        self.activeProject.scanCollection.add(name)
-                        self.updateProjectExplorer()
-                        break #Done!
-                    except AcdOptiException_scan_createFail:
-                        #Nope, try again
-                        print "got: \"" + name + "\""
-                        mDia = gtk.MessageDialog(self.window,
-                                                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                                                 gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                                 "Name already in use")
-                        mDia.run()
-                        mDia.destroy()
-                        continue;
-            #Response cancel or close
             else:
-                break
+                try:
+                    self.activeProject.parameterScanCollection.addNew(name,typ)
+                    self.updateProjectExplorer()
+                except:
+                    raise
+
+        else:
+            pass
+
     def event_toolbutton_metaAnalysisNewButton(self, widget,data=None):
         print "MainWindow::event_toolbutton_metaAnalysisNewButton()"
         
@@ -683,9 +675,15 @@ class MainWindow():
         elif isinstance(row[-1], AcdOptiScan):
             print "MainWindow::event_treeView_rowActivated() : scan, name='" + row[0] + "'"
             self.__infoFrame.push(Scan(self.__infoFrame, row[-1]))
+        elif isinstance(row[-1], ParameterScanInterface):
+            print "MainWindow::event_treeView_rowActivated() : ParameterScan (new-style), name='" + row[0] + "'"
+            from acdOpti.parameterScan.DummySubscan import DummySubscan
+            if isinstance(row[-1], DummySubscan):
+                self.__infoFrame.push(DummySubscanFrame(self.__infoFrame,row[-1]))
+            else:
+                self.__infoFrame.writeMessage("ParameterScan, instName='" + row[-1].instName + "'")
         elif isinstance(row[-1], AcdOptiMetaAnalysisCollection):
             print "MainWindow::event_treeView_rowActivated() : Meta analysis collection"
-            #self.__infoFrame.writeMessage("Meta-analysis collection")
             self.__infoFrame.push(MetaAnalysisCollection(self.__infoFrame, self.activeProject.metaAnalysisCollection))
         elif isinstance(row[-1], AcdOptiMetaAnalysis):
             print "MainWindow::event_treeView_rowActivated() : Meta analysis, name='" + row[0] + "'"
@@ -816,7 +814,7 @@ class MainWindow():
         scIter = self.__searchIter(self.activeProject.scanCollection)
         if not scIter:
             scIter = self.__treeModel.append(None, ["Scans", self.__treeView.render_icon(gtk.STOCK_EXECUTE, gtk.ICON_SIZE_MENU), "white", self.activeProject.scanCollection])
-        #Scans
+        #Scans (old-style)
         for (scanName, scan) in self.activeProject.scanCollection.scans.iteritems():
             if scan.lockdown:
                 color = "green"
@@ -832,6 +830,9 @@ class MainWindow():
                 if scan in v.scanInstances:
                     geomColMap[k] = v
             self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, sIter)
+        #Scans (new-style)
+        self.__updateProjectExplorer_helper_parameterscansWithChildren(self.activeProject.parameterScanCollection, scIter)
+        #Expand tree?
         if newProjectNow:
             self.__treeView.expand_row(self.__treeModel.get_path(scIter),False)
         
@@ -874,6 +875,30 @@ class MainWindow():
         if newProjectNow:
             self.__treeView.expand_row(self.__treeModel.get_path(decIter),False)
 
+    def __updateProjectExplorer_helper_parameterscansWithChildren(self, baseScanCollection, baseTreeIter):
+        """
+        Recursively add new-style parameter scans to the tree (they can be nested),
+        and add geometry instances with children below this.
+        Arguments:
+        - baseScanCollection: Where to look for scans (which are checked for scan collections) and geometries 
+        - baseTreeIter: From where to hang them in the GUI
+        """
+        for (scanName, scan) in baseScanCollection.scans.iteritems():
+            color = "white"
+            sIter = self.__searchIter(scan,self.__treeModel.iter_children(baseTreeIter))
+            if not sIter:
+                sIter = self.__treeModel.append(baseTreeIter,[scanName, self.__treeView.render_icon(gtk.STOCK_PAGE_SETUP, gtk.ICON_SIZE_MENU), color, scan])
+            else:
+                self.__treeModel[sIter][-2] = color
+            #Recursively add more scan collections
+            if scan.slaveScanCollection != None:
+                self.__updateProjectExplorer_helper_parameterscansWithChildren(scan.slaveScanCollection, sIter)
+            #Add geometries to the scan
+            geomColMap = {}
+            for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
+                if scan in v.scanInstances:
+                    geomColMap[k] = v
+            self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, sIter)
 
     def __updateProjectExplorer_helper_geomInstancesWithChildren(self,geomInstancesMap,baseTreeIter):
         # GeomInstances

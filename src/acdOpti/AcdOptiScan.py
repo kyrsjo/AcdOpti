@@ -100,7 +100,7 @@ class AcdOptiScan:
         baseGeomInstance_name = self.__paramfile.dataDict["baseGeomInstance_name"]
         if baseGeomInstance_name == "":
             self.baseGeomInstance = None
-            assert len(self.slaveGeoms) == 0
+            assert len(self.slaveGeomsDict) == 0
         else:
             self.baseGeomInstance = self.scanCollection.project.geomCollection.geomInstances[baseGeomInstance_name]
         

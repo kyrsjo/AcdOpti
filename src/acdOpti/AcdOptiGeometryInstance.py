@@ -361,6 +361,7 @@ class AcdOptiGeometryInstance():
 
     scanInstances = None #A list of the scans this geomInstances belongs to. 
                          # This is set by the scanInstance's __init__()
+                         # The list may contain both old- and new-style scans
 
     
     #Static class fields

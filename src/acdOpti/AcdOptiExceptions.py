@@ -155,6 +155,10 @@ class AcdOptiException_scan_analysisFail(AcdOptiException):
 class AcdOptiException_scan_predictFail(AcdOptiException):
     pass
 
+#ParameterScan
+class AcdOptiException_parameterScan(AcdOptiException):
+    pass
+
 #AcdOptiMetaAnalysisCollection
 class AcdOptiException_metaAnalysisCollection_loadFail(AcdOptiException):
     pass

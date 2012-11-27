@@ -19,9 +19,8 @@
 from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple
 from acdOpti.AcdOptiExceptions import AcdOptiException_parameterScan
 
-
-
 import os
+from acdOpti.parameterScan.ParameterScanInterface import ParameterScanInterface
 
 class ParameterScanCollection(object):
     """
@@ -37,7 +36,7 @@ class ParameterScanCollection(object):
     
     scans = None #Map of objects implementing ParameterScanInterface 
     
-    parameterScanTypes = ["ParameterScan::Dummy", "ParameterScan::DummySubscan"]
+    parameterScanTypes = ["ParameterScan::Dummy", "ParameterScan::DummySubscan", "ParameterScan::TuneFreq"]
     
     def __init__(self, folder, parent, parentScan=None):
         self.folder = folder
@@ -75,6 +74,9 @@ class ParameterScanCollection(object):
             elif scanType == "ParameterScan::DummySubscan":
                 from DummySubscan import DummySubscan
                 self.scans[scanName] = DummySubscan(childPath, self)
+            elif scanType == "ParameterScan::TuneFreq":
+                from TuneFreq import TuneFreq
+                self.scans[scanName] = TuneFreq(childPath,self)
             else:
                 if scanType in self.parameterScanTypes or "ParameterScan::"+scanType in self.parameterScanTypes:
                     raise NotImplementedError("Forgot to implement support for ParameterScan '" + scanType + "'!")
@@ -110,6 +112,10 @@ class ParameterScanCollection(object):
             from DummySubscan import DummySubscan
             DummySubscan.createNew(scanFolder)
             self.scans[name] = newScan = DummySubscan(scanFolder, self)
+        elif scanType == "ParameterScan::TuneFreq" or scanType == "TuneFreq":
+            from TuneFreq import TuneFreq
+            TuneFreq.createNew(scanFolder)
+            self.scans[name] = newScan = TuneFreq(scanFolder,self)
         else:
             if scanType in self.parameterScanTypes or "ParameterScan::"+scanType in self.parameterScanTypes:
                 raise NotImplementedError("Forgot to implement support for ParameterScan '" + scanType + "'!")

@@ -54,6 +54,7 @@ from infoFrames.MeshTemplate import MeshTemplate
 from infoFrames.AnalysisExportedResults import AnalysisExportedResults
 from infoFrames.Scan import Scan
 from infoFrames.DummySubscanFrame import DummySubscanFrame 
+from infoFrames.TuneFreqFrame import TuneFreqFrame
 from infoFrames.MetaAnalysis import MetaAnalysis
 from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
 from infoFrames.DataExtractor import DataExtractor
@@ -678,8 +679,11 @@ class MainWindow():
         elif isinstance(row[-1], ParameterScanInterface):
             print "MainWindow::event_treeView_rowActivated() : ParameterScan (new-style), name='" + row[0] + "'"
             from acdOpti.parameterScan.DummySubscan import DummySubscan
+            from acdOpti.parameterScan.TuneFreq import TuneFreq
             if isinstance(row[-1], DummySubscan):
                 self.__infoFrame.push(DummySubscanFrame(self.__infoFrame,row[-1]))
+            elif isinstance(row[-1], TuneFreq):
+                self.__infoFrame.push(TuneFreqFrame(self.__infoFrame,row[-1]))
             else:
                 self.__infoFrame.writeMessage("ParameterScan, instName='" + row[-1].instName + "'")
         elif isinstance(row[-1], AcdOptiMetaAnalysisCollection):
@@ -747,22 +751,6 @@ class MainWindow():
         """
         Clears and repopulates the project explorer by scanning the project
         """
-
-#        def searchIter(searchObject,baseIter=None):
-#            if baseIter == None:
-#                rowIter = self.__treeModel.get_iter_root()
-#            else:
-#                rowIter = baseIter
-#            while rowIter:
-#                print self.__treeModel[rowIter][-1]
-#                if self.__treeModel[rowIter][-1] == searchObject:
-#                    return rowIter
-#                    break
-#                rowIter = self.__treeModel.iter_next(rowIter)
-#            return None
-
-
-        #self.__treeModel.clear()
         color = "white"
         
         #Main project
@@ -895,12 +883,32 @@ class MainWindow():
                 self.__updateProjectExplorer_helper_parameterscansWithChildren(scan.slaveScanCollection, sIter)
             #Add geometries to the scan
             geomColMap = {}
-            for (k,v) in self.activeProject.geomCollection.geomInstances.iteritems(): 
-                if scan in v.scanInstances:
+            if scan.baseGeomInstance != None:
+                geomColMap[scan.baseGeomInstance.instName] = scan.baseGeomInstance
+                #In case of DummySubscan, where baseGeom in slaveGeoms: Only added once to GUI,
+                # as map can only have one entry/key
+                for (k,v) in scan.slaveGeoms.iteritems():
                     geomColMap[k] = v
             self.__updateProjectExplorer_helper_geomInstancesWithChildren(geomColMap, sIter)
 
     def __updateProjectExplorer_helper_geomInstancesWithChildren(self,geomInstancesMap,baseTreeIter):
+        
+        #If in GUI but not in geomColMap: Remove from GUI
+        while True:
+            throughAll = True
+            rowIter = self.__treeModel.iter_children(baseTreeIter)
+            while rowIter:
+                if isinstance(self.__treeModel[rowIter][-1],AcdOptiGeometryInstance):
+                    if not self.__treeModel[rowIter][-1] in geomInstancesMap.values():
+                        self.__treeModel.remove(rowIter)
+                        throughAll = False #restart
+                        break
+                rowIter = self.__treeModel.iter_next(rowIter)
+            #Managed to reach the end of rowIter without restarting!
+            if throughAll:
+                break
+        
+        
         # GeomInstances
         for (giName, gi) in geomInstancesMap.iteritems():
             if gi.lockdown:

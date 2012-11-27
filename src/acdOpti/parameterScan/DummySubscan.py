@@ -43,10 +43,15 @@ class DummySubscan(ParameterScanInterface):
             raise DummySubscanException("Invalid name '" + newName + "'")
         
         gName = self.instName + "--" + newName
-        self.slaveGeoms[gName] = newGeom = self.getProject().geomCollection.addGeomInstance(gName)
-        newGeom.scanInstances.append(self)
+        newGeom = self.getProject().geomCollection.addGeomInstance(gName)
         if self.baseGeomInstance == None:
-            self.baseGeomInstance = newGeom
+            self.setBaseGeom(gName)
+            
+        self.slaveGeoms[gName] = newGeom
+        newGeom.scanInstances.append(self)
+        
+        self.lockdown = True
+        
         self.write()
     
     @staticmethod
@@ -67,6 +72,8 @@ class DummySubscan(ParameterScanInterface):
         
         paramFile.dataDict.pushBack("baseGeomInstance_name", "")
         paramFile.dataDict.pushBack("slaveGeoms", DataDict())
+
+        paramFile.dataDict.pushBack("lockdown", "False")
 
         paramFile.write()
         

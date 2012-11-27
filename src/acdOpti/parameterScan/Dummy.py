@@ -49,6 +49,8 @@ class Dummy(ParameterScanInterface):
         paramFile.dataDict.pushBack("baseGeomInstance_name", "")
         paramFile.dataDict.pushBack("slaveGeoms", DataDict())
 
+        paramFile.dataDict.pushBack("lockdown", "False")
+
         paramFile.write()
     
     

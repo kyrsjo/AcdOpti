@@ -27,7 +27,7 @@ from acdOpti.parameterScan.TuneFreq import TuneFreq, TuneFreqException
 
 class TuneFreqFrame(InfoFrameComponent):
     """
-    Tune freq interface
+    ParameterScan::TuneFreq GUI
     """
     
     tuneFreq = None
@@ -58,6 +58,8 @@ class TuneFreqFrame(InfoFrameComponent):
     __fittedPredicted_Box = None
     __fittedPredicted_Entry = None
 
+    __plotButton = None
+
     def __init__(self,frameManager,tuneFreq):
         InfoFrameComponent.__init__(self, frameManager)
         self.tuneFreq = tuneFreq
@@ -77,7 +79,7 @@ class TuneFreqFrame(InfoFrameComponent):
         #Scan variable selector
         self.__scanVariableBox = gtk.HBox()
         self.__scanVariableCombo = gtk.combo_box_new_text()
-        self.__scanVariableChangedHandlerID =  self.__scanVariableCombo.connect("changed", self.event_comboChanged_scanVar, None)
+        self.__scanVariableChangedHandlerID = self.__scanVariableCombo.connect("changed", self.event_comboChanged_scanVar, None)
         self.__scanVariableBox.pack_start(gtk.Label("Scan variable:"), expand=False, padding=5)
         self.__scanVariableBox.pack_start(self.__scanVariableCombo , expand=True, padding=5)
         self.baseWidget.pack_start(self.__scanVariableBox, expand=False, padding=5)
@@ -136,6 +138,10 @@ class TuneFreqFrame(InfoFrameComponent):
         self.__fittedNDOF_Entry.set_sensitive(False)
         self.__fittedSqrtR2_Entry.set_sensitive(False)
         self.__fittedPredicted_Entry.set_sensitive(False)
+        
+        self.__plotButton = gtk.Button("Show plot")
+        self.__plotButton.connect("clicked", self.event_button_plot, None)
+        self.baseWidget.pack_start(self.__plotButton, expand=False, padding=10)
         
         self.updateDisplay()
         self.baseWidget.show_all()
@@ -299,6 +305,32 @@ class TuneFreqFrame(InfoFrameComponent):
         self.saveToScan()
         self.tuneFreq.doPredict()
         self.updateDisplay()
+    
+    def event_button_plot(self, widget, data=None):
+        self.saveToScan()
+        
+        import matplotlib.pyplot as plt
+        import numpy as np
+        (X,Y) = self.tuneFreq.getXY()
+        if len(X) > 1:
+            plt.plot(X,Y, "+")
+            xRANGE = abs(max(X)-min(X))
+            yRANGE = abs(max(Y)-min(Y))
+            plt.xlim(min(X)-0.1*xRANGE, max(X)+0.1*xRANGE)
+            plt.ylim(min(Y)-0.1*yRANGE, max(Y)+0.1*yRANGE)
+            print "NDOF=", self.tuneFreq.predict_ndof   
+            if (self.tuneFreq.predict_ndof >= 0):
+                xr = np.linspace(min(X)-0.1*xRANGE, max(X)+0.1*xRANGE)
+                yr = self.tuneFreq.predict_a*xr + self.tuneFreq.predict_b
+                plt.plot(xr,yr)
+            plt.axhline(y=self.tuneFreq.predict_targetValue, ls='--')
+        
+            plt.xlabel(self.tuneFreq.scanParameter_name)
+            plt.ylabel(self.tuneFreq.predict_anaVariable)
+            
+            plt.show()
+            gtk.main() #Else everything is closed when window is closed 
+        
     
     def event_comboChanged_geom(self, widget, data=None):
         self.saveToScan()

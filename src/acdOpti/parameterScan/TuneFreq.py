@@ -65,11 +65,7 @@ class TuneFreq(ParameterScanInterface):
             raise TuneFreqException("No prediction, can't add point")
         
         self.write()
-    def doPredict(self):
-        "Update the current prediction"
-        assert self.baseGeomInstance != None, "You must set a baseGeomInstance before doPredict()"
-        assert self.scanParameter_name in self.getProject().geomCollection.paramDefaults_getKeys()
-        
+    def getXY(self):
         X = []
         Y = []
         for geom in (self.slaveGeoms.values() + [self.baseGeomInstance]):
@@ -84,13 +80,22 @@ class TuneFreq(ParameterScanInterface):
         print "X =", X, "Y =", Y
         X = map(float,X)
         Y = map(float,Y)  
+        return (X,Y)
+    def doPredict(self):
+        "Update the current prediction"
+        assert self.baseGeomInstance != None, "You must set a baseGeomInstance before doPredict()"
+        assert self.scanParameter_name in self.getProject().geomCollection.paramDefaults_getKeys()
+        
+        (X,Y) = self.getXY()
+        
         try:
             (model, ndof, R2) = self.fit1D(X, Y, 1)
             self.predict_ndof = ndof
-            self.predict_x = self.eval1D(self.predict_targetValue, model)
+            #self.predict_x = self.eval1D(self.predict_targetValue, model)
             self.predict_R2 = R2
             self.predict_a = model[1]
             self.predict_b = model[0]
+            self.predict_x = (self.predict_targetValue-self.predict_b)/self.predict_a
         except FittingException_NDOF:
             self.predict_ndof = len(Y)-2
             self.predict_x = 0.0
@@ -172,7 +177,7 @@ class TuneFreq(ParameterScanInterface):
         paramFile.dataDict.pushBack("predict_b", "0")
         paramFile.dataDict.pushBack("predict_x", "0")
         paramFile.dataDict.pushBack("predict_R2", "0")
-        paramFile.dataDict.pushBack("predict_ndof", "0")
+        paramFile.dataDict.pushBack("predict_ndof", "-10") #predict_ndof only positive iff have valid prediction
 
         paramFile.dataDict.pushBack("lockdown", "False")
 

@@ -55,6 +55,7 @@ from infoFrames.AnalysisExportedResults import AnalysisExportedResults
 from infoFrames.Scan import Scan
 from infoFrames.DummySubscanFrame import DummySubscanFrame 
 from infoFrames.TuneFreqFrame import TuneFreqFrame
+from infoFrames.Scan2DFrame import Scan2DFrame
 from infoFrames.MetaAnalysis import MetaAnalysis
 from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
 from infoFrames.DataExtractor import DataExtractor
@@ -680,10 +681,13 @@ class MainWindow():
             print "MainWindow::event_treeView_rowActivated() : ParameterScan (new-style), name='" + row[0] + "'"
             from acdOpti.parameterScan.DummySubscan import DummySubscan
             from acdOpti.parameterScan.TuneFreq import TuneFreq
+            from acdOpti.parameterScan.Scan2D import Scan2D
             if isinstance(row[-1], DummySubscan):
                 self.__infoFrame.push(DummySubscanFrame(self.__infoFrame,row[-1]))
             elif isinstance(row[-1], TuneFreq):
                 self.__infoFrame.push(TuneFreqFrame(self.__infoFrame,row[-1]))
+            elif isinstance(row[-1], Scan2D):
+                self.__infoFrame.push(Scan2DFrame(self.__infoFrame, row[-1]))
             else:
                 self.__infoFrame.writeMessage("ParameterScan, instName='" + row[-1].instName + "'")
         elif isinstance(row[-1], AcdOptiMetaAnalysisCollection):

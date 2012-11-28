@@ -70,7 +70,7 @@ class InfoFrameComponent:
     
     
     def getTypeAndNameDialog_currentBase(self,types,diaTitle):
-        self.getTypeAndNameDialog(types, diaTitle, self.getBaseWindow())
+        return self.getTypeAndNameDialog(types, diaTitle, self.getBaseWindow())
     
     @staticmethod
     def getTypeAndNameDialog(types,diaTitle,baseWindow,mustName=False):
@@ -128,5 +128,5 @@ class InfoFrameComponent:
         
         #Delete the dialog
         dia.destroy()
-        
+
         return (type, name, response)

@@ -196,7 +196,7 @@ class ParameterScanInterface(object):
                                 return nextBranch
                         r = dictRecDig(anaVarSplit[1:],ana.exportResults)
                         if r != None:
-                            retVals.pushBack()
+                            retVals.append(r)
         return retVals
     
     @staticmethod
@@ -215,14 +215,14 @@ class ParameterScanInterface(object):
             raise FittingException_NDOF("ndof =", ndof, "< 0, can't fit.")
         A = [np.ones(len(x))]
         for i in xrange(deg):
-            A.append(x**i)
+            A.append(np.asarray(x)**(i+1))
         A = np.vstack(A).T
         
         model = np.linalg.lstsq(A,y)[0]
         
         R2 = 0.0
-        for i in len(x):
-            R2 += (y[i]-ParameterScanInterface.eval1D(x[i],model))
+        for i in xrange(len(x)):
+            R2 += (y[i]-ParameterScanInterface.eval1D(x[i],model))**2
 
         return (model, ndof, R2)
 

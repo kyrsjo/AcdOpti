@@ -232,6 +232,8 @@ class TuneFreqFrame(InfoFrameComponent):
             mDia.run()
             mDia.destroy()
         self.updateDisplay()
+        self.frameManager.mainWindow.updateProjectExplorer()
+
     
     def event_button_addpoint(self, widget, data=None):
         self.saveToScan()

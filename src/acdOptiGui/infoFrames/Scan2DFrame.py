@@ -24,7 +24,7 @@ import gtk
 import math as m
 
 from InfoFrameComponent import InfoFrameComponent
-from acdOpti.parameterScan.TuneFreq import TuneFreq, TuneFreqException
+from acdOpti.parameterScan.Scan2D import Scan2DException
 
 class Scan2DFrame(InfoFrameComponent):
     """
@@ -199,8 +199,11 @@ class Scan2DFrame(InfoFrameComponent):
         for i in xrange(self.__scanVariable2Combo.get_model().iter_n_children(None)):
             self.__scanVariable2Combo.remove_text(0)
         #Refill
-        idx = 0
         scanVariable2Name = self.scan2D.scanParameter2_name
+        self.__scanVariable2Combo.append_text(" -- Disabled --")
+        if scanVariable2Name == "":
+            self.__scanVariable2Combo.set_active(0)
+        idx = 1
         for varName in self.scan2D.getProject().geomCollection.paramDefaults_getKeys():
             if varName == self.scan2D.scanParameter1_name:
                 continue #Skip
@@ -236,10 +239,14 @@ class Scan2DFrame(InfoFrameComponent):
                 self.scan2D.setBaseGeom(geomComboText)
             
             scanVar1ComboText = self.__scanVariable1Combo.get_active_text()
-            if scanVar1ComboText != None:
+            if scanVar1ComboText == None:
+                self.scan2D.scanParameter1_name = ""
+            elif scanVar1ComboText != None:
                 self.scan2D.scanParameter1_name = scanVar1ComboText
             scanVar2ComboText = self.__scanVariable2Combo.get_active_text()
-            if scanVar2ComboText != None:
+            if scanVar2ComboText == " -- Disabled --" or scanVar2ComboText == None:
+                self.scan2D.scanParameter2_name = ""
+            elif scanVar2ComboText != None:
                 self.scan2D.scanParameter2_name = scanVar2ComboText
 
         try:
@@ -259,19 +266,49 @@ class Scan2DFrame(InfoFrameComponent):
     def event_button_checkScanRange(self, widget, data=None):
         self.saveToScan()
         self.updateDisplay() #In case invalid entries found by saveToScan, update the GUI to see the reset values
-        (range1,range2) = self.scan2D.getScanRanges()
+        try:
+            (range1,range2) = self.scan2D.getScanRanges()
+        except Scan2DException as e:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Error while generating the range:\n%s" % (e.args[0],) )
+            mDia.run()
+            mDia.destroy()
+            return
         
-        mDia = gtk.MessageDialog(self.getBaseWindow(),
-                                 gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                                 gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
-                                 "Got scan ranges:\n %s: %s\n %s: %s\n Total number of points: %i" % \
-                                 ( self.scan2D.scanParameter1_name, str(range1), self.scan2D.scanParameter2_name, str(range2), len(range1)*len(range2) ) )
-        mDia.run()
-        mDia.destroy()
+        if range2 != None:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
+                                     "Got scan ranges:\n %s: %s\n %s: %s\n Total number of points: %i" % \
+                                     ( self.scan2D.scanParameter1_name, str(range1), self.scan2D.scanParameter2_name, str(range2), len(range1)*len(range2) ) )
+            mDia.run()
+            mDia.destroy()
+        else:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
+                                     "Got scan ranges:\n %s: %s\n (2nd variable disabled)\n Total number of points: %i" % \
+                                     ( self.scan2D.scanParameter1_name, str(range1), len(range1) ) )
+            mDia.run()
+            mDia.destroy()
     
     def event_button_doScan(self,widget,data=None):
         self.saveToScan()
         self.updateDisplay()
+        
+        #Just as a test
+        try:
+            (range1,range2) = self.scan2D.getScanRanges()
+        except Scan2DException as e:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Error while generating the range:\n%s" % (e.args[0],) )
+            mDia.run()
+            mDia.destroy()
+            return
         
         self.scan2D.createScan()
         
@@ -282,48 +319,93 @@ class Scan2DFrame(InfoFrameComponent):
         self.saveToScan()
         self.updateDisplay()
         
-        #import numpy as np
+        if self.scan2D.scanParameter1_name == "":
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Must set at least one scan parameter!" )
+            mDia.run()
+            mDia.destroy()
+            return
+        
+        import numpy as np
         import matplotlib.pyplot as plt
         
-        (range1,range2) = self.scan2D.getScanRanges()
+        try:
+            (range1,range2) = self.scan2D.getScanRanges()
+        except Scan2DException as e:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Error while generating the range:\n%s" % (e.args[0],) )
+            mDia.run()
+            mDia.destroy()
+            return
+        
+        showPlot = False
         
         X = [] #parameter 1
         Y = [] #parameter 2
-        for i in xrange(len(range2)):
-            X += list(range1)
-            Y += [range2[i]]*len(range1)
-        plt.plot(X,Y, '+', label="Proposed range")
+        if range2 != None:
+            for i in xrange(len(range2)):
+                X += list(range1)
+                Y += [range2[i]]*len(range1)
+        else:
+             X = list(range1)
+             Y = list(np.zeros_like(range1))
+        if len(X) > 0:
+            plt.plot(X,Y, '+', label="Proposed range")
+            showPlot = True
         
         #Todo: Show current geometries also
         if self.scan2D.baseGeomInstance != None:
             X2 = []
             Y2 = []
             
+            #BaseGeomInstance
             if self.scan2D.scanParameter1_name in self.scan2D.baseGeomInstance.templateOverrides_getKeys():
                 X2.append(self.scan2D.baseGeomInstance.templateOverrides_get(self.scan2D.scanParameter1_name))
             else:
                 X2.append(self.scan2D.getProject().geomCollection.paramDefaults_get(self.scan2D.scanParameter1_name))
             
-            if self.scan2D.scanParameter2_name in self.scan2D.baseGeomInstance.templateOverrides_getKeys():
+            if self.scan2D.scanParameter2_name == "":
+                Y2.append(0.0)
+            elif self.scan2D.scanParameter2_name in self.scan2D.baseGeomInstance.templateOverrides_getKeys():
                 Y2.append(self.scan2D.baseGeomInstance.templateOverrides_get(self.scan2D.scanParameter2_name))
             else:
                 Y2.append(self.scan2D.getProject().geomCollection.paramDefaults_get(self.scan2D.scanParameter2_name))
-                
+            
+            #SlaveGeoms
             for geom in self.scan2D.slaveGeoms.values():
                 X2.append(geom.templateOverrides_get(self.scan2D.scanParameter1_name))
-                Y2.append(geom.templateOverrides_get(self.scan2D.scanParameter2_name))
-            
-            plt.plot(X2,Y2, 'x', label="Current slaveGeoms")
-        xRANGE = abs(max(X)-min(X))
-        yRANGE = abs(max(Y)-min(Y))
-        plt.xlim(min(X)-0.1*xRANGE, max(X)+0.1*xRANGE)
-        plt.ylim(min(Y)-0.1*yRANGE, max(Y)+0.1*yRANGE)
+                if self.scan2D.scanParameter2_name == "":
+                    Y2.append(0.0)
+                else:
+                    Y2.append(geom.templateOverrides_get(self.scan2D.scanParameter2_name))
+            X2 = map(float, X2)
+            Y2 = map(float, Y2)
+            if len(X2) > 0:
+                plt.plot(X2,Y2, 'x', label="Current slaveGeoms")
+                showPlot = True
+        
+        if showPlot:
+            xRANGE = abs(max(X+X2)-min(X+X2)) #X,X2 are lists
+            yRANGE = abs(max(Y+Y2)-min(Y+Y2))
+            if yRANGE == 0:
+                yRANGE = 1.0 #In case of no 2nd parameter
+            plt.xlim(min(X+X2)-0.1*xRANGE, max(X+X2)+0.1*xRANGE)
+            plt.ylim(min(Y+Y2)-0.1*yRANGE, max(Y+Y2)+0.1*yRANGE)
 
-        plt.legend()
-        
-        plt.show()
-        
-        gtk.main()
+            plt.legend()
+            plt.show()
+            gtk.main()
+        else:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "No data to plot?" )
+            mDia.run()
+            mDia.destroy()
     
     def event_comboChanged_geom(self, widget, data=None):
         print "Scan2DFrame::event_comboChanged_geom, data =", data

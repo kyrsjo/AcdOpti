@@ -23,7 +23,7 @@ import gtk
 import math as m
 
 from InfoFrameComponent import InfoFrameComponent
-from acdOpti.parameterScan.TuneFreq import TuneFreq, TuneFreqException
+from acdOpti.parameterScan.TuneFreq import TuneFreqException
 
 class TuneFreqFrame(InfoFrameComponent):
     """
@@ -330,6 +330,13 @@ class TuneFreqFrame(InfoFrameComponent):
             
             plt.show()
             gtk.main() #Else everything is closed when window is closed 
+        else:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "No data to plot?" )
+            mDia.run()
+            mDia.destroy()
         
     
     def event_comboChanged_geom(self, widget, data=None):

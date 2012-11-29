@@ -36,7 +36,7 @@ class ParameterScanCollection(object):
     
     scans = None #Map of objects implementing ParameterScanInterface 
     
-    parameterScanTypes = ["ParameterScan::Dummy", "ParameterScan::DummySubscan", "ParameterScan::TuneFreq"]
+    parameterScanTypes = ["ParameterScan::Dummy", "ParameterScan::DummySubscan", "ParameterScan::TuneFreq", "ParameterScan::Scan2D"]
     
     def __init__(self, folder, parent, parentScan=None):
         self.folder = folder
@@ -77,6 +77,9 @@ class ParameterScanCollection(object):
             elif scanType == "ParameterScan::TuneFreq":
                 from TuneFreq import TuneFreq
                 self.scans[scanName] = TuneFreq(childPath,self)
+            elif scanType == "ParameterScan::Scan2D":
+                from Scan2D import Scan2D
+                self.scans[scanName] = Scan2D(childPath,self)
             else:
                 if scanType in self.parameterScanTypes or "ParameterScan::"+scanType in self.parameterScanTypes:
                     raise NotImplementedError("Forgot to implement support for ParameterScan '" + scanType + "'!")
@@ -116,6 +119,10 @@ class ParameterScanCollection(object):
             from TuneFreq import TuneFreq
             TuneFreq.createNew(scanFolder)
             self.scans[name] = newScan = TuneFreq(scanFolder,self)
+        elif scanType == "ParameterScan::Scan2D" or scanType == "Scan2D":
+            from Scan2D import Scan2D
+            Scan2D.createNew(scanFolder)
+            self.scans[name] = newScan = Scan2D(scanFolder,self)
         else:
             if scanType in self.parameterScanTypes or "ParameterScan::"+scanType in self.parameterScanTypes:
                 raise NotImplementedError("Forgot to implement support for ParameterScan '" + scanType + "'!")

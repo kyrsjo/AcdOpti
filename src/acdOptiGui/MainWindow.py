@@ -56,6 +56,7 @@ from infoFrames.Scan import Scan
 from infoFrames.DummySubscanFrame import DummySubscanFrame 
 from infoFrames.TuneFreqFrame import TuneFreqFrame
 from infoFrames.Scan2DFrame import Scan2DFrame
+from infoFrames.Scan2D_TuneFrame import Scan2D_TuneFrame
 from infoFrames.MetaAnalysis import MetaAnalysis
 from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
 from infoFrames.DataExtractor import DataExtractor
@@ -682,12 +683,15 @@ class MainWindow():
             from acdOpti.parameterScan.DummySubscan import DummySubscan
             from acdOpti.parameterScan.TuneFreq import TuneFreq
             from acdOpti.parameterScan.Scan2D import Scan2D
+            from acdOpti.parameterScan.Scan2D_Tune import Scan2D_Tune
             if isinstance(row[-1], DummySubscan):
                 self.__infoFrame.push(DummySubscanFrame(self.__infoFrame,row[-1]))
             elif isinstance(row[-1], TuneFreq):
                 self.__infoFrame.push(TuneFreqFrame(self.__infoFrame,row[-1]))
             elif isinstance(row[-1], Scan2D):
                 self.__infoFrame.push(Scan2DFrame(self.__infoFrame, row[-1]))
+            elif isinstance(row[-1], Scan2D_Tune):
+                self.__infoFrame.push(Scan2D_TuneFrame(self.__infoFrame, row[-1]))
             else:
                 self.__infoFrame.writeMessage("ParameterScan, instName='" + row[-1].instName + "'")
         elif isinstance(row[-1], AcdOptiMetaAnalysisCollection):
@@ -832,8 +836,8 @@ class MainWindow():
         macIter = self.__searchIter(self.activeProject.metaAnalysisCollection)
         if not macIter:
             macIter = self.__treeModel.append(None, ["Meta-analysis", self.__graphIcon, "white", self.activeProject.metaAnalysisCollection])
-        else:
-            self.__treeModel[macIter][-2] = color
+        #else:
+        #    self.__treeModel[macIter][-2] = color
         #Meta analysis
         for (metAnaName, metAna) in self.activeProject.metaAnalysisCollection.metaAnalysis.iteritems():
             if metAna.lockdown:

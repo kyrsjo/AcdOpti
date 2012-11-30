@@ -40,7 +40,7 @@ class Scan2D(ParameterScanInterface):
     scanParameter2_num  = None
     
     def __init__(self, folder, collection):
-        print "TuneFreq::__init__()"
+        print "Scan2D::__init__()"
         super(Scan2D,self).__init__(folder,collection,"ParameterScan::Scan2D")
         
         self.scanParameter1_name = self._paramFile.dataDict["scanParameter1_name"]
@@ -98,8 +98,10 @@ class Scan2D(ParameterScanInterface):
         """
         Add a point to the scan with the given parameter value
         """
-        assert self.scanParameter1_name != ""
-        assert self.scanParameter2_name != ""
+
+        assert self.scanParameter1_name in self.getProject().geomCollection.paramDefaults_getKeys()
+        if parameterValue2 != None:
+            assert self.scanParameter2_name in self.getProject().geomCollection.paramDefaults_getKeys()
         
         oldName = self.baseGeomInstance.instName
         if parameterValue2 != None: #2D scan

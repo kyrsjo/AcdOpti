@@ -39,7 +39,6 @@ class Scan2DFrame(InfoFrameComponent):
 
     __scanVariable1Box = None
     __scanVariable1Combo = None
-    __scanVariable1DefLabel = None
     __scanVariable1ChangedHandlerID = None
     
     __scanVariable1RangeBox = None
@@ -50,7 +49,6 @@ class Scan2DFrame(InfoFrameComponent):
 
     __scanVariable2Box = None
     __scanVariable2Combo = None
-    __scanVariable2DefLabel = None
     __scanVariable2ChangedHandlerID = None
     
     __scanVariable2RangeBox = None
@@ -229,6 +227,10 @@ class Scan2DFrame(InfoFrameComponent):
             self.__geomCombo.set_sensitive(False)
             self.__scanVariable1Combo.set_sensitive(False)
             self.__scanVariable2Combo.set_sensitive(False)
+        if self.scan2D.scanParameter1_name == "":
+            self.__doScanButton.set_sensitive(False)
+        else:
+            self.__doScanButton.set_sensitive(True)
     
     def saveToScan(self):
         print "Scan2DFrame::saveToScan()"

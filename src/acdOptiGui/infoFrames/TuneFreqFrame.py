@@ -38,7 +38,6 @@ class TuneFreqFrame(InfoFrameComponent):
     
     __scanVariableBox = None
     __scanVariableCombo = None
-    __scanVariableDefLabel = None
     __scanVariableChangedHandlerID = None
 
     __pointButtonBox = None
@@ -257,7 +256,7 @@ class TuneFreqFrame(InfoFrameComponent):
         
         defaultValue = None
         if self.tuneFreq.scanParameter_name in self.tuneFreq.baseGeomInstance.templateOverrides_getKeys():
-            defaultValue = self.tuneFreq.baseGeomInstance.templateOverrides_get()
+            defaultValue = self.tuneFreq.baseGeomInstance.templateOverrides_get(self.tuneFreq.scanParameter_name)
         elif self.tuneFreq.scanParameter_name in self.tuneFreq.baseGeomInstance.template.paramDefaults_getKeys():
             defaultValue = self.tuneFreq.baseGeomInstance.template.paramDefaults_get(self.tuneFreq.scanParameter_name)
         assert defaultValue != None, "scanParameter_name '" + self.tuneFreq.scanParameter_name + "' not found ?!?"

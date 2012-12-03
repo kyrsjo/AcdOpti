@@ -39,7 +39,9 @@ class AcdOptiDataExtractor:
     
     dataExtracted = None
     keyNames = None
+    
     filters = None
+    keepKeys = None
     
     lockdown = None
     
@@ -70,6 +72,18 @@ class AcdOptiDataExtractor:
             self.__paramfile.dataDict.pushBack("extractFname", "")
             self.__paramfile.write()
             self.extractFname = ""
+
+        #KeepKeys
+        self.keepKeys = []
+        try:
+            fileKeepKeys = self.__paramfile.dataDict["keepKeys"]
+            for (k,v) in fileKeepKeys:
+                assert k == "key"
+                self.keepKeys.append(v)
+        except AcdOptiException_dataDict_getValsSingle:
+            print "AcdOptiDataExtractor::__init__(): Adding keepKeys to paramFile"
+            self.__paramfile.dataDict.pushBack("keepKeys", DataDict())
+            self.__paramfile.write()
 
         #Parse keyNames
         self.keyNames = []
@@ -194,7 +208,29 @@ class AcdOptiDataExtractor:
                 raise KeyError
         self.keyNames.sort(key=lambda s: s.split(".",1)[1])
         self.keyNames.sort(key=sort1)
-                  
+        
+        #Filter keys
+        if len(self.keepKeys) > 0:
+            print "Filtering keys..."
+            i = 0
+            while i < len(self.keyNames):
+                k = self.keyNames[i]
+                if k in self.keepKeys:
+                    print "Kept key '" + k + "'" 
+                    i += 1
+                    
+                else:
+                    print "Deleting key '" + k + "'"
+                    del self.keyNames[i]                
+                    for d in self.dataExtracted:
+                        try:
+                            del d[k]
+                        except KeyError:
+                            #print "key '" + k + "' not in this row"
+                            pass
+                    #i = 0 #restart loop
+
+                    
         self.lockdown = True
         self.write()
     
@@ -265,6 +301,12 @@ class AcdOptiDataExtractor:
             f.settingsDict["numFiltered"] = str(f.numFiltered)
             fifile.pushBack(f.filterType, f.settingsDict)
         
+        kkfile = self.__paramfile.dataDict["keepKeys"]
+        kkfile.clear()
+        for k in self.keepKeys:
+            if len(self.keyNames) > 0 and not k in self.keyNames:
+                print "WARNING: Invalid key '" + k + "' in keepKeys"
+            kkfile.pushBack("key", k)
         self.__paramfile.write()
             
     @staticmethod
@@ -289,6 +331,8 @@ class AcdOptiDataExtractor:
         paramFile.dataDict.pushBack("extractedData", DataDict())
         
         paramFile.dataDict.pushBack("filters", DataDict())
+        
+        paramFile.dataDict.pushBack("keepKeys", DataDict())
         
         paramFile.dataDict.pushBack("lockdown", "False")
         

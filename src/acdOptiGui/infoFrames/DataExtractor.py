@@ -39,6 +39,8 @@ class DataExtractor(InfoFrameComponent):
     __dataRenders = None
     
     __extractFnameEntry = None
+    __keepKeyEntry      = None
+    
     __filterButton = None
     __addPlotButton = None
     __exportButton = None
@@ -61,8 +63,14 @@ class DataExtractor(InfoFrameComponent):
         fnameEntryBox = gtk.HBox()
         fnameEntryBox.pack_start(gtk.Label("Export to filename:"), padding=5,expand=False)
         self.__extractFnameEntry = gtk.Entry()
-        fnameEntryBox.pack_start(self.__extractFnameEntry)
+        fnameEntryBox.pack_start(self.__extractFnameEntry, padding=5, expand=True)
         self.baseWidget.pack_start(fnameEntryBox,expand=False)
+        
+        keepKeyEntryBox = gtk.HBox()
+        keepKeyEntryBox.pack_start(gtk.Label("Only keep key(s):"), padding=5, expand=False)
+        self.__keepKeyEntry = gtk.Entry()
+        keepKeyEntryBox.pack_start(self.__keepKeyEntry, padding = 5, expand=True)
+        self.baseWidget.pack_start(keepKeyEntryBox,expand=False)
         
         self.__filterButton = gtk.Button("_Filters...")
         self.__filterButton.connect("clicked", self.event_button_filter,None)
@@ -87,7 +95,14 @@ class DataExtractor(InfoFrameComponent):
         
         self.__extractFnameEntry.set_text(self.dataExtractor.extractFname)
 
+        keepKeyString = ""
+        for k in self.dataExtractor.keepKeys:
+            keepKeyString += k + ", "
+        keepKeyString = keepKeyString[:-2]
+        self.__keepKeyEntry.set_text(keepKeyString)
+
         if self.dataExtractor.lockdown:
+            self.__keepKeyEntry.set_sensitive(False)
             #self.__filterButton.set_sensitive(False)
             self.__exportButton.set_sensitive(True)
             self.__lockdownRunButton.set_label("_Clear lockdown")
@@ -121,6 +136,9 @@ class DataExtractor(InfoFrameComponent):
                 self.__dataModel.append(rl)
             
         else:
+            #not lockdown
+            self.__keepKeyEntry.set_sensitive(True)
+            
             self.__filterButton.set_sensitive(True)
             self.__exportButton.set_sensitive(False)
             self.__lockdownRunButton.set_label("_Run")
@@ -133,6 +151,27 @@ class DataExtractor(InfoFrameComponent):
                 self.__dataCols    = None
                 self.__dataRenders = None
     
+    def saveToDataExtractor(self):
+        "Save current GUI content to DataExtractor"
+
+        self.dataExtractor.extractFname = self.__extractFnameEntry.get_text()
+
+        if not self.dataExtractor.lockdown:
+            keepKeyString = self.__keepKeyEntry.get_text()
+            keepKeyString = keepKeyString.split(",")
+            del self.dataExtractor.keepKeys[:] #clear it!
+            for k in keepKeyString:
+                k2 = k.strip()
+                if " " in k2:
+                    print "keepKeyString element contained space, skipping '" + k2 + "'"
+                    continue
+                elif k2 == "":
+                    print "keepKeyString element is empty string, skipping."
+                    continue
+                self.dataExtractor.keepKeys.append(k2)
+                    
+        self.dataExtractor.write()
+    
     def event_button_filter(self,widget,data=None):
         self.frameManager.push(DataExtractorFilters(self.frameManager, self.dataExtractor,self.dataExtractor.lockdown))
     
@@ -140,19 +179,21 @@ class DataExtractor(InfoFrameComponent):
         pass
     
     def event_button_export(self,widget,data=None):
-        fname = self.__extractFnameEntry.get_text()
-        if fname != self.dataExtractor.extractFname:
-            self.dataExtractor.extractFname = fname
-            self.dataExtractor.write()
+        self.saveToDataExtractor()
         #self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv", ["GEOM.idw", "GEOM.eow", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].Hmax_norm[0]"])
         #self.dataExtractor.export("/home/kyrre/PhD/OptiData/cellData.csv")
         self.dataExtractor.export()
     
     def event_button_lockdownRun(self,widget,data=None):
+        self.saveToDataExtractor()
+        
         if self.dataExtractor.lockdown:
             self.dataExtractor.clearLockdown()
         else:
             self.dataExtractor.runExtractor()
         
         self.__updateGui()
-        
+    
+    def event_delete(self):
+        return self.saveToDataExtractor()
+    

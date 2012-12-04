@@ -22,6 +22,7 @@ import gtk
 
 from InfoFrameComponent import InfoFrameComponent
 from DataExtractorFilters import DataExtractorFilters
+from DataExtractorPlots import DataExtractorPlots
 
 from acdOpti.AcdOptiDataExtractor import AcdOptiDataExtractor
 
@@ -42,7 +43,7 @@ class DataExtractor(InfoFrameComponent):
     __keepKeyEntry      = None
     
     __filterButton = None
-    __addPlotButton = None
+    __plotButton = None
     __exportButton = None
     __lockdownRunButton = None
     
@@ -76,9 +77,9 @@ class DataExtractor(InfoFrameComponent):
         self.__filterButton.connect("clicked", self.event_button_filter,None)
         self.baseWidget.pack_start(self.__filterButton, expand=False)
         
-        self.__addPlotButton = gtk.Button("_Add plot...")
-        self.__addPlotButton.connect("clicked", self.event_button_addPlot,None)
-        self.baseWidget.pack_start(self.__addPlotButton, expand=False)
+        self.__plotButton = gtk.Button("_Plots...")
+        self.__plotButton.connect("clicked", self.event_button_plot,None)
+        self.baseWidget.pack_start(self.__plotButton, expand=False)
         
         self.__exportButton = gtk.Button("E_xport...")
         self.__exportButton.connect("clicked", self.event_button_export,None)
@@ -175,8 +176,9 @@ class DataExtractor(InfoFrameComponent):
     def event_button_filter(self,widget,data=None):
         self.frameManager.push(DataExtractorFilters(self.frameManager, self.dataExtractor,self.dataExtractor.lockdown))
     
-    def event_button_addPlot(self,widget,data=None):
-        pass
+    def event_button_plot(self,widget,data=None):
+        #print "DataExtractor::event_button_plot()"
+        self.frameManager.push(DataExtractorPlots(self.frameManager,self.dataExtractor))
     
     def event_button_export(self,widget,data=None):
         self.saveToDataExtractor()

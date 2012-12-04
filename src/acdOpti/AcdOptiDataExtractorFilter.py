@@ -28,7 +28,7 @@ class AcdOptiDataExtractorFilter(object):
     
     numFiltered = None #How many was filtered?
     
-    def __init__(self,settingsDict=None):
+    def __init__(self,settingsDict):
         "Init and/or load  a filter"
         assert isinstance(settingsDict,DataDict)
         self.settingsDict = settingsDict

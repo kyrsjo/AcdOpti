@@ -18,6 +18,7 @@
 
 from AcdOptiFileParser import AcdOptiFileParser_simple, DataDict
 from AcdOptiDataExtractorFilter import AcdOptiDataExtractorFilter
+from acdOpti.AcdOptiDataExtractorPlot import AcdOptiDataExtractorPlot
 from acdOpti.AcdOptiExceptions import AcdOptiException_dataExtractor_createFail,\
                                       AcdOptiException_dataExtractor_loadFail,\
                                       AcdOptiException_dataDict_getValsSingle
@@ -41,6 +42,8 @@ class AcdOptiDataExtractor:
     keyNames = None
     
     filters = None
+    plots = None
+    
     keepKeys = None
     
     lockdown = None
@@ -108,6 +111,15 @@ class AcdOptiDataExtractor:
         for (k,v) in self.__paramfile.dataDict["filters"]:
             self.filters.append(AcdOptiDataExtractorFilter.getFilterClass(k,v))
         
+        #Plots
+        self.plots = []
+        try:
+            filePlots = self.__paramfile.dataDict["plots"]
+            for (k,v) in filePlots:
+                self.plots.append(AcdOptiDataExtractorPlot.getPlotClass(k, self, v))
+        except AcdOptiException_dataDict_getValsSingle:
+            self.__paramfile.dataDict.pushBack("plots", DataDict())
+            self.__paramfile.write()
             
     def runExtractor(self):
         assert self.lockdown == False
@@ -307,8 +319,14 @@ class AcdOptiDataExtractor:
             if len(self.keyNames) > 0 and not k in self.keyNames:
                 print "WARNING: Invalid key '" + k + "' in keepKeys"
             kkfile.pushBack("key", k)
+        
+        plfile = self.__paramfile.dataDict["plots"]
+        plfile.clear()
+        for p in self.plots:
+            plfile.pushBack(p.plotType, p.settingsDict)
+
         self.__paramfile.write()
-            
+        
     @staticmethod
     def createNew(folder):
         #Construct the instance name from folder
@@ -331,6 +349,8 @@ class AcdOptiDataExtractor:
         paramFile.dataDict.pushBack("extractedData", DataDict())
         
         paramFile.dataDict.pushBack("filters", DataDict())
+        
+        paramFile.dataDict.pushBack("plots", DataDict())
         
         paramFile.dataDict.pushBack("keepKeys", DataDict())
         

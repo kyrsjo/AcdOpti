@@ -36,6 +36,9 @@ class DataExtractorFilters(InfoFrameComponent):
     __tableScroll = None
     __tableWidget = None
     
+    __inputCollection = None
+    __delCollection   = None
+    
     __addButton   = None
     __closeButton = None
     
@@ -62,7 +65,7 @@ class DataExtractorFilters(InfoFrameComponent):
         self.__addButton.set_sensitive(not self.lockdown)
         self.baseWidget.pack_start(self.__addButton,expand=False)
         
-        self.__closeButton = gtk.Button("Close filter view")
+        self.__closeButton = gtk.Button("_Close filter view")
         self.__closeButton.connect("clicked", self.event_button_close, None)
         self.baseWidget.pack_start(self.__closeButton,expand=False)
 

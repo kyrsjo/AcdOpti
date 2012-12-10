@@ -134,10 +134,12 @@ class RFpostParser():
             #print  sec[1].strip(), surfID_match.groups()
             surfID = surfID_match.group(1)
             secDict.pushBack("surfaceID", surfID)
-            for i in xrange(2,len(sec)-1,3):
+            print "sec=", sec
+            for i in xrange(2,len(sec)-1,4):
                 #print "*****", i, sec[i], sec[i+1], sec[i+2]
                 modDict = DataDict()
     
+                print "sec[" + str(i) + "] = '" + sec[i] + "'"
                 modID_match = re.match("ModeID :[ ]*([0-9]*)", sec[i].strip())
                 modID = modID_match.group(1)
                 modDict.pushBack("modeID", modID)
@@ -150,6 +152,10 @@ class RFpostParser():
                 Hmax = Hmax_match.group(1)
                 modDict.pushBack("Hmax", Hmax)
                 
+                SCmax_match = re.match(r"SCmax :[ ]*([0-9]*\.[0-9]*e\+[0-9]*)",sec[i+3].strip())
+                SCmax = SCmax_match.group(1)
+                modDict.pushBack("SCmax", SCmax)
+                
                 if retDataROQ != None:
                     try:
                         RoQ = retDataROQ["RoverQ"]
@@ -158,10 +164,11 @@ class RFpostParser():
                             if int(mode["ModeID"]) == int(modID):
                                 assert Ez_ave == None
                                 Ez_ave = float(mode["Ez_ave"])
-                        if Ez_ave != None and L != -1.0:
+                        if Ez_ave != None:
                             modDict.pushBack("Ez_ave", str(Ez_ave))
                             modDict.pushBack("Emax_norm", str(float(Emax)/Ez_ave))
                             modDict.pushBack("Hmax_norm", str(float(Hmax)/Ez_ave))
+                            modDict.pushBack("SCmax_norm", str(float(SCmax)/Ez_ave/Ez_ave))
                         else:
                             print "Didn't find Ez_ave"
                     

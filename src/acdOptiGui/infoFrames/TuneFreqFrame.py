@@ -43,12 +43,16 @@ class TuneFreqFrame(InfoFrameComponent):
     __pointButtonBox = None
     __iterateButton  = None
     __addPointButton = None
-
+    
     __anaVarBox = None
     __anaVarEntry = None
     __targetValBox = None
     __targetValEntry = None
+    
+    __predictButtonsBox = None
     __doPredictButton = None
+    __addPredictedButton = None
+    
     __fitBox = None
     __fittedA_Entry = None
     __fittedB_Entry = None
@@ -88,10 +92,10 @@ class TuneFreqFrame(InfoFrameComponent):
         self.__pointButtonBox = gtk.HBox(homogeneous=True)
         self.__iterateButton = gtk.Button("Iterate")
         self.__iterateButton.connect("clicked", self.event_button_iterate, None)
-        self.__pointButtonBox.pack_start(self.__iterateButton)
+        self.__pointButtonBox.pack_start(self.__iterateButton, expand=True, padding=5)
         self.__addPointButton = gtk.Button("Add point") 
         self.__addPointButton.connect("clicked", self.event_button_addpoint, None)
-        self.__pointButtonBox.pack_start(self.__addPointButton)
+        self.__pointButtonBox.pack_start(self.__addPointButton, expand=True, padding=5)
         self.baseWidget.pack_start(self.__pointButtonBox,expand=False,padding=5)
         
         self.__anaVarBox = gtk.HBox()
@@ -105,9 +109,14 @@ class TuneFreqFrame(InfoFrameComponent):
         self.__targetValBox.pack_start(self.__targetValEntry, expand=True, padding = 5)
         self.baseWidget.pack_start(self.__targetValBox, expand=False,padding=5)
         
+        self.__predictButtonsBox = gtk.HBox(homogeneous=True)
         self.__doPredictButton = gtk.Button("Predict value")
         self.__doPredictButton.connect("clicked", self.event_button_doPredict, None)
-        self.baseWidget.pack_start(self.__doPredictButton, expand=False, padding=5)
+        self.__predictButtonsBox.pack_start(self.__doPredictButton, expand=True, padding=5)
+        self.__addPredictedButton = gtk.Button("Add predicted value point")
+        self.__addPredictedButton.connect("clicked", self.event_button_addPredicted, None)
+        self.__predictButtonsBox.pack_start(self.__addPredictedButton, expand=True, padding=5)
+        self.baseWidget.pack_start(self.__predictButtonsBox, expand=False, padding=5)
         
         self.__fitBox = gtk.HBox()
         self.__fitBox.pack_start(gtk.Label("Fit:"), expand=False, padding=5)
@@ -185,8 +194,10 @@ class TuneFreqFrame(InfoFrameComponent):
         self.__fittedB_Entry.set_text(str(self.tuneFreq.predict_b))
         if self.tuneFreq.predict_R2 > 0.0:
             self.__fittedSqrtR2_Entry.set_text(str(m.sqrt(self.tuneFreq.predict_R2)))
+            self.__addPredictedButton.set_sensitive(True)
         else:
             self.__fittedSqrtR2_Entry.set_text("N/A")
+            self.__addPredictedButton.set_sensitive(False)
         self.__fittedNDOF_Entry.set_text(str(self.tuneFreq.predict_ndof))
         self.__fittedPredicted_Entry.set_text(str(self.tuneFreq.predict_x))
          
@@ -254,13 +265,16 @@ class TuneFreqFrame(InfoFrameComponent):
         dia.set_default_response(gtk.RESPONSE_OK)
         nameBox = gtk.Entry()
         
-        defaultValue = None
-        if self.tuneFreq.scanParameter_name in self.tuneFreq.baseGeomInstance.templateOverrides_getKeys():
-            defaultValue = self.tuneFreq.baseGeomInstance.templateOverrides_get(self.tuneFreq.scanParameter_name)
-        elif self.tuneFreq.scanParameter_name in self.tuneFreq.baseGeomInstance.template.paramDefaults_getKeys():
-            defaultValue = self.tuneFreq.baseGeomInstance.template.paramDefaults_get(self.tuneFreq.scanParameter_name)
-        assert defaultValue != None, "scanParameter_name '" + self.tuneFreq.scanParameter_name + "' not found ?!?"
-        nameBox.set_text(defaultValue)
+        if data == None:
+            defaultValue = None
+            if self.tuneFreq.scanParameter_name in self.tuneFreq.baseGeomInstance.templateOverrides_getKeys():
+                defaultValue = self.tuneFreq.baseGeomInstance.templateOverrides_get(self.tuneFreq.scanParameter_name)
+            elif self.tuneFreq.scanParameter_name in self.tuneFreq.baseGeomInstance.template.paramDefaults_getKeys():
+                defaultValue = self.tuneFreq.baseGeomInstance.template.paramDefaults_get(self.tuneFreq.scanParameter_name)
+            assert defaultValue != None, "scanParameter_name '" + self.tuneFreq.scanParameter_name + "' not found ?!?"
+            nameBox.set_text(defaultValue)
+        else:
+            nameBox.set_text(data)
         
         dia.vbox.pack_start(nameBox)
         dia.show_all()
@@ -304,6 +318,9 @@ class TuneFreqFrame(InfoFrameComponent):
         self.saveToScan()
         self.tuneFreq.doPredict()
         self.updateDisplay()
+    
+    def event_button_addPredicted(self, widget, data=None):
+        self.event_button_addpoint(widget, str(self.tuneFreq.predict_x))
     
     def event_button_plot(self, widget, data=None):
         self.saveToScan()

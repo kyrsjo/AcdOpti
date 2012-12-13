@@ -247,9 +247,17 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     __varYentry = None
     __varZentry = None
     
+    __fittedModelEntry = None
+    __fitPlaneButton = None
+    __fitQuadButton = None
+    __fittedNdofEntry = None
+    __fittedREntry = None
+    model = None
+    
     __plotDelunayButton = None
     __plotDelunayColorsButton = None
     __plot3DPointCloudButton = None
+    __plot3DPointCloudFitButton = None
     
     __closeButton = None
     
@@ -286,16 +294,52 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
         
-        self.baseWidget.pack_start(gtk.Label("Available variables:\n (textbox just to enable copy/paste, nothing is saved)"), padding=5,expand=False)
+        varAvailBox = gtk.HBox() 
+        varAvailBox.pack_start(gtk.Label("Available variables:"), padding=5,expand=False)
         varString = ""
         for k in self.plotObject.dataExtractor.keyNames:
             varString += k + " "
         varString = varString[:-1]
         varEntry = gtk.Entry()
         varEntry.set_text(varString)
-        self.baseWidget.pack_start(varEntry, padding=5, expand=True)
+        varAvailBox.pack_start(varEntry, padding=5, expand=True)
+        self.baseWidget.pack_start(varAvailBox,padding=5,expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+        
+        fittedModelBox = gtk.HBox()
+        fittedModelBox.pack_start(gtk.Label("Fitted model:"), padding=5, expand=False)
+        self.__fittedModelEntry = gtk.Entry()
+        fittedModelBox.pack_start(self.__fittedModelEntry, padding=5, expand=True)
+        self.baseWidget.pack_start(fittedModelBox, padding=5, expand=False)
+        
+        fitStatsBox = gtk.HBox()
+        fitStatsBox.pack_start(gtk.Label("NDOF ="), padding=5, expand=False)
+        self.__fittedNdofEntry = gtk.Entry()
+        self.__fittedNdofEntry.set_sensitive(False)
+        fitStatsBox.pack_start(self.__fittedNdofEntry, padding=5, expand=True)
+        fitStatsBox.pack_start(gtk.Label("R ="), padding=5, expand=False)
+        self.__fittedREntry = gtk.Entry()
+        self.__fittedREntry.set_sensitive(False)
+        fitStatsBox.pack_start(self.__fittedREntry, padding=5, expand=True)
+        self.baseWidget.pack_start(fitStatsBox, padding=5,expand=False)
+
+        fitButtonBox = gtk.HBox()
+        self.__fitPlaneButton = gtk.Button("Fit plane")
+        self.__fitPlaneButton.connect("clicked", self.event_button_fitPlane, None)
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__fitPlaneButton.set_sensitive(False) 
+        fitButtonBox.pack_start(self.__fitPlaneButton, padding=5, expand=True)
+        self.__fitQuadButton = gtk.Button("Fit quad function")
+        self.__fitQuadButton.connect("clicked", self.event_button_fitQuad, None)
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__fitQuadButton.set_sensitive(False)
+        fitButtonBox.pack_start(self.__fitQuadButton, padding=5, expand=True)
+        self.baseWidget.pack_start(fitButtonBox, padding=5, expand=False)
+        
+        
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+
         
         self.__plotDelunayButton = gtk.Button("Show Delunay triangulation of points")
         if not self.plotObject.dataExtractor.lockdown:
@@ -314,6 +358,12 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
             self.__plot3DPointCloudButton.set_sensitive(False)
         self.__plot3DPointCloudButton.connect("clicked", self.event_button_plotPointcloud, None)
         self.baseWidget.pack_start(self.__plot3DPointCloudButton, padding=5, expand=False)
+        
+        self.__plot3DPointCloudFitButton = gtk.Button("Show 3D point cloud + fit")
+        self.__plot3DPointCloudFitButton.set_sensitive(False)
+        self.__plot3DPointCloudFitButton.connect("clicked", self.event_button_plotPointcloud, "Fit")
+        self.baseWidget.pack_start(self.__plot3DPointCloudFitButton, padding=5, expand=False)
+        
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
         
@@ -341,6 +391,28 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         self.plotObject.updateSettingsDict()
         self.plotObject.dataExtractor.write()
     
+    def event_button_fitPlane(self,widget,data):
+        (model, ndof, R2) = self.plotObject.fitPlane()
+        self.model = model
+        modelTxt = str(model[0]) + " + " + str(model[1])+"*X + " + str(model[2])+"*Y" 
+        self.__fittedModelEntry.set_text(modelTxt)
+        self.__fittedNdofEntry.set_text(str(ndof))
+        import math as m
+        self.__fittedREntry.set_text(str(m.sqrt(R2)))
+        self.__plot3DPointCloudFitButton.set_sensitive(True)
+
+        
+    def event_button_fitQuad(self,widget,data):
+        (model, ndof, R2) = self.plotObject.fitQuad()
+        self.model = model
+        modelTxt = str(model[0]) + " + " + str(model[1])+"*X + " + str(model[2])+"*Y + " + str(model[3])+"*X^2 + " + str(model[4])+"*Y^2 + " + str(model[5])+"*X*Y" 
+        self.__fittedModelEntry.set_text(modelTxt)
+        self.__fittedNdofEntry.set_text(str(ndof))
+        import math as m
+        self.__fittedREntry.set_text(str(m.sqrt(R2)))
+        self.__plot3DPointCloudFitButton.set_sensitive(True)
+
+        
     def event_button_plotDelunay(self, widget, data):
         self.saveToPlot()
         try:
@@ -439,6 +511,19 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         ax = fig.gca(projection='3d')
         ax.scatter(X, Y, Z)
         
+        if data == "Fit":
+            print "Ploting the fit..."
+            import numpy as np
+            Xr = np.linspace(min(X), max(X))
+            Yr = np.linspace(min(Y), max(Y))
+            Xr, Yr = np.meshgrid(Xr, Yr)
+            #Zr = np.zeros_like(Xr)
+            if len(self.model) == 3:
+                Zr = self.model[0] + self.model[1]*Xr + self.model[2]*Yr
+            elif len(self.model) == 6:
+                Zr = self.model[0] + self.model[1]*Xr + self.model[2]*Yr + self.model[3]*Xr**2 + self.model[4]*Yr**2 + self.model[5]*Xr*Yr
+            surf = ax.plot_surface(Xr, Yr, Zr)
+            
         #xRange = abs(max(X)-min(X))
         #yRange = abs(max(Y)-min(Y))
         

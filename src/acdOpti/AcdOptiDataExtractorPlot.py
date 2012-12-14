@@ -217,8 +217,58 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
             z[-1] /= float(n[-1])
         
         return(x,y,z,n)
-                
     
+    def fitPlane(self):
+        """Fit Z=a0+a1*x+a2*y"""
+        
+        (X,Y,Z) = self.getData()
+        assert len(X) == len(Y) and len(X) == len(Z)
+        ndof = len(Z)-3
+        assert ndof > 0             
+    
+        import numpy as np
+        
+        A = [np.ones(len(Z))]
+        A.append(np.asarray(X))
+        A.append(np.asarray(Y))
+        A = np.vstack(A).T
+        
+        model = np.linalg.lstsq(A,Z)[0]
+        
+        #Calculate R^2
+        R2 = 0.0
+        for i in xrange(len(Z)):
+            R2 += ( (model[0] + model[1]*X[i] + model[2]*Y[i]) - Z[i])**2
+        
+        return (model, ndof, R2)
+     
+    def fitQuad(self):
+        """Fit Z=a0 + a1*x+a2*y + a3*x^2+a4*y^2 + a5*x*y"""
+        
+        (X,Y,Z) = self.getData()
+        assert len(X) == len(Y) and len(X) == len(Z)
+        ndof = len(Z)-6
+        assert ndof > 0             
+    
+        import numpy as np
+        
+        A = [np.ones(len(Z))]
+        A.append(np.asarray(X))
+        A.append(np.asarray(Y))
+        A.append(np.asarray(X)**2)
+        A.append(np.asarray(Y)**2)
+        A.append(np.asarray(X)*np.asarray(Y))
+        A = np.vstack(A).T
+        
+        model = np.linalg.lstsq(A,Z)[0]
+        
+        #Calculate R^2
+        R2 = 0.0
+        for i in xrange(len(Z)):
+            R2 += ( (model[0] + model[1]*X[i] + model[2]*Y[i] + model[3]*X[i]**2 + model[4]*Y[i]**2 + model[5]*X[i]*Y[i]) - Z[i])**2
+        
+        return (model, ndof, R2)
+        
     def updateSettingsDict(self):
         self.settingsDict["varX"] = self.varX
         self.settingsDict["varY"] = self.varY

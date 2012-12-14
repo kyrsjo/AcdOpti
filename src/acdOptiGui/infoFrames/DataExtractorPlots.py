@@ -394,7 +394,7 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     def event_button_fitPlane(self,widget,data):
         (model, ndof, R2) = self.plotObject.fitPlane()
         self.model = model
-        modelTxt = str(model[0]) + " + " + str(model[1])+"*X + " + str(model[2])+"*Y" 
+        modelTxt = str(model[0]) + "+" + str(model[1])+"*X+" + str(model[2])+"*Y" 
         self.__fittedModelEntry.set_text(modelTxt)
         self.__fittedNdofEntry.set_text(str(ndof))
         import math as m
@@ -405,7 +405,7 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     def event_button_fitQuad(self,widget,data):
         (model, ndof, R2) = self.plotObject.fitQuad()
         self.model = model
-        modelTxt = str(model[0]) + " + " + str(model[1])+"*X + " + str(model[2])+"*Y + " + str(model[3])+"*X^2 + " + str(model[4])+"*Y^2 + " + str(model[5])+"*X*Y" 
+        modelTxt = str(model[0]) + "+" + str(model[1])+"*X+" + str(model[2])+"*Y+" + str(model[3])+"*X^2+" + str(model[4])+"*Y^2+" + str(model[5])+"*X*Y" 
         self.__fittedModelEntry.set_text(modelTxt)
         self.__fittedNdofEntry.set_text(str(ndof))
         import math as m

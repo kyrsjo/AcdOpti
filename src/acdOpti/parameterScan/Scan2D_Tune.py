@@ -17,7 +17,8 @@
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
 from acdOpti.AcdOptiFileParser import DataDict, AcdOptiFileParser_simple
-from acdOpti.AcdOptiExceptions import AcdOptiException_parameterScan
+from acdOpti.AcdOptiExceptions import AcdOptiException_parameterScan,\
+                                      AcdOptiException_dataDict_getValsSingle
 
 from ParameterScanInterface import ParameterScanInterface
 from ParameterScanCollection import ParameterScanCollection
@@ -48,7 +49,8 @@ class Scan2D_Tune(ParameterScanInterface):
     tune_targetValue = None
     
     tune_initialPoints = None #List of points to add to the tuneFreq
-    
+    tune_model = None #List of coefficients for plane/quad surface to use for initial points
+    tune_useModelPoints = False #If True, use a model to generate initial points. If false, use initialPoints.
     #Todo: Add initial point prediction
     
     def __init__(self, folder, collection):
@@ -72,6 +74,23 @@ class Scan2D_Tune(ParameterScanInterface):
         self.tune_initialPoints = []
         for (k,v) in self._paramFile.dataDict["tune_initialPoints"]:
             self.tune_initialPoints.append(k)
+        
+        self.tune_model = []            
+        try:
+            tune_ipModelDict = self._paramFile.dataDict["tune_ipModelDict"]
+            self.tune_useModelPoints = DataDict.boolconv(self._paramFile.dataDict["tune_useModelPoints"])
+        except AcdOptiException_dataDict_getValsSingle:
+            print "Scan2D_Tune::__init__(): Adding tune_ipModelDict and tune_useModelPoints to paramFile"
+            self._paramFile.dataDict.pushBack("tune_ipModelDict", DataDict())
+            self._paramFile.dataDict.pushBack("tune_useModelPoints", "False")
+            self._paramFile.write()
+            tune_ipModelDict = DataDict()
+            self.tune_useModelPoints = False
+        i = 0
+        for (k,v) in tune_ipModelDict:
+            assert k == str(i)
+            self.tune_model.append(float(v))
+            i += 1
         
         #Initialize slave scan collection in same folder     
         self.slaveScanCollection = ParameterScanCollection(folder, collection,self)
@@ -147,12 +166,17 @@ class Scan2D_Tune(ParameterScanInterface):
         elif newName in self.slaveScanCollection.scans.keys():
             print "Error in Scan2D_Tune::addPoint: newName '" + newName + "' in use, parameter point already exists in slaveScanCollection!"
             raise Scan2D_TuneException("newName '" + newName + "' in use, parameter point already exists in slaveScanCollection!")
+        #Create geom & set parameters
         newGeom = self.getProject().geomCollection.cloneGeomInstance(oldName,newName)
         newGeom.templateOverrides_insert(self.scanParameter1_name, str(parameterValue1))
         if parameterValue2 != None:
             newGeom.templateOverrides_insert(self.scanParameter2_name, str(parameterValue2))
-        if len(self.tune_initialPoints) > 0:
-            newGeom.templateOverrides_insert(self.tune_parameter, self.tune_initialPoints[0])
+        if self.tune_useModelPoints == False:
+            if len(self.tune_initialPoints) > 0:
+                newGeom.templateOverrides_insert(self.tune_parameter, self.tune_initialPoints[0])
+        elif self.tune_useModelPoints == True:
+            assert parameterValue2 != None
+            newGeom.templateOverrides_insert(self.tune_parameter, str(self.getTunedModel(parameterValue1, parameterValue2)))
         newGeom.scanInstances.append(self)
         newGeom.write()
         
@@ -164,11 +188,22 @@ class Scan2D_Tune(ParameterScanInterface):
         newTuner.predict_anaVariable = self.tune_anaVariable
         newTuner.predict_targetValue = self.tune_targetValue
         newTuner.write()
-        for pi in xrange(1,len(self.tune_initialPoints)):
-            newTuner.addPoint(self.tune_initialPoints[pi])
+        if self.tune_useModelPoints == False:
+            for pi in xrange(1,len(self.tune_initialPoints)):
+                newTuner.addPoint(self.tune_initialPoints[pi])
         
         self.lockdown = True
         self.write()
+    
+    def getTunedModel(self, parameterValue1, parameterValue2):
+        assert self.scanParameter2_name != "" #Can only be used for 2D scan
+        if len(self.tune_model) == 3:
+            return self.tune_model[0] + parameterValue1*self.tune_model[1] + parameterValue2*self.tune_model[2]
+        elif len(self.tune_model) == 6:
+            return self.tune_model[0] + parameterValue1*self.tune_model[1] + parameterValue2*self.tune_model[2] + \
+                (parameterValue1**2)*self.tune_model[3] + (parameterValue2**2)*self.tune_model[4] + (parameterValue1*parameterValue2)*self.tune_model[5]
+        else:
+            raise ValueError("Something wrong with tune_model!")
         
     def write(self):
         "Update the paramFile with the class variables"
@@ -178,14 +213,14 @@ class Scan2D_Tune(ParameterScanInterface):
         if self.lockdown:
             assert self.scanParameter1_name      != ""
             assert self.scanParameter1_name      == self._paramFile.dataDict["scanParameter1_name"]
-            assert str(self.scanParameter1_min)  == self._paramFile.dataDict["scanParameter1_min"] 
-            assert str(self.scanParameter1_max)  == self._paramFile.dataDict["scanParameter1_max"]
-            assert str(self.scanParameter1_num)  == self._paramFile.dataDict["scanParameter1_num"]
+            #assert str(self.scanParameter1_min)  == self._paramFile.dataDict["scanParameter1_min"] 
+            #assert str(self.scanParameter1_max)  == self._paramFile.dataDict["scanParameter1_max"]
+            #assert str(self.scanParameter1_num)  == self._paramFile.dataDict["scanParameter1_num"]
             
             assert self.scanParameter2_name      == self._paramFile.dataDict["scanParameter2_name"]
-            assert str(self.scanParameter2_min)  == self._paramFile.dataDict["scanParameter2_min"] 
-            assert str(self.scanParameter2_max)  == self._paramFile.dataDict["scanParameter2_max"]
-            assert str(self.scanParameter2_num)  == self._paramFile.dataDict["scanParameter2_num"]
+            #assert str(self.scanParameter2_min)  == self._paramFile.dataDict["scanParameter2_min"] 
+            #assert str(self.scanParameter2_max)  == self._paramFile.dataDict["scanParameter2_max"]
+            #assert str(self.scanParameter2_num)  == self._paramFile.dataDict["scanParameter2_num"]
             
             assert self.tune_parameter           == self._paramFile.dataDict["tune_parameter"]
             assert self.tune_anaVariable         == self._paramFile.dataDict["tune_anaVariable"]
@@ -211,8 +246,7 @@ class Scan2D_Tune(ParameterScanInterface):
             if self.scanParameter1_name != "":
                 assert self.tune_parameter != self.scanParameter1_name
             if self.scanParameter2_name != "":
-                assert self.tune_parameter != self.scanParameter2_name 
-        
+                assert self.tune_parameter != self.scanParameter2_name
         
         self._paramFile.dataDict["scanParameter1_name"] = self.scanParameter1_name
         self._paramFile.dataDict["scanParameter1_min"]  = str(self.scanParameter1_min) 
@@ -231,7 +265,15 @@ class Scan2D_Tune(ParameterScanInterface):
         self._paramFile.dataDict["tune_initialPoints"].clear()
         for p in self.tune_initialPoints:
             self._paramFile.dataDict["tune_initialPoints"].pushBack(p, "") 
-                
+        
+        self._paramFile.dataDict["tune_ipModelDict"].clear()
+        i = 0
+        for p in self.tune_model:
+            self._paramFile.dataDict["tune_ipModelDict"].pushBack(str(i), str(p))
+            i += 1
+            
+        self._paramFile.dataDict["tune_useModelPoints"] = str(self.tune_useModelPoints)
+        
         self._paramFile.write()
         
     @staticmethod
@@ -267,6 +309,9 @@ class Scan2D_Tune(ParameterScanInterface):
         paramFile.dataDict.pushBack("tune_anaVariable","Omega3P_modeInfo.Mode.FrequencyReal_GHz")
         paramFile.dataDict.pushBack("tune_targetValue","11.9942")
         paramFile.dataDict.pushBack("tune_initialPoints", DataDict())
+        
+        paramFile.dataDict.pushBack("tune_ipModelDict", DataDict())
+        paramFile.dataDict.pushBack("tune_useModelPoints", "False")
         
         paramFile.dataDict.pushBack("lockdown", "False")
 

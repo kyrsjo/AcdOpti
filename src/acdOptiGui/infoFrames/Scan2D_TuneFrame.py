@@ -73,6 +73,11 @@ class Scan2D_TuneFrame(InfoFrameComponent):
     __tuneParameterTargetVarBox = None
     __tuneParameterTargetVarEntry = None
     
+    __tuneParameterFitModelBox = None
+    __tuneParameterFitModelEntry = None
+    __tuneParameterFitModelCheckEnable = None
+    __tuneParameterCheckRangeButton = None
+    
     __doScanButton     = None
     __plotButton       = None
     
@@ -176,6 +181,19 @@ class Scan2D_TuneFrame(InfoFrameComponent):
         self.__tuneParameterTargetVarBox.pack_start(self.__tuneParameterTargetVarEntry, expand=True, padding=5)
         self.baseWidget.pack_start(self.__tuneParameterTargetVarBox, expand=False, padding=5)
 
+        self.__tuneParameterFitModelBox = gtk.HBox()
+        self.__tuneParameterFitModelBox.pack_start(gtk.Label("Fitted plane/quadsurf\n from dataExtractor:"), expand=False, padding=5)
+        self.__tuneParameterFitModelEntry = gtk.Entry()
+        self.__tuneParameterFitModelBox.pack_start(self.__tuneParameterFitModelEntry, expand=True, padding=5)
+        self.__tuneParameterFitModelCheckEnable = gtk.CheckButton("Use model")
+        self.__tuneParameterFitModelCheckEnable.connect("toggled", self.event_modelEnableCheck_toggled, None)
+        self.__tuneParameterFitModelBox.pack_start(self.__tuneParameterFitModelCheckEnable, expand=False, padding=5)
+        self.baseWidget.pack_start(self.__tuneParameterFitModelBox, expand=False, padding=5)
+        
+        self.__tuneParameterCheckRangeButton = gtk.Button("Check scan range and tuning")
+        self.__tuneParameterCheckRangeButton.connect("clicked", self.event_button_tuneParameterCheckRange, None)
+        self.baseWidget.pack_start(self.__tuneParameterCheckRangeButton, expand=False, padding=5)
+        
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
 
         #General stuff
@@ -313,6 +331,38 @@ class Scan2D_TuneFrame(InfoFrameComponent):
         
         self.__tuneParameterTargetVarEntry.set_text(str(self.scan2D_Tune.tune_targetValue))
         
+        #Model
+        if self.scan2D_Tune.tune_useModelPoints == True:
+            self.__tuneParameterInitValEntry.set_sensitive(False)
+            self.__tuneParameterFitModelEntry.set_sensitive(True)
+            self.__tuneParameterFitModelCheckEnable.set_active(True)
+        elif self.scan2D_Tune.tune_useModelPoints == False:
+            self.__tuneParameterInitValEntry.set_sensitive(True)
+            self.__tuneParameterFitModelEntry.set_sensitive(False)
+            self.__tuneParameterFitModelCheckEnable.set_active(False)
+        else:
+            raise ValueError
+        if len(self.scan2D_Tune.tune_model) == 3:
+            mod = self.scan2D_Tune.tune_model
+            modelString = str(mod[0]) + "+" + \
+                str(mod[1]) + "*" + self.scan2D_Tune.scanParameter1_name + "+" +\
+                str(mod[2]) + "*" + self.scan2D_Tune.scanParameter2_name 
+            self.__tuneParameterFitModelEntry.set_text(modelString)
+            self.__tuneParameterCheckRangeButton.set_sensitive(True)
+        elif len(self.scan2D_Tune.tune_model) == 6:
+            mod = self.scan2D_Tune.tune_model
+            modelString = str(mod[0]) + "+" + \
+                str(mod[1]) + "*" + self.scan2D_Tune.scanParameter1_name + "+" +\
+                str(mod[2]) + "*" + self.scan2D_Tune.scanParameter2_name + "+" +\
+                str(mod[3]) + "*" + self.scan2D_Tune.scanParameter1_name + "^2+" + \
+                str(mod[4]) + "*" + self.scan2D_Tune.scanParameter2_name + "^2+" + \
+                str(mod[5]) + "*" + self.scan2D_Tune.scanParameter1_name + "*" + self.scan2D_Tune.scanParameter2_name 
+            self.__tuneParameterFitModelEntry.set_text(modelString)
+            self.__tuneParameterCheckRangeButton.set_sensitive(True)
+        else:
+            self.__tuneParameterCheckRangeButton.set_sensitive(False)
+        
+        
         if self.scan2D_Tune.lockdown:
             self.__geomCombo.set_sensitive(False)
             self.__scanVariable1Combo.set_sensitive(False)
@@ -320,6 +370,11 @@ class Scan2D_TuneFrame(InfoFrameComponent):
             self.__tuneParameterCombo.set_sensitive(False)
             self.__tuneParameterAnaVarEntry.set_sensitive(False)
             self.__tuneParameterTargetVarEntry.set_sensitive(False)
+            
+        if self.scan2D_Tune.scanParameter1_name == "" or self.scan2D_Tune.scanParameter2_name == "":
+            self.__tuneParameterFitModelCheckEnable.set_sensitive(False)
+            self.__tuneParameterFitModelEntry.set_sensitive(False)
+            self.__tuneParameterCheckRangeButton.set_sensitive(False)
         
         if self.scan2D_Tune.scanParameter1_name == "" or self.scan2D_Tune.tune_parameter == "" or self.scan2D_Tune.tune_anaVariable == "":
             self.__doScanButton.set_sensitive(False)
@@ -408,7 +463,73 @@ class Scan2D_TuneFrame(InfoFrameComponent):
                                      "Could not convert contents to float for scanParameter 1" )
             mDia.run()
             mDia.destroy()
+        
+        #Parse model
+        modelString = self.__tuneParameterFitModelEntry.get_text()
+        modelString = modelString.split("+")
+        if len(modelString) == 3:
+            #Plane
+            try:
+                model = []
+
+                model.append(float(modelString[0]))
+                
+                s = modelString[1].split("*")
+                assert s[1] == "X" or s[1] == self.scan2D_Tune.scanParameter1_name
+                assert len(s) == 2
+                model.append(float(s[0]))
+                
+                s = modelString[2].split("*")
+                assert s[1] == "Y" or s[1] == self.scan2D_Tune.scanParameter2_name
+                assert len(s) == 2
+                model.append(float(s[0]))
+                
+                self.scan2D_Tune.tune_model = model
+            except:
+                print "Scan2D_TuneFrame::write(): Problem parsing the modelString (plane)"
+                
+        elif len(modelString) == 6:
+            #Quad
+            try:
+                model = []
+
+                model.append(float(modelString[0]))
+                
+                s = modelString[1].split("*")
+                assert s[1] == "X" or s[1] == self.scan2D_Tune.scanParameter1_name
+                assert len(s) == 2
+                model.append(float(s[0]))
+                
+                s = modelString[2].split("*")
+                assert s[1] == "Y" or s[1] == self.scan2D_Tune.scanParameter2_name
+                assert len(s) == 2
+                model.append(float(s[0]))
+                
+                s = modelString[3].split("*")
+                assert s[1] == "X^2" or s[1] == (self.scan2D_Tune.scanParameter1_name + "^2")
+                assert len(s) == 2
+                model.append(float(s[0]))
+                
+                s = modelString[4].split("*")
+                assert s[1] == "Y^2" or s[1] == (self.scan2D_Tune.scanParameter2_name + "^2")
+                assert len(s) == 2
+                model.append(float(s[0]))
+                
+                s = modelString[5].split("*")
+                assert s[1] == "X" or s[1] == self.scan2D_Tune.scanParameter1_name
+                assert s[2] == "Y" or s[2] == self.scan2D_Tune.scanParameter2_name
+                assert len(s) == 3
+                model.append(float(s[0]))
+                
+                self.scan2D_Tune.tune_model = model
+            except:
+                print "Scan2D_TuneFrame::write(): Problem parsing the modelString (quad)"
+        else:
+            print "Unexpected length of modelString =", modelString
+        print "tune_model =", self.scan2D_Tune.tune_model
             
+        self.scan2D_Tune.tune_useModelPoints = self.__tuneParameterFitModelCheckEnable.get_active()
+        
         self.scan2D_Tune.write()
     
     def event_button_checkScanRange(self, widget, data=None):
@@ -426,11 +547,21 @@ class Scan2D_TuneFrame(InfoFrameComponent):
             return
         
         if range2 != None:
+            msgStr = None
+            if data == "Model":
+                msgStr = "Scanning %s and %s, tuning with %s from model. Generated values:\n"\
+                     % ( self.scan2D_Tune.scanParameter1_name, self.scan2D_Tune.scanParameter2_name, self.scan2D_Tune.tune_parameter )
+                for i in xrange(len(range1)):
+                    for j in xrange(len(range2)):
+                        msgStr += str(range1[i]) + ", " + str(range2[j]) + "; " + str(self.scan2D_Tune.getTunedModel(range1[i], range2[j])) + "\n"
+                msgStr = msgStr[:-1] #trim last "\n"
+            elif data == None:
+                msgStr = "Got scan ranges:\n %s: %s\n %s: %s\n Total number of points: %i" % \
+                        ( self.scan2D_Tune.scanParameter1_name, str(range1), self.scan2D_Tune.scanParameter2_name, str(range2), len(range1)*len(range2) )
             mDia = gtk.MessageDialog(self.getBaseWindow(),
                                      gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                      gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
-                                     "Got scan ranges:\n %s: %s\n %s: %s\n Total number of points: %i" % \
-                                     ( self.scan2D_Tune.scanParameter1_name, str(range1), self.scan2D_Tune.scanParameter2_name, str(range2), len(range1)*len(range2) ) )
+                                     msgStr )
             mDia.run()
             mDia.destroy()
         else:
@@ -441,6 +572,9 @@ class Scan2D_TuneFrame(InfoFrameComponent):
                                      ( self.scan2D_Tune.scanParameter1_name, str(range1), len(range1) ) )
             mDia.run()
             mDia.destroy()
+    
+    def event_button_tuneParameterCheckRange(self, widget,data=None):
+        self.event_button_checkScanRange(widget, "Model")
     
     def event_button_doScan(self,widget,data=None):
         self.saveToScan()
@@ -571,7 +705,12 @@ class Scan2D_TuneFrame(InfoFrameComponent):
         
         self.saveToScan()
         self.updateDisplay()
-        
+    
+    def event_modelEnableCheck_toggled(self, widget, data):
+        print "scan2D_TuneFrame::event_modelEnableCheck_toggled"
+        self.saveToScan()
+        self.updateDisplay()
+    
     def event_delete(self):
         return self.saveToScan()
     

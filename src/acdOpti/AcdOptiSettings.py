@@ -38,11 +38,13 @@ class AcdOptiSettings:
             return "ksjobak"
         elif key == "acdtoolpath":
             #return "/opt/acdtool/acdtool"
-            return "~/PhD/ACE3P/ace3p/bin/acdtool"
+            #return "~/PhD/ACE3P/ace3p/bin/acdtool"
+            return "acdtool"
         elif key == "acdtool_preinit": #Not obligatory; tells acdOpti if some command needs to be run before starting acdtool
             return "module load openmpi-x86_64"
         elif key == "paraviewpath":
             #return "/usr/bin/paraview"
-            return "/opt/ParaView-3.14.1-Linux-64bit/bin/paraview"
+            #return "/opt/ParaView-3.14.1-Linux-64bit/bin/paraview"
+            return "paraview"
         else:
             raise AcdOptiException_settings_notFound

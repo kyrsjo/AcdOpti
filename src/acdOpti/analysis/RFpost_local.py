@@ -78,12 +78,12 @@ class RFpost_local(AnalysisInterface, RFpostParser):
         
         self.localSolver.generateSetup()
         self.localSolver.lockdown = True
-        
+
         #Create a symlink to avoid long folder names (ACDtool doesn't like that)
         if os.path.islink(dataPath):
             os.unlink(dataPath)
         os.symlink(self.runConfig.finishedFolder, dataPath) #UNIX only!
-        
+
         #Modify the postprocess.in file to the right path
         shutil.copy(os.path.join(dataPath2, "VECTOR", "postprocess.in"),\
                     os.path.join(self.folder, self.instName, "postprocess.in.bak"))

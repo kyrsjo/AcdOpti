@@ -26,8 +26,39 @@ and returning "pre-processed" output.
 from AcdOptiSettings import AcdOptiSettings
 from AcdOptiExceptions import AcdOptiException_settings_notFound
 
-import subprocess
 import os
+
+import subprocess
+## Ducktape subprocess.check_output for old Python (SLC 6 / python 2.6)
+if "check_output" not in dir( subprocess ): # duck punch it in!
+    for i in xrange(20):
+        print "WARNING WARNING WARNING EXECUTING DUCK PUNCH INSERTION OF SUBPROCESS.CHECK_OUTPUT() WARNING WARNING WARNING"
+        class CalledProcessError(Exception):
+            """This exception is raised when a process run by check_call() or
+            check_output() returns a non-zero exit status.
+            The exit status will be stored in the returncode attribute;
+            check_output() will also store the output in the output attribute.
+            """
+            def __init__(self, returncode, cmd, output=None):
+                self.returncode = returncode
+                self.cmd = cmd
+                self.output = output
+            def __str__(self):
+                return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+    def f(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            print unused_err
+            raise CalledProcessError(retcode, cmd)
+        return output
+    subprocess.check_output = f
 
 acdtoolpath = AcdOptiSettings().getSetting("acdtoolpath") #"/opt/acdtool/acdtool" 
 
@@ -35,7 +66,8 @@ acdtool_initDone = False
 def initAcdTool():
     "Helper function, runs the neccessary initialization commands"
     if not acdtool_initDone:
-        subprocess.check_call("module load openmpi-x86_64", shell=True)
+        #subprocess.check_call("module load openmpi-x86_64", shell=True)
+        pass #Not needed on pcbe15690
         
 
 def convertGenNcdf(genFileName, ncdfFileName):

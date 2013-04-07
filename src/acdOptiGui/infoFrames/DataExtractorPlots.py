@@ -235,6 +235,9 @@ class DataExtractorPlots_Plot2D(InfoFrameComponent):
     def event_button_close(self,widget,data):
         self.saveToPlot()
         self.frameManager.pop()
+    def event_delete(self):
+        #self.saveToPlot()
+        return False
 
 class DataExtractorPlots_Plot3D(InfoFrameComponent):
     """
@@ -254,8 +257,15 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     __fittedREntry = None
     model = None
     
+    __plotLimitEntry = None
+    __plotLimitCheck = None
+
     __plotDelunayButton = None
     __plotDelunayColorsButton = None
+    __plotDelunayColorsLogButton = None
+    __plotDelunayContoursButton = None
+    __numContoursEntry = None
+
     __plot3DPointCloudButton = None
     __plot3DPointCloudFitButton = None
     
@@ -340,7 +350,20 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
 
+        plotLimitBox = gtk.HBox()
+        plotLimitBox.pack_start(gtk.Label("Plot points below z ="), padding=5, expand=False)
+        self.__plotLimitEntry = gtk.Entry()
+        self.__plotLimitEntry.set_text(self.plotObject.limit)
+        plotLimitBox.pack_start(self.__plotLimitEntry, padding=5, expand=True)
+        self.__plotLimitCheck = gtk.CheckButton(label="Use limit")
+        if self.plotObject.useLimit == "True":
+            self.__plotLimitCheck.set_active(True);
+        else:
+            self.__plotLimitCheck.set_active(False);
+        plotLimitBox.pack_start(self.__plotLimitCheck, padding=5, expand=False)
+        self.baseWidget.pack_start(plotLimitBox, padding=5, expand=False);
         
+    
         self.__plotDelunayButton = gtk.Button("Show Delunay triangulation of points")
         if not self.plotObject.dataExtractor.lockdown:
             self.__plotDelunayButton.set_sensitive(False)
@@ -352,7 +375,26 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
             self.__plotDelunayColorsButton.set_sensitive(False)
         self.__plotDelunayColorsButton.connect("clicked", self.event_button_plotDelunayColors, None)
         self.baseWidget.pack_start(self.__plotDelunayColorsButton, padding=5, expand=False)
+
+        self.__plotDelunayColorsLogButton = gtk.Button("Show log-scale tripcolor plot")
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__plotDelunayColorsLogButton.set_sensitive(False)
+        self.__plotDelunayColorsLogButton.connect("clicked", self.event_button_plotDelunayColors, "log")
+        self.baseWidget.pack_start(self.__plotDelunayColorsLogButton, padding=5, expand=False)
         
+        contoursBox = gtk.HBox(homogeneous=True)
+        self.__plotDelunayContoursButton = gtk.Button("Show tricontourf plot")
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__plotDelunayContoursButton.set_sensitive(False)
+        self.__plotDelunayContoursButton.connect("clicked", self.event_button_plotDelunayColors, "contour")
+        contoursBox.pack_start(self.__plotDelunayContoursButton, padding=5, expand=False);
+        self.__numContoursEntry = gtk.Entry()
+        self.__numContoursEntry.set_text(self.plotObject.numContours)
+        contoursBox.pack_start(self.__numContoursEntry, padding=5, expand=True)
+        self.baseWidget.pack_start(contoursBox, padding=5, expand=False);
+
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+
         self.__plot3DPointCloudButton = gtk.Button("Show 3D point cloud")
         if not self.plotObject.dataExtractor.lockdown:
             self.__plot3DPointCloudButton.set_sensitive(False)
@@ -377,17 +419,28 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         x = self.__varXentry.get_text().strip()
         y = self.__varYentry.get_text().strip()
         z = self.__varZentry.get_text().strip()
-        if " " in x or " " in y:
+        l = self.__plotLimitEntry.get_text().strip()
+        nc = self.__numContoursEntry.get_text().strip()
+        if " " in x or " " in y or " " in z or " " in l or " " in nc:
             mDia = gtk.MessageDialog(self.getBaseWindow(),
                                      gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                      gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                     "Space in X, Y, or Z variable, not saving to plot." )
+                                     "Space in X, Y, or Z variable, or plotLimit/numContours -- not saving to plot." )
             mDia.run()
             mDia.destroy()
             return
+
         self.plotObject.varX = x
         self.plotObject.varY = y
         self.plotObject.varZ = z
+        self.plotObject.limit = l
+        self.plotObject.numContours = nc
+        
+        if self.__plotLimitCheck.get_active():
+            self.plotObject.useLimit = "True"
+        else:
+            self.plotObject.useLimit = "False"
+
         self.plotObject.updateSettingsDict()
         self.plotObject.dataExtractor.write()
     
@@ -421,7 +474,18 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         except ImportError:
             print "Could not import matplotlib, aborting plot. You should still be able to doExport()!"
             return
-        (X,Y,Z) = self.plotObject.getData()
+
+        limit = None
+        if self.__plotLimitCheck.get_active():
+            try:
+                limit = float(self.__plotLimitEntry.get_text())
+            except ValueError:
+                limit = None
+        if self.__plotLimitCheck.get_active():
+            (X,Y,Z) = self.plotObject.getBelowLimit(limit)
+        else:
+            (X,Y,Z) = self.plotObject.getData()
+
         print "X:", X
         print "Y:", Y
         print "Z:", Z
@@ -458,19 +522,31 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         try:
             import matplotlib.pyplot as plt
             import matplotlib.tri as tri
+            import numpy as np
         except ImportError:
-            print "Could not import matplotlib, aborting plot. You should still be able to doExport()!"
+            print "Could not import matplotlib or numpy, aborting plot. You should still be able to doExport()!"
             return
-        (X,Y,Z) = self.plotObject.getData()
-        print "X:", X
-        print "Y:", Y
-        print "Z:", Z
-        print "Deduplicating..."
+
+        limit = None
+        if self.__plotLimitCheck.get_active():
+            try:
+                limit = float(self.__plotLimitEntry.get_text())
+            except ValueError:
+                limit = None
+        if self.__plotLimitCheck.get_active():
+            (X,Y,Z) = self.plotObject.getBelowLimit(limit)
+        else:
+            (X,Y,Z) = self.plotObject.getData()
+
+        # print "X:", X
+        # print "Y:", Y
+        # print "Z:", Z
+        # print "Deduplicating..."
         (X,Y,Z,N) = self.plotObject.deduplicate(X,Y,Z)
-        print "X:", X
-        print "Y:", Y
-        print "Z:", Z
-        print "N:", N
+        # print "X:", X
+        # print "Y:", Y
+        # print "Z:", Z
+        # print "N:", N
         if len(X) < 3:
             mDia = gtk.MessageDialog(self.getBaseWindow(),
                                      gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -480,8 +556,35 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
             mDia.destroy()
             return
         triang = tri.Triangulation(X, Y)
-        plt.tripcolor(triang, Z, shading='gouraud')
-        plt.colorbar()
+        if data == "log":
+            logZ = np.log10(Z);
+            # print "logZ =", logZ
+            # ticksMin = np.floor(min(logZ)*100)/100.0
+            # ticksMax = np.ceil(max(logZ*100))/100.0
+            # print "ticksMin =", ticksMin, "ticksMax =", ticksMax
+            # ticks = np.linspace(ticksMin, ticksMax, ticksMax-ticksMin+1)-ticksMin;
+            # print "ticks =", ticks
+            plt.tripcolor(triang, logZ, shading='gouraud')
+            cbar = plt.colorbar()
+            #cbar.set_ticks(ticks)
+            #ticklabels = map(lambda t: "$10^{"+( "%d"%(abs(t)+ticksMin,) )+"}$", ticks)
+            #print "ticklabels =", ticklabels
+            #cbar.set_ticklabels(ticklabels)
+        elif data == "contour":
+            try:
+                nc = int(self.__numContoursEntry.get_text().strip())
+            except ValueError:
+                print "numContours invalid, use 10 countours"
+                nc = 10
+            plt.tricontourf(triang,Z, nc)
+            plt.colorbar()
+        else:
+            plt.tripcolor(triang, Z, shading='gouraud')
+            plt.colorbar()
+
+        (X2,Y2,Z2) = self.plotObject.getData()
+        plt.plot(X2,Y2, 'b+')
+        plt.plot(X,Y,'r+')
 
         plt.xlabel(self.plotObject.varX)
         plt.ylabel(self.plotObject.varY)
@@ -502,7 +605,18 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         except ImportError:
             print "Could not import matplotlib, aborting plot. You should still be able to doExport()!"
             return
-        (X,Y,Z) = self.plotObject.getData()
+
+        limit = None
+        if self.__plotLimitCheck.get_active():
+            try:
+                limit = float(self.__plotLimitEntry.get_text())
+            except ValueError:
+                limit = None
+        if self.__plotLimitCheck.get_active():
+            (X,Y,Z) = self.plotObject.getBelowLimit(limit)
+        else:
+            (X,Y,Z) = self.plotObject.getData()
+        
         print "X:", X
         print "Y:", Y
         print "Z:", Z
@@ -538,3 +652,6 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     def event_button_close(self,widget,data):
         self.saveToPlot()
         self.frameManager.pop()
+    def event_delete(self):
+        #self.saveToPlot()
+        return False

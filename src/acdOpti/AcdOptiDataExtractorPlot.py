@@ -17,6 +17,7 @@
 #    along with AcdOpti.  If not, see <http://www.gnu.org/licenses/>.
 
 from AcdOptiFileParser import DataDict
+from AcdOptiExceptions import AcdOptiException_dataDict_getValsSingle
 
 class AcdOptiDataExtractorPlot(object):
     "Base class for plot data/settings objects"
@@ -130,6 +131,11 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
     varY = None
     varZ = None
     
+    limit = None
+    useLimit = None
+
+    numContours = None
+
     def __init__(self, dataExtractor, settingsDictOrInstName):
         assert settingsDictOrInstName != None
         settingsDict = None
@@ -141,6 +147,9 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
             settingsDict.pushBack("varX", "")
             settingsDict.pushBack("varY", "")
             settingsDict.pushBack("varZ", "")
+            settingsDict.pushBack("limit", "")
+            settingsDict.pushBack("useLimit", "False")
+            settingsDict.pushBack("numContours", "");
         else:
             settingsDict = settingsDictOrInstName
         print settingsDict
@@ -149,7 +158,21 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         self.varX = settingsDict["varX"]
         self.varY = settingsDict["varY"]
         self.varZ = settingsDict["varZ"]
-        
+        try:
+            self.limit = settingsDict["limit"]
+            self.useLimit = settingsDict["useLimit"]
+        except AcdOptiException_dataDict_getValsSingle:
+            settingsDict.pushBack("limit", "")
+            self.limit = ""
+            settingsDict.pushBack("useLimit", "False")
+            self.useLimit = "False"
+
+        try:
+            self.numContours = settingsDict["numContours"]
+        except AcdOptiException_dataDict_getValsSingle:
+            settingsDict.pushBack("numContours", "");
+            self.numContours = ""
+
     def doExport(self,fname):
         (X, Y, Z) = self.getData()
         raise NotImplementedError
@@ -268,8 +291,27 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
             R2 += ( (model[0] + model[1]*X[i] + model[2]*Y[i] + model[3]*X[i]**2 + model[4]*Y[i]**2 + model[5]*X[i]*Y[i]) - Z[i])**2
         
         return (model, ndof, R2)
+
+    def getBelowLimit(self,limit):
+        "Remove points with z-values larger than limit"
+        (X,Y,Z) = self.getData()      
+        x = []
+        y = []
+        z = []
         
+        for i in xrange(len(X)):
+            if (Z[i] < limit):
+                x.append(X[i])
+                y.append(Y[i])
+                z.append(Z[i])
+        return (x,y,z);
+
     def updateSettingsDict(self):
         self.settingsDict["varX"] = self.varX
         self.settingsDict["varY"] = self.varY
         self.settingsDict["varZ"] = self.varZ
+
+        self.settingsDict["limit"] = self.limit
+        self.settingsDict["useLimit"] = self.useLimit
+        
+        self.settingsDict["numContours"] = self.numContours

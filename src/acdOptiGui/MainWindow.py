@@ -35,6 +35,7 @@ from acdOpti.AcdOptiMetaAnalysisCollection import AcdOptiMetaAnalysisCollection
 from acdOpti.AcdOptiMetaAnalysis import AcdOptiMetaAnalysis
 from acdOpti.AcdOptiDataExtractorCollection import AcdOptiDataExtractorCollection
 from acdOpti.AcdOptiDataExtractor import AcdOptiDataExtractor
+from acdOpti.AcdOptiDataExtractorPlot import AcdOptiDataExtractorPlot
 
 from acdOpti.parameterScan.ParameterScanInterface import ParameterScanInterface
 from acdOpti.parameterScan.ParameterScanCollection import ParameterScanCollection
@@ -60,6 +61,7 @@ from infoFrames.Scan2D_TuneFrame import Scan2D_TuneFrame
 from infoFrames.MetaAnalysis import MetaAnalysis
 from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
 from infoFrames.DataExtractor import DataExtractor
+from infoFrames.DataExtractorPlots import DataExtractorPlots_Plot2D, DataExtractorPlots_Plot3D
 
 import os
 
@@ -700,15 +702,19 @@ class MainWindow():
         elif isinstance(row[-1], AcdOptiMetaAnalysis):
             print "MainWindow::event_treeView_rowActivated() : Meta analysis, name='" + row[0] + "'"
             self.__infoFrame.push(MetaAnalysis(self.__infoFrame,row[-1]))
-            #self.__infoFrame.writeMessage("Meta-analysis, name='" + row[0] + "'='" + row[-1].instName)
         elif isinstance(row[-1], AcdOptiDataExtractorCollection):
             print "MainWindow::event_treeView_rowActivated() : Data extractor collection, name='" + row[0] + "'"
-            #self.__infoFrame.push(MetaAnalysis(self.__infoFrame,row[-1]))
             self.__infoFrame.writeMessage("Data extractor collection, name='" + row[0] + "'")
         elif isinstance(row[-1], AcdOptiDataExtractor):
             print "MainWindow::event_treeView_rowActivated() : Data extractor, name='" + row[0] + "'"
             self.__infoFrame.push(DataExtractor(self.__infoFrame,row[-1]))
-            #self.__infoFrame.writeMessage("Data extractor collection, name='" + row[0] + "'")
+        elif isinstance(row[-1], AcdOptiDataExtractorPlot):
+            if row[-1].plotType == "DataExtractorPlot2D":  
+                self.__infoFrame.push(DataExtractorPlots_Plot2D(self.__infoFrame, row[-1]))
+            elif row[-1].plotType == "DataExtractorPlot3D":
+                self.__infoFrame.push(DataExtractorPlots_Plot3D(self.__infoFrame, row[-1]))
+            else:
+                self.__infoFrame.writeMessage("Error in MainWindow::event_treeView_rowActivated() when opening DataExtractorPlot: Unknown plot type '" + data.plotType + "'")
         else:
             raise NotImplementedError("Unknown class encountered in row[-1]?!? name='" + row[0] + "', row[-1]='" + str(row[-1]) + "'")
             
@@ -868,6 +874,13 @@ class MainWindow():
                 deIter = self.__treeModel.append(decIter,[deName, self.__deIcon, color, de])
             else:
                 self.__treeModel[deIter][-2] = color
+            #DataExtractorPlots
+            for dep in de.plots:
+                depName = dep.instName
+                depIter = self.__searchIter(dep, self.__treeModel.iter_children(deIter))
+                if not depIter:
+                    depIter = self.__treeModel.append(deIter,[depName, self.__graphIcon,"white",dep])
+                    
         if newProjectNow:
             self.__treeView.expand_row(self.__treeModel.get_path(decIter),False)
 

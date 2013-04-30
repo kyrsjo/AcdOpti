@@ -151,6 +151,8 @@ class DataExtractor(InfoFrameComponent):
                 self.__dataModel   = None
                 self.__dataCols    = None
                 self.__dataRenders = None
+        
+        self.frameManager.mainWindow.updateProjectExplorer()
     
     def saveToDataExtractor(self):
         "Save current GUI content to DataExtractor"

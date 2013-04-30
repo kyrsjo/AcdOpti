@@ -76,7 +76,7 @@ class EqualsFilter(AcdOptiDataExtractorFilter):
                 self.numFiltered += 1
                 return False
         except KeyError:
-            return True
+            return False
 
 class RangeFilter(AcdOptiDataExtractorFilter):
     "Let pass if the filtered variable 'key' is in (a,b)"
@@ -112,5 +112,5 @@ class RangeFilter(AcdOptiDataExtractorFilter):
                 self.numFiltered += 1
                 return False
         except KeyError:
-            return True
+            return False
         

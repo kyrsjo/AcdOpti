@@ -26,12 +26,12 @@ from datetime import datetime
 
 #Initialize
 print "Module AcdOptiCubitTemplateFile.py is loading CUBIT..."
-if not os.path.lexists("/tmp/AcdOpti"):
-    os.mkdir("/tmp/AcdOpti")
-elif not os.path.isdir("/tmp/AcdOpti"):
-    raise AcdOptiException_cubitTemplateFile_initError("/tmp/AcdOpti already exists but is not a folder")
-CUBIT_basepath = "/tmp/AcdOpti"
-CUBIT_journalPath = os.path.join(CUBIT_basepath, "debugJournal.jou")
+#if not os.path.lexists("/tmp/AcdOpti"):
+#    os.mkdir("/tmp/AcdOpti")
+#elif not os.path.isdir("/tmp/AcdOpti"):
+#    raise AcdOptiException_cubitTemplateFile_initError("/tmp/AcdOpti already exists but is not a folder")
+#CUBIT_basepath = "/tmp/AcdOpti"
+#CUBIT_journalPath = os.path.join(CUBIT_basepath, "debugJournal.jou")
 
 #Make sure that "." is the decimal separator
 os.environ['LC_NUMERIC'] = 'en_US.utf8'

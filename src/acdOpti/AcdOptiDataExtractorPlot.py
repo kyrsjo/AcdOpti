@@ -315,3 +315,150 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         self.settingsDict["useLimit"] = self.useLimit
         
         self.settingsDict["numContours"] = self.numContours
+
+class DataExtractorPlots_ScaleOptim(AcdOptiDataExtractorPlot):
+    
+    plotType = "DataExtractorPlotScaleOptim"
+
+    varX     = None
+    varY     = None
+
+    constE   = None
+    varNormE = None
+    
+    constSC   = None
+    varNormSC = None
+    
+    constPC      = None
+    varFrequency = None
+    varRQ        = None
+    varVg        = None
+    varLen       = None
+    varRadius    = None
+        
+    def __init__(self, dataExtractor, settingsDictOrInstName):
+        assert settingsDictOrInstName != None
+        settingsDict = None
+        print settingsDictOrInstName
+        if type(settingsDictOrInstName) == str:
+            settingsDict = DataDict()
+            settingsDict.pushBack("plotType", self.plotType)
+            settingsDict.pushBack("instName", settingsDictOrInstName)
+            settingsDict.pushBack("varX", "GEOM.e")
+            settingsDict.pushBack("varY", "GEOM.sFrac")
+            
+            settingsDict.pushBack("constE", "220") #(MV/m)**6 * 200 ns, will be taken to the power 6
+            settingsDict.pushBack("varNormE", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].Emax_norm[0]")
+            
+            settingsDict.pushBack("constSC", "4.0") #(MW/mm**2)**3 * 200 ns, will be taken to the power 3
+            settingsDict.pushBack("varNormSC", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].SCmax_norm[0]")
+            
+            settingsDict.pushBack("constPC", "2.3") #(MW/mm)**3 * 200 ns, will be taken to the power 3
+            settingsDict.pushBack("varFrequency", "ANA.Omega3P_modeInfo.Mode[0].FrequencyReal[0]")
+            settingsDict.pushBack("varRQ", "ANA.RFpost_local.RoverQ[0].mode[0].RoQ_norm[0]")
+            settingsDict.pushBack("varVg", "ANA.GroupVelocity.VG[0]")
+            settingsDict.pushBack("varLen", "GEOM.L")
+            settingsDict.pushBack("varRadius", "GEOM.a")
+            
+        else:
+            settingsDict = settingsDictOrInstName
+        print settingsDict
+        
+        super(DataExtractorPlots_ScaleOptim,self).__init__(dataExtractor,settingsDict)
+        
+        self.varX = settingsDict["varX"]
+        self.varY = settingsDict["varY"]
+        
+        self.constE   = settingsDict["constE"]
+        self.varNormE = settingsDict["varNormE"]
+        
+        self.constSC    = settingsDict["constSC"]
+        self.varNormSC  = settingsDict["varNormSC"]
+
+        self.constPC      = settingsDict["constPC"]
+        self.varFrequency = settingsDict["varFrequency"]
+        self.varRQ        = settingsDict["varRQ"]
+        self.varVG        = settingsDict["varVg"]
+        self.varLen       = settingsDict["varLen"]
+        self.varRadius    = settingsDict["varRadius"]
+        
+    def doExport(self,fname):
+        raise NotImplementedError
+        
+    def getData(self):
+        assert self.dataExtractor.lockdown
+        assert self.varX         in self.dataExtractor.keyNames
+        assert self.varY         in self.dataExtractor.keyNames
+        assert self.varNormE     in self.dataExtractor.keyNames
+        assert self.varNormSC    in self.dataExtractor.keyNames
+        assert self.varFrequency in self.dataExtractor.keyNames
+        assert self.varRQ        in self.dataExtractor.keyNames
+        assert self.varVg        in self.dataExtractor.keyNames
+        assert self.varLen       in self.dataExtractor.keyNames
+        assert self.varRadius    in self.dataExtractor.keyNames
+
+        try:
+            constE_scaled  = float(self.constE**6  * 200)  # (MV/m)^6 * ns
+            constSC_scaled = float(self.constSC**3 * 200)  # (MW/mm^2)^3 * ns
+            constPC_scaled = float(self.constPC**3 * 200)  # (MW/mm)^3 * ns
+        except ValueError:
+            print "Warning in DataExtractorPlots_ScaleOptim::getData(): Could not convert a constant"
+            return ([],[], [],[],[])
+        
+        X = []
+        Y = []
+        
+        #Units: (MV/m)^6 * ns
+        tE = []
+        tSC = []
+        tPC = []
+        
+        for (row, rcount) in zip(self.dataExtractor.dataExtracted, xrange(len(self.dataExtractor.dataExtracted))):
+            try:
+                x = float(row[self.varX])
+                y = float(row[self.varY])
+
+                maxE = float(row[self.varNormE])
+                t_E = constE_scaled/maxE**6
+                
+                maxSC = float(row[self.varNormSC])
+                t_SC  = constSC_scaled/maxSC**3
+                
+                radius = float(row[self.varRadius]) # mm
+                circ = 2*np.pi*radius*1e-3          # m
+                
+                vg = float(row[self.varVg])         # m/s
+                omega = 2*np.pi*float(row[self.varFrequency]) # s^-1
+                RQnorm = float(row[self.varRQ])*1e3     # Ohm/m (its Ohm/mm in R/Q parser) 
+                
+                t_PC = 1e-9*constPC_scaled * (circ*omega*RQnorm/vg)**3
+                
+                X.append(x)
+                Y.append(y)
+                tE.append(t_E)
+                tSC.append(t_SC)
+                tPC.append(t_PC)
+            except KeyError:
+                pass
+            except ValueError:
+                print "Warning in DataExtractorPlot_ScaleOptim::getData(): Could not convert value in row", rcount, "to float, skipping!"
+        
+        return (X,Y,tE,tSC,tPC)
+    
+    def updateSettingsDict(self):
+        self.settingsDict["varX"] = self.varX
+        self.settingsDict["varY"] = self.varY
+        
+        self.settingsDict["constE"]    = self.constE
+        self.settingsDict["varNormE"]  = self.varNormE
+        
+        self.settingsDict["constSC"]   = self.constSC
+        self.settingsDict["varNormSC"] = self.varNormSC
+
+        self.settingsDict["constPC"]      = self.constPC
+        self.settingsDict["varFrequency"] = self.varFrequency
+        self.settingsDict["varRQ"]        = self.varRQ
+        self.settingsDict["varVg"]        = self.varVg
+        self.settingsDict["varLen"]       = self.varLen
+        self.settingsDict["varRadius"]    = self.varRadius
+

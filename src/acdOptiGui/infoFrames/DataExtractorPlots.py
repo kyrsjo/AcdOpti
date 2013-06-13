@@ -112,6 +112,8 @@ class DataExtractorPlots(InfoFrameComponent):
             self.frameManager.push(DataExtractorPlots_Plot2D(self.frameManager, data))
         elif data.plotType == "DataExtractorPlot3D":
             self.frameManager.push(DataExtractorPlots_Plot3D(self.frameManager, data))
+        elif data.plotType == "DataExtractorPlotScaleOptim":
+            self.frameManager.push(DataExtractorPlots_ScaleOptim(self.frameManager, data))
         else:
             print "Error in DataExtractorPlots::event_button_manipulate(): Unknown plot type '" + data.plotType + "'"
     def event_button_delete(self,widget,data):
@@ -123,7 +125,7 @@ class DataExtractorPlots(InfoFrameComponent):
     
     def event_button_add(self,widget,data):
         
-        (type, name, response) = self.getTypeAndNameDialog_currentBase(("DataExtractorPlot2D","DataExtractorPlot3D"), "New plotter")
+        (type, name, response) = self.getTypeAndNameDialog_currentBase(("DataExtractorPlot2D","DataExtractorPlot3D", "DataExtractorPlotScaleOptim"), "New plotter")
         
         if response == gtk.RESPONSE_OK:
             if name == None:

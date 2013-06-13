@@ -105,14 +105,15 @@ class RFpostParser():
             ls = re.match(r'\s*(\d+)\s+('+redigits+")\s+\(\s*("+redigits+"),\s*(" + redigits + ")\s*\)\s*("+redigits+")\s*("+redigits+")",line)
             #ls = line.split()
             ldic.pushBack("ModeID", ls.group(1))
-            ldic.pushBack("Frequency", ls.group(2))
+            ldic.pushBack("Frequency", ls.group(2)) #Hz
             ldic.pushBack("Vr", ls.group(3))
             ldic.pushBack("Vi", ls.group(4))
-            ldic.pushBack("Vabs", ls.group(5))
+            ldic.pushBack("Vabs", ls.group(5)) #V
             if L != -1.0:
-                ldic.pushBack("Ez_ave", str(float(ldic["Vabs"])/(L/1000.0)))
+                ldic.pushBack("Ez_ave", str(float(ldic["Vabs"])/(L/1000.0)))  #V/m
             ldic.pushBack("RoQ", ls.group(6))
-            ldic.pushBack("RoQ_norm", str(float(ls.group(6))/L))
+            if L != -1.0:
+                ldic.pushBack("RoQ_norm", str(float(ls.group(6))/L)) #Ohm/mm (weird unit, but changing would mean data containing two versions :/)
             retDict.pushBack("mode",ldic)
         
         return retDict

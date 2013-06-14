@@ -19,6 +19,8 @@
 from AcdOptiFileParser import DataDict
 from AcdOptiExceptions import AcdOptiException_dataDict_getValsSingle
 
+import numpy as np
+
 class AcdOptiDataExtractorPlot(object):
     "Base class for plot data/settings objects"
 
@@ -316,7 +318,7 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         
         self.settingsDict["numContours"] = self.numContours
 
-class DataExtractorPlots_ScaleOptim(AcdOptiDataExtractorPlot):
+class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
     
     plotType = "DataExtractorPlotScaleOptim"
 
@@ -364,7 +366,7 @@ class DataExtractorPlots_ScaleOptim(AcdOptiDataExtractorPlot):
             settingsDict = settingsDictOrInstName
         print settingsDict
         
-        super(DataExtractorPlots_ScaleOptim,self).__init__(dataExtractor,settingsDict)
+        super(DataExtractorPlotsScaleOptim,self).__init__(dataExtractor,settingsDict)
         
         self.varX = settingsDict["varX"]
         self.varY = settingsDict["varY"]
@@ -378,7 +380,7 @@ class DataExtractorPlots_ScaleOptim(AcdOptiDataExtractorPlot):
         self.constPC      = settingsDict["constPC"]
         self.varFrequency = settingsDict["varFrequency"]
         self.varRQ        = settingsDict["varRQ"]
-        self.varVG        = settingsDict["varVg"]
+        self.varVg        = settingsDict["varVg"]
         self.varLen       = settingsDict["varLen"]
         self.varRadius    = settingsDict["varRadius"]
         
@@ -398,11 +400,11 @@ class DataExtractorPlots_ScaleOptim(AcdOptiDataExtractorPlot):
         assert self.varRadius    in self.dataExtractor.keyNames
 
         try:
-            constE_scaled  = float(self.constE**6  * 200)  # (MV/m)^6 * ns
-            constSC_scaled = float(self.constSC**3 * 200)  # (MW/mm^2)^3 * ns
-            constPC_scaled = float(self.constPC**3 * 200)  # (MW/mm)^3 * ns
+            constE_scaled  = float(self.constE)**6  * 200  # (MV/m)^6 * ns
+            constSC_scaled = float(self.constSC)**3 * 200  # (MW/mm^2)^3 * ns
+            constPC_scaled = float(self.constPC)**3 * 200  # (MW/mm)^3 * ns
         except ValueError:
-            print "Warning in DataExtractorPlots_ScaleOptim::getData(): Could not convert a constant"
+            print "Warning in DataExtractorPlotsScaleOptim::getData(): Could not convert a constant"
             return ([],[], [],[],[])
         
         X = []
@@ -441,7 +443,7 @@ class DataExtractorPlots_ScaleOptim(AcdOptiDataExtractorPlot):
             except KeyError:
                 pass
             except ValueError:
-                print "Warning in DataExtractorPlot_ScaleOptim::getData(): Could not convert value in row", rcount, "to float, skipping!"
+                print "Warning in DataExtractorPlotScaleOptim::getData(): Could not convert value in row", rcount, "to float, skipping!"
         
         return (X,Y,tE,tSC,tPC)
     

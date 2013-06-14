@@ -61,7 +61,7 @@ from infoFrames.Scan2D_TuneFrame import Scan2D_TuneFrame
 from infoFrames.MetaAnalysis import MetaAnalysis
 from infoFrames.MetaAnalysisCollection import MetaAnalysisCollection
 from infoFrames.DataExtractor import DataExtractor
-from infoFrames.DataExtractorPlots import DataExtractorPlots_Plot2D, DataExtractorPlots_Plot3D
+from infoFrames.DataExtractorPlots import DataExtractorPlots_Plot2D, DataExtractorPlots_Plot3D, DataExtractorPlots_ScaleOptim
 
 import os
 
@@ -713,6 +713,8 @@ class MainWindow():
                 self.__infoFrame.push(DataExtractorPlots_Plot2D(self.__infoFrame, row[-1]))
             elif row[-1].plotType == "DataExtractorPlot3D":
                 self.__infoFrame.push(DataExtractorPlots_Plot3D(self.__infoFrame, row[-1]))
+            elif row[-1].plotType == "DataExtractorPlotScaleOptim":
+                self.__infoFrame.push(DataExtractorPlots_ScaleOptim(self.__infoFrame, row[-1]))
             else:
                 self.__infoFrame.writeMessage("Error in MainWindow::event_treeView_rowActivated() when opening DataExtractorPlot: Unknown plot type '" + data.plotType + "'")
         else:

@@ -657,3 +657,124 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     def event_delete(self):
         #self.saveToPlot()
         return False
+
+class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
+    """
+    ScaleOptim plot
+    """
+    
+    plotObject = None
+    
+    __varX_entry = None
+    __varY_entry = None
+    
+    __constE_entry = None
+    __varNormE_entry = None
+    
+    __constSC_entry = None
+    __varNormSC_entry = None
+    
+    __constPC_entry = None
+    __varFrequency_entry = None
+    __varRQ_entry = None
+    __varVg_entry = None
+    __varLen_entry = None
+    __varRadius_entry = None
+    
+    #__plotButton = None
+    
+    __closeButton = None
+    
+    
+    def __init__(self, frameManager, plotObject):
+        InfoFrameComponent.__init__(self, frameManager)
+        assert isinstance(plotObject, DataExtractorPlotsScaleOptim) 
+        self.plotObject = plotObject
+        
+        self.baseWidget = gtk.VBox()
+        
+        self.baseWidget.pack_start(gtk.Label("DataExtractorPlotScaleOptim, instName = " + self.plotObject.instName), padding=5, expand=False)
+        
+        varXbox = gtk.HBox()
+        varXbox.pack_start(gtk.Label("X variable:"), padding=5,expand=False)
+        self.__varX_entry = gtk.Entry()
+        self.__varX_entry.set_text(self.plotObject.varX)
+        varXbox.pack_start(self.__varX_entry, padding=5, expand=True)
+        self.baseWidget.pack_start(varXbox, padding=5, expand=False)
+        
+        varYbox = gtk.HBox()
+        varYbox.pack_start(gtk.Label("Y variable:"), padding=5,expand=False)
+        self.__varY_entry = gtk.Entry()
+        self.__varY_entry.set_text(self.plotObject.varY)
+        varYbox.pack_start(self.__varY_entry, padding=5, expand=True)
+        self.baseWidget.pack_start(varYbox, padding=5, expand=False)
+        
+        self.baseWidget.pack_start(gtk.Label("Available variables:\n (textbox just to enable copy/paste, nothing is saved)"), padding=5,expand=False)
+        varString = ""
+        for k in self.plotObject.dataExtractor.keyNames:
+            varString += k + " "
+        varString = varString[:-1]
+        varEntry = gtk.Entry()
+        varEntry.set_text(varString)
+        self.baseWidget.pack_start(varEntry, padding=5, expand=True)
+        
+        self.__plotButton = gtk.Button("Show _plot!")
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__plotButton.set_sensitive(False)
+        self.__plotButton.connect("clicked", self.event_button_plot, None)
+        self.baseWidget.pack_start(self.__plotButton, padding=5, expand=False)
+        
+        self.__closeButton = gtk.Button("_Close plot view")
+        self.__closeButton.connect("clicked", self.event_button_close, None)
+        self.baseWidget.pack_start(self.__closeButton,padding = 5, expand=False)
+
+        self.baseWidget.show_all()
+    
+    def saveToPlot(self):
+        x = self.__varX_entry.get_text().strip()
+        y = self.__varY_entry.get_text().strip()
+        if " " in x or " " in y:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Space in X or Y variable, not saving to plot." )
+            mDia.run()
+            mDia.destroy()
+            return
+        self.plotObject.varX = x
+        self.plotObject.varY = y
+        self.plotObject.updateSettingsDict()
+        self.plotObject.dataExtractor.write()
+    
+    def event_button_plot(self, widget, data):
+        self.saveToPlot()
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print "Could not import matplotlib.pyplot, aborting plot. You should still be able to doExport()!"
+            return
+        (X,Y, tE, tSC, tPC) = self.plotObject.getData()
+        plt.plot(X,tE,  '+', label="E")
+        plt.plot(X,tSC, '+', label="SC")
+        plt.plot(X,tPC, '+', label="PC")
+        plt.xlabel(self.plotObject.varX)
+        plt.ylabel("Time * G^6 (MV/m)^6 * ns")
+        
+        xRange = abs(max(X)-min(X))
+        ymax = max(max(tE),max(tSC),max(tPC))
+        ymin = min(min(tE),min(tSC),min(tPC))
+        yRange = abs(ymax-ymin)
+        plt.axis([min(X)-0.1*xRange, max(X)+0.1*xRange, ymin-0.1*yRange, ymax+0.1*yRange])
+        
+        plt.legend()
+        
+        plt.show()
+        
+        gtk.main()
+    
+    def event_button_close(self,widget,data):
+        self.saveToPlot()
+        self.frameManager.pop()
+    def event_delete(self):
+        #self.saveToPlot()
+        return False

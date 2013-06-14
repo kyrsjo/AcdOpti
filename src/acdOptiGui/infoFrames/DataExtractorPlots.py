@@ -678,7 +678,6 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __varFrequency_entry = None
     __varRQ_entry = None
     __varVg_entry = None
-    __varLen_entry = None
     __varRadius_entry = None
     
     __enable_E = None
@@ -831,18 +830,43 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.baseWidget.show_all()
     
     def saveToPlot(self):
-        x = self.__varX_entry.get_text().strip()
-        y = self.__varY_entry.get_text().strip()
-        if " " in x or " " in y:
+        varX         = self.__varX_entry.get_text().strip()
+        varY         = self.__varY_entry.get_text().strip()
+        
+        constE       = self.__constE_entry.get_text().strip()
+        varNormE     = self.__varNormE_entry.get_text().strip()
+        
+        constSC      = self.__constSC_entry.get_text().strip()
+        varNormSC    = self.__varNormSC_entry.get_text().strip()
+        
+        constPC      = self.__constPC_entry.get_text().strip()
+        varFrequency = self.__varFrequency_entry.get_text().strip()
+        varRQ        = self.__varRQ_entry.get_text().strip()
+        varVg        = self.__varVg_entry.get_text().strip()
+        varRadius    = self.__varRadius_entry.get_text().strip()
+        
+        if " " in varX or " " in varY or " " in constE or " " in varNormE \
+            or " " in constSC or " " in varNormSC or " " in constPC or " " in varFrequency \
+            or " " in varRQ or " " in varVg or " " in varRadius :
             mDia = gtk.MessageDialog(self.getBaseWindow(),
                                      gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                      gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                     "Space in X or Y variable, not saving to plot." )
+                                     "Space in a variable, not saving to plot." )
             mDia.run()
             mDia.destroy()
             return
-        self.plotObject.varX = x
-        self.plotObject.varY = y
+        self.plotObject.varX = varX
+        self.plotObject.varY = varY
+        self.plotObject.constE = constE
+        self.plotObject.varNormE = varNormE
+        self.plotObject.constSC = constSC
+        self.plotObject.varNormSC = varNormSC
+        self.plotObject.constPC = constPC
+        self.plotObject.varFrequency = varFrequency
+        self.plotObject.varRQ = varRQ
+        self.plotObject.varVg = varVg
+        self.plotObject.varRadius = varRadius
+        
         self.plotObject.updateSettingsDict()
         self.plotObject.dataExtractor.write()
     

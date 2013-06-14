@@ -335,7 +335,6 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
     varFrequency = None
     varRQ        = None
     varVg        = None
-    varLen       = None
     varRadius    = None
         
     def __init__(self, dataExtractor, settingsDictOrInstName):

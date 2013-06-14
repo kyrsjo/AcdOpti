@@ -681,6 +681,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __varLen_entry = None
     __varRadius_entry = None
     
+    __enable_E = None
+    __enable_SC = None
+    __enable_PC = None
+    
     #__plotButton = None
     
     __closeButton = None
@@ -709,16 +713,112 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         varYbox.pack_start(self.__varY_entry, padding=5, expand=True)
         self.baseWidget.pack_start(varYbox, padding=5, expand=False)
         
-        self.baseWidget.pack_start(gtk.Label("Available variables:\n (textbox just to enable copy/paste, nothing is saved)"), padding=5,expand=False)
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+        
+        constEbox = gtk.HBox()
+        constEbox.pack_start(gtk.Label("constE:"), padding=5,expand=False)
+        self.__constE_entry = gtk.Entry()
+        self.__constE_entry.set_text(self.plotObject.constE)
+        constEbox.pack_start(self.__constE_entry, padding=5, expand=True)
+        constEbox.pack_start(gtk.Label("^6 [(MV/m)^6] * 200 ns"), padding=5,expand=False)
+        self.baseWidget.pack_start(constEbox, padding=5, expand=False)
+        
+        varNormEbox = gtk.HBox()
+        varNormEbox.pack_start(gtk.Label("varNormE:"), padding=5,expand=False)
+        self.__varNormE_entry = gtk.Entry()
+        self.__varNormE_entry.set_text(self.plotObject.varNormE)
+        varNormEbox.pack_start(self.__varNormE_entry, padding=5, expand=True)
+        self.baseWidget.pack_start(varNormEbox, padding=5, expand=False)
+        
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+        
+        constSCbox = gtk.HBox()
+        constSCbox.pack_start(gtk.Label("constSC:"), padding=5,expand=False)
+        self.__constSC_entry = gtk.Entry()
+        self.__constSC_entry.set_text(self.plotObject.constSC)
+        constSCbox.pack_start(self.__constSC_entry, padding=5, expand=True)
+        constSCbox.pack_start(gtk.Label("^3 [(MW/mm^2)^3] * 200 ns"), padding=5,expand=False)
+        self.baseWidget.pack_start(constSCbox, padding=5, expand=False)
+        
+        varNormSCbox = gtk.HBox()
+        varNormSCbox.pack_start(gtk.Label("varNormSC:"), padding=5,expand=False)
+        self.__varNormSC_entry = gtk.Entry()
+        self.__varNormSC_entry.set_text(self.plotObject.varNormSC)
+        varNormSCbox.pack_start(self.__varNormSC_entry, padding=5, expand=True)
+        self.baseWidget.pack_start(varNormSCbox, padding=5, expand=False)
+        
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+        
+        constPCbox = gtk.HBox()
+        constPCbox.pack_start(gtk.Label("constPC:"), padding=5,expand=False)
+        self.__constPC_entry = gtk.Entry()
+        self.__constPC_entry.set_text(self.plotObject.constPC)
+        constPCbox.pack_start(self.__constPC_entry, padding=5, expand=True)
+        constPCbox.pack_start(gtk.Label("^3 [(MW/mm)^3] * 200 ns"), padding=5,expand=False)
+        self.baseWidget.pack_start(constPCbox, padding=5, expand=False)
+        
+        varFrequencybox = gtk.HBox()
+        varFrequencybox.pack_start(gtk.Label("varFrequency:"), padding=5,expand=False)
+        self.__varFrequency_entry = gtk.Entry()
+        self.__varFrequency_entry.set_text(self.plotObject.varFrequency)
+        varFrequencybox.pack_start(self.__varFrequency_entry, padding=5, expand=True)
+        varFrequencybox.pack_start(gtk.Label("(in [Hz])"), padding=5,expand=False)
+        self.baseWidget.pack_start(varFrequencybox, padding=5, expand=False)
+        
+        varRQbox = gtk.HBox()
+        varRQbox.pack_start(gtk.Label("varRQ:"), padding=5,expand=False)
+        self.__varRQ_entry = gtk.Entry()
+        self.__varRQ_entry.set_text(self.plotObject.varRQ)
+        varRQbox.pack_start(self.__varRQ_entry, padding=5, expand=True)
+        varRQbox.pack_start(gtk.Label("(In [Ohm/mm])"), padding=5,expand=False)
+        self.baseWidget.pack_start(varRQbox, padding=5, expand=False)
+        
+        varVgbox = gtk.HBox()
+        varVgbox.pack_start(gtk.Label("varVg:"), padding=5,expand=False)
+        self.__varVg_entry = gtk.Entry()
+        self.__varVg_entry.set_text(self.plotObject.varVg)
+        varVgbox.pack_start(self.__varVg_entry, padding=5, expand=True)
+        varVgbox.pack_start(gtk.Label("(In [m/s])"), padding=5,expand=False)
+        self.baseWidget.pack_start(varVgbox, padding=5, expand=False)
+        
+        varRadiusbox = gtk.HBox()
+        varRadiusbox.pack_start(gtk.Label("varRadius:"), padding=5,expand=False)
+        self.__varRadius_entry = gtk.Entry()
+        self.__varRadius_entry.set_text(self.plotObject.varRadius)
+        varRadiusbox.pack_start(self.__varRadius_entry, padding=5, expand=True)
+        varRadiusbox.pack_start(gtk.Label("(In [mm])"), padding=5,expand=False)
+        self.baseWidget.pack_start(varRadiusbox, padding=5, expand=False)
+        
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+        
+        varAvailBox = gtk.HBox() 
+        varAvailBox.pack_start(gtk.Label("Available variables:"), padding=5,expand=False)
         varString = ""
         for k in self.plotObject.dataExtractor.keyNames:
             varString += k + " "
         varString = varString[:-1]
         varEntry = gtk.Entry()
         varEntry.set_text(varString)
-        self.baseWidget.pack_start(varEntry, padding=5, expand=True)
+        varAvailBox.pack_start(varEntry, padding=5, expand=True)
+        self.baseWidget.pack_start(varAvailBox,padding=5,expand=False)
         
-        self.__plotButton = gtk.Button("Show _plot!")
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+        
+        enableBox = gtk.HBox(homogeneous=True)
+        self.__enable_E = gtk.CheckButton(label="Enable _E")
+        self.__enable_E.set_active(True)
+        enableBox.pack_start(self.__enable_E)
+        self.__enable_SC = gtk.CheckButton(label="Enable _SC")
+        self.__enable_SC.set_active(True)
+        enableBox.pack_start(self.__enable_SC)
+        self.__enable_PC = gtk.CheckButton(label="Enable _P/C")
+        self.__enable_PC.set_active(True)
+        enableBox.pack_start(self.__enable_PC)
+        self.baseWidget.pack_start(enableBox, padding=5, expand=False)
+        
+        self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
+        
+        self.__plotButton = gtk.Button("Show _2D plot")
         if not self.plotObject.dataExtractor.lockdown:
             self.__plotButton.set_sensitive(False)
         self.__plotButton.connect("clicked", self.event_button_plot, None)
@@ -754,17 +854,71 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             print "Could not import matplotlib.pyplot, aborting plot. You should still be able to doExport()!"
             return
         (X,Y, tE, tSC, tPC) = self.plotObject.getData()
-        plt.plot(X,tE,  '+', label="E")
-        plt.plot(X,tSC, '+', label="SC")
-        plt.plot(X,tPC, '+', label="PC")
+        
+        enableE  = self.__enable_E.get_active()
+        enableSC = self.__enable_SC.get_active()
+        enablePC = self.__enable_PC.get_active()
+        if not (enableE or enableSC or enablePC):
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Nothing enabled, not plotting" )
+            mDia.run()
+            mDia.destroy()
+            return
+        
+        def dedupX(X, t, minORmean="min"):
+            Xret = []
+            tret = []
+            for i in xrange(len(X)):
+                if X[i] in Xret:
+                    continue
+                Xret.append(X[i])
+                ttemp = []
+                for j in xrange(len(X)):
+                    if X[j]==X[i]:
+                        ttemp.append(t[j])
+                if minORmean == "min":
+                    tret.append(np.min(ttemp))
+                elif minORmean == "mean":
+                    tret.append(np.mean(ttemp))
+                else:
+                    print "dedupX expects minORmean = {min|mean}"
+            sortIDX = np.argsort(Xret)
+            return (np.asarray(Xret)[sortIDX], np.asarray(tret)[sortIDX])
+        
+        XAll = []
+        tAll = []
+        if enableE:
+            plt.plot(X, tE,  '+', label="E", color="blue")
+            (Xmin,tmin) = dedupX(X,tE)
+            plt.plot(Xmin, tmin, "--", color="blue")
+            XAll += X
+            tAll += tE
+        if enableSC:
+            plt.plot(X, tSC, '+', label="SC", color="green")
+            (Xmin,tmin) = dedupX(X,tSC)
+            plt.plot(Xmin, tmin, "--", color="green")
+            XAll += X
+            tAll += tSC
+        if enablePC:
+            plt.plot(X, tPC, '+', label="PC", color="red")
+            (Xmin,tmin) = dedupX(X,tPC)
+            plt.plot(Xmin, tmin, "--", color="red")
+            XAll += X
+            tAll += tPC
+        (Xmin,tmin) = dedupX(XAll,tAll)
+        plt.plot(Xmin,tmin, "--", color="black", label="Minimum")
+        
+        
         plt.xlabel(self.plotObject.varX)
-        plt.ylabel("Time * G^6 (MV/m)^6 * ns")
+        plt.ylabel("Time * G^6 [(MV/m)^6 * ns]")
         
         xRange = abs(max(X)-min(X))
-        ymax = max(max(tE),max(tSC),max(tPC))
-        ymin = min(min(tE),min(tSC),min(tPC))
-        yRange = abs(ymax-ymin)
-        plt.axis([min(X)-0.1*xRange, max(X)+0.1*xRange, ymin-0.1*yRange, ymax+0.1*yRange])
+        #ymax = max(max(tE),max(tSC),max(tPC))
+        #ymin = min(min(tE),min(tSC),min(tPC))
+        #yRange = abs(ymax-ymin)
+        #plt.axis([min(X)-0.1*xRange, max(X)+0.1*xRange, ymin-0.1*yRange, ymax+0.1*yRange])
         
         plt.legend()
         

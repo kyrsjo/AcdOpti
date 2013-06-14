@@ -359,7 +359,6 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
             settingsDict.pushBack("varFrequency", "ANA.Omega3P_modeInfo.Mode[0].FrequencyReal[0]")
             settingsDict.pushBack("varRQ", "ANA.RFpost_local.RoverQ[0].mode[0].RoQ_norm[0]")
             settingsDict.pushBack("varVg", "ANA.GroupVelocity.VG[0]")
-            settingsDict.pushBack("varLen", "GEOM.L")
             settingsDict.pushBack("varRadius", "GEOM.a")
             
         else:
@@ -381,7 +380,6 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
         self.varFrequency = settingsDict["varFrequency"]
         self.varRQ        = settingsDict["varRQ"]
         self.varVg        = settingsDict["varVg"]
-        self.varLen       = settingsDict["varLen"]
         self.varRadius    = settingsDict["varRadius"]
         
     def doExport(self,fname):
@@ -396,7 +394,6 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
         assert self.varFrequency in self.dataExtractor.keyNames
         assert self.varRQ        in self.dataExtractor.keyNames
         assert self.varVg        in self.dataExtractor.keyNames
-        assert self.varLen       in self.dataExtractor.keyNames
         assert self.varRadius    in self.dataExtractor.keyNames
 
         try:
@@ -461,6 +458,5 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
         self.settingsDict["varFrequency"] = self.varFrequency
         self.settingsDict["varRQ"]        = self.varRQ
         self.settingsDict["varVg"]        = self.varVg
-        self.settingsDict["varLen"]       = self.varLen
         self.settingsDict["varRadius"]    = self.varRadius
 

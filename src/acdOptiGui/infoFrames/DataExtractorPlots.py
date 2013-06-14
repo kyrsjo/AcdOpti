@@ -684,7 +684,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __enable_SC = None
     __enable_PC = None
     
-    #__plotButton = None
+    __plotButtonX = None
+    __plotButtonY = None
+    __plot2DButton = None
     
     __closeButton = None
     
@@ -806,22 +808,35 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         enableBox = gtk.HBox(homogeneous=True)
         self.__enable_E = gtk.CheckButton(label="Enable _E")
         self.__enable_E.set_active(True)
-        enableBox.pack_start(self.__enable_E)
+        enableBox.pack_start(self.__enable_E, padding=5)
         self.__enable_SC = gtk.CheckButton(label="Enable _SC")
         self.__enable_SC.set_active(True)
-        enableBox.pack_start(self.__enable_SC)
+        enableBox.pack_start(self.__enable_SC, padding=5)
         self.__enable_PC = gtk.CheckButton(label="Enable _P/C")
         self.__enable_PC.set_active(True)
-        enableBox.pack_start(self.__enable_PC)
+        enableBox.pack_start(self.__enable_PC, padding=5)
         self.baseWidget.pack_start(enableBox, padding=5, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
         
-        self.__plotButton = gtk.Button("Show _2D plot")
+        plotBox = gtk.HBox(homogeneous=True)
+        self.__plotButtonX = gtk.Button("Show _plot (X)")
         if not self.plotObject.dataExtractor.lockdown:
-            self.__plotButton.set_sensitive(False)
-        self.__plotButton.connect("clicked", self.event_button_plot, None)
-        self.baseWidget.pack_start(self.__plotButton, padding=5, expand=False)
+            self.__plotButtonX.set_sensitive(False)
+        self.__plotButtonX.connect("clicked", self.event_button_plot, None)
+        plotBox.pack_start(self.__plotButtonX, padding=5, expand=False)
+        self.__plotButtonY = gtk.Button("Show _plot (Y)")
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__plotButtonY.set_sensitive(False)
+        self.__plotButtonY.connect("clicked", self.event_button_plot, "Y")
+        plotBox.pack_start(self.__plotButtonY, padding=5, expand=False)
+        self.baseWidget.pack_start(plotBox, padding=5, expand=False)
+        
+        self.__plot2DButton = gtk.Button("Show _2D plot")
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__plot2DButton.set_sensitive(False)
+        self.__plot2DButton.connect("clicked", self.event_button_plot2D, None)
+        self.baseWidget.pack_start(self.__plot2DButton, padding=5, expand=False)
         
         self.__closeButton = gtk.Button("_Close plot view")
         self.__closeButton.connect("clicked", self.event_button_close, None)
@@ -878,6 +893,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             print "Could not import matplotlib.pyplot, aborting plot. You should still be able to doExport()!"
             return
         (X,Y, tE, tSC, tPC) = self.plotObject.getData()
+        
+        if data=="Y":
+            X=Y
         
         enableE  = self.__enable_E.get_active()
         enableSC = self.__enable_SC.get_active()
@@ -936,6 +954,8 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         
         plt.xlabel(self.plotObject.varX)
+        if data=="Y":
+            plt.xlabel(self.plotObject.varY)
         plt.ylabel("Time * G^6 [(MV/m)^6 * ns]")
         
         xRange = abs(max(X)-min(X))
@@ -950,6 +970,74 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         gtk.main()
     
+    def event_button_plot2D(self,widget,data):
+        self.saveToPlot()
+        try:
+            import matplotlib.pyplot as plt
+            import matplotlib.tri as tri
+            import numpy as np
+        except ImportError:
+            print "Could not import matplotlib.pyplot, matplotlib.tri, or nump -- aborting plot. You should still be able to doExport()!"
+            return
+        (X,Y, tE, tSC, tPC) = self.plotObject.getData()
+        
+        enableE  = self.__enable_E.get_active()
+        enableSC = self.__enable_SC.get_active()
+        enablePC = self.__enable_PC.get_active()
+        if not (enableE or enableSC or enablePC):
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Nothing enabled, not plotting" )
+            mDia.run()
+            mDia.destroy()
+            return
+        
+        #Merge data
+        x = X*3
+        y = Y*3
+        t = []
+        if enableE:
+            t += tE
+        if enableSC:
+            t += tSC
+        if enablePC:
+            t += tPC
+        
+        #Deduplicate
+        Xdedup = []
+        Ydedup = []
+        Tdedup = []
+        for i in xrange(len(X)):
+            #Already there, if so which idx?
+            j = 0
+            while j < len(Xdedup):
+                if X[i] == Xdedup[j] and Y[i] == Ydedup[j]:
+                    break
+                j += 1
+            if j == len(Xdedup):
+                #Didn't find
+                Xdedup.append(X[i])
+                Ydedup.append(Y[i])
+                Tdedup.append(t[i])
+            else:
+                #Found
+                if t[i] < Tdedup[j]:
+                    Tdedup[j] = t[i]
+        
+        #Plot
+        triang = tri.Triangulation(Xdedup, Ydedup)
+        plt.tricontourf(triang,Tdedup)
+        plt.colorbar()
+        
+        plt.xlabel(self.plotObject.varX)
+        plt.ylabel(self.plotObject.varY)
+        
+        plt.show()
+        
+        gtk.main()
+        
+        
     def event_button_close(self,widget,data):
         self.saveToPlot()
         self.frameManager.pop()

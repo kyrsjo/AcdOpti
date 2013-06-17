@@ -669,12 +669,15 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __varY_entry = None
     
     __constE_entry = None
+    __constE_2_entry = None
     __varNormE_entry = None
     
     __constSC_entry = None
+    __constSC_2_entry = None
     __varNormSC_entry = None
     
     __constPC_entry = None
+    __constPC_2_entry = None
     __varFrequency_entry = None
     __varRQ_entry = None
     __varVg_entry = None
@@ -683,6 +686,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __enable_E = None
     __enable_SC = None
     __enable_PC = None
+    
+    __optimistic_optimistic  = None
+    __optimistic_both        = None
+    __optimistic_pessimistic = None
     
     __plotButtonX = None
     __plotButtonY = None
@@ -721,6 +728,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__constE_entry = gtk.Entry()
         self.__constE_entry.set_text(self.plotObject.constE)
         constEbox.pack_start(self.__constE_entry, padding=5, expand=True)
+        constEbox.pack_start(gtk.Label("-"), padding=5,expand=False)
+        self.__constE_2_entry = gtk.Entry()
+        self.__constE_2_entry.set_text(self.plotObject.constE_2)
+        constEbox.pack_start(self.__constE_2_entry, padding=5, expand=True)
         constEbox.pack_start(gtk.Label("^6 [(MV/m)^6] * 200 ns"), padding=5,expand=False)
         self.baseWidget.pack_start(constEbox, padding=5, expand=False)
         
@@ -738,6 +749,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__constSC_entry = gtk.Entry()
         self.__constSC_entry.set_text(self.plotObject.constSC)
         constSCbox.pack_start(self.__constSC_entry, padding=5, expand=True)
+        constSCbox.pack_start(gtk.Label("-"), padding=5,expand=False)
+        self.__constSC_2_entry = gtk.Entry()
+        self.__constSC_2_entry.set_text(self.plotObject.constSC_2)
+        constSCbox.pack_start(self.__constSC_2_entry, padding=5, expand=True)
         constSCbox.pack_start(gtk.Label("^3 [(MW/mm^2)^3] * 200 ns"), padding=5,expand=False)
         self.baseWidget.pack_start(constSCbox, padding=5, expand=False)
         
@@ -755,6 +770,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__constPC_entry = gtk.Entry()
         self.__constPC_entry.set_text(self.plotObject.constPC)
         constPCbox.pack_start(self.__constPC_entry, padding=5, expand=True)
+        constPCbox.pack_start(gtk.Label("-"), padding=5,expand=False)
+        self.__constPC_2_entry = gtk.Entry()
+        self.__constPC_2_entry.set_text(self.plotObject.constPC_2)
+        constPCbox.pack_start(self.__constPC_2_entry, padding=5, expand=True)
         constPCbox.pack_start(gtk.Label("^3 [(MW/mm)^3] * 200 ns"), padding=5,expand=False)
         self.baseWidget.pack_start(constPCbox, padding=5, expand=False)
         
@@ -815,6 +834,15 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__enable_PC = gtk.CheckButton(label="Enable _P/C")
         self.__enable_PC.set_active(True)
         enableBox.pack_start(self.__enable_PC, padding=5)
+        optimisticBox = gtk.VBox(homogeneous=True)
+        self.__optimistic_optimistic  = gtk.RadioButton(None,"Optimistic")
+        optimisticBox.pack_start(self.__optimistic_optimistic)
+        self.__optimistic_both        = gtk.RadioButton(self.__optimistic_optimistic,"Both")
+        self.__optimistic_both.set_active(True)
+        optimisticBox.pack_start(self.__optimistic_both)        
+        self.__optimistic_pessimistic = gtk.RadioButton(self.__optimistic_optimistic,"Pessimistic")
+        optimisticBox.pack_start(self.__optimistic_pessimistic)
+        enableBox.pack_start(optimisticBox,padding=5);
         self.baseWidget.pack_start(enableBox, padding=5, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
@@ -849,19 +877,23 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         varY         = self.__varY_entry.get_text().strip()
         
         constE       = self.__constE_entry.get_text().strip()
+        constE_2     = self.__constE_2_entry.get_text().strip()
         varNormE     = self.__varNormE_entry.get_text().strip()
         
         constSC      = self.__constSC_entry.get_text().strip()
+        constSC_2    = self.__constSC_2_entry.get_text().strip()
         varNormSC    = self.__varNormSC_entry.get_text().strip()
         
         constPC      = self.__constPC_entry.get_text().strip()
+        constPC_2    = self.__constPC_2_entry.get_text().strip()
         varFrequency = self.__varFrequency_entry.get_text().strip()
         varRQ        = self.__varRQ_entry.get_text().strip()
         varVg        = self.__varVg_entry.get_text().strip()
         varRadius    = self.__varRadius_entry.get_text().strip()
         
-        if " " in varX or " " in varY or " " in constE or " " in varNormE \
-            or " " in constSC or " " in varNormSC or " " in constPC or " " in varFrequency \
+        if " " in varX or " " in varY or " " in constE or " " in constPC_2 or " " in varNormE \
+            or " " in constSC or " " in constSC_2 or " " in varNormSC \
+            or " " in constPC or " " in constPC_2 or " " in varFrequency \
             or " " in varRQ or " " in varVg or " " in varRadius :
             mDia = gtk.MessageDialog(self.getBaseWindow(),
                                      gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -873,10 +905,13 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.plotObject.varX = varX
         self.plotObject.varY = varY
         self.plotObject.constE = constE
+        self.plotObject.constE_2 = constE_2
         self.plotObject.varNormE = varNormE
         self.plotObject.constSC = constSC
+        self.plotObject.constSC_2 = constSC_2
         self.plotObject.varNormSC = varNormSC
         self.plotObject.constPC = constPC
+        self.plotObject.constPC_2 = constPC_2
         self.plotObject.varFrequency = varFrequency
         self.plotObject.varRQ = varRQ
         self.plotObject.varVg = varVg
@@ -893,7 +928,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             print "Could not import matplotlib.pyplot, aborting plot. You should still be able to doExport()!"
             return
         (X,Y, tE, tSC, tPC) = self.plotObject.getData()
-        
+        (X_2,Y_2, tE_2, tSC_2, tPC_2) = self.plotObject.getData(True)
+        assert X == X_2
+        assert Y == Y_2
+
         if data=="Y":
             X=Y
         
@@ -908,6 +946,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             mDia.run()
             mDia.destroy()
             return
+
+        doOptimistic  = self.__optimistic_optimistic.get_active()  or self.__optimistic_both.get_active()
+        doPessimistic = self.__optimistic_pessimistic.get_active() or self.__optimistic_both.get_active()
         
         def dedupX(X, t, minORmean="min"):
             Xret = []
@@ -931,24 +972,47 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         XAll = []
         tAll = []
+
+        def plotData(X,t, MARKER, LABEL, COLOR, XAll, tAll):
+            if LABEL:
+                plt.plot(X, t,  MARKER, label=LABEL, color=COLOR)
+            else:
+                plt.plot(X, t,  MARKER, color=COLOR)
+            (Xmin,tmin) = dedupX(X,t)
+            plt.plot(Xmin, tmin, "--", color=COLOR)
+            XAll += X
+            tAll += t
+
         if enableE:
-            plt.plot(X, tE,  '+', label="E", color="blue")
-            (Xmin,tmin) = dedupX(X,tE)
-            plt.plot(Xmin, tmin, "--", color="blue")
-            XAll += X
-            tAll += tE
+            if doOptimistic and doPessimistic:
+                plotData(X,tE, '+', "E", "blue", XAll, tAll)
+                plotData(X,tE_2, '*', None, "blue", XAll, tAll)
+            elif doOptimistic:
+                plotData(X,tE_2, '*', "E", "blue", XAll, tAll)
+            elif doPessimistic:
+                plotData(X,tE, '+', "E", "blue", XAll, tAll)
         if enableSC:
-            plt.plot(X, tSC, '+', label="SC", color="green")
-            (Xmin,tmin) = dedupX(X,tSC)
-            plt.plot(Xmin, tmin, "--", color="green")
-            XAll += X
-            tAll += tSC
+            if doOptimistic and doPessimistic:
+                plotData(X,tSC, '+', "SC", "green", XAll, tAll)
+                plotData(X,tSC_2, '*', None, "green", XAll, tAll)
+            elif doOptimistic:
+                plotData(X,tSC_2, '*', "SC", "green", XAll, tAll)
+            elif doPessimistic:
+                plotData(X,tSC, '+', "SC", "green", XAll, tAll)
         if enablePC:
-            plt.plot(X, tPC, '+', label="PC", color="red")
-            (Xmin,tmin) = dedupX(X,tPC)
-            plt.plot(Xmin, tmin, "--", color="red")
-            XAll += X
-            tAll += tPC
+            if doOptimistic and doPessimistic:
+                plotData(X,tPC, '+', "PC", "red", XAll, tAll)
+                plotData(X,tPC_2, '*', None, "red", XAll, tAll)
+            elif doOptimistic:
+                plotData(X,tPC_2, '*', "PC", "red", XAll, tAll)
+            elif doPessimistic:
+                plotData(X,tPC, '+', "PC", "red", XAll, tAll)
+
+            # plt.plot(X, tPC, '+', label="PC", color="red")
+            # (Xmin,tmin) = dedupX(X,tPC)
+            # plt.plot(Xmin, tmin, "--", color="red")
+            # XAll += X
+            # tAll += tPC
         (Xmin,tmin) = dedupX(XAll,tAll)
         plt.plot(Xmin,tmin, "--", color="black", label="Minimum")
         
@@ -979,7 +1043,19 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         except ImportError:
             print "Could not import matplotlib.pyplot, matplotlib.tri, or nump -- aborting plot. You should still be able to doExport()!"
             return
-        (X,Y, tE, tSC, tPC) = self.plotObject.getData()
+
+        doOptimistic  = self.__optimistic_optimistic.get_active()  or self.__optimistic_both.get_active()
+        doPessimistic = self.__optimistic_pessimistic.get_active() or self.__optimistic_both.get_active()        
+        if doOptimistic and doPessimistic:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Choose either optimistic or pessimistic, not plotting" )
+            mDia.run()
+            mDia.destroy()
+            return
+            
+        (X,Y, tE, tSC, tPC) = self.plotObject.getData(doOptimistic)
         
         enableE  = self.__enable_E.get_active()
         enableSC = self.__enable_SC.get_active()
@@ -992,7 +1068,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             mDia.run()
             mDia.destroy()
             return
-        
+
+
+
         #Merge data
         x = []
         y = []

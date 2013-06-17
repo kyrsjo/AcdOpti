@@ -994,34 +994,40 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             return
         
         #Merge data
-        x = X*3
-        y = Y*3
+        x = []
+        y = []
         t = []
         if enableE:
-            t += tE
+            x += list(X)
+            y += list(Y)
+            t += list(tE)
         if enableSC:
-            t += tSC
+            x += list(X)
+            y += list(Y)
+            t += list(tSC)
         if enablePC:
-            t += tPC
+            x += list(X)
+            y += list(Y)
+            t += list(tPC)
+        assert len(x) == len(y) and len(x) == len(t)
         
         #Deduplicate
         Xdedup = []
         Ydedup = []
         Tdedup = []
-        for i in xrange(len(X)):
-            #Already there, if so which idx?
+        for i in xrange(len(x)):
             j = 0
             while j < len(Xdedup):
-                if X[i] == Xdedup[j] and Y[i] == Ydedup[j]:
+                if x[i] == Xdedup[j] and y[i] == Ydedup[j]:
                     break
                 j += 1
             if j == len(Xdedup):
-                #Didn't find
-                Xdedup.append(X[i])
-                Ydedup.append(Y[i])
+                #Didn't find (X,Y)
+                Xdedup.append(x[i])
+                Ydedup.append(y[i])
                 Tdedup.append(t[i])
             else:
-                #Found
+                #Found (X,Y). Is this better minimum?
                 if t[i] < Tdedup[j]:
                     Tdedup[j] = t[i]
         
@@ -1044,3 +1050,4 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     def event_delete(self):
         #self.saveToPlot()
         return False
+

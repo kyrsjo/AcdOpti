@@ -694,6 +694,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __minORmean_min  = None
     __minORmean_mean = None
     
+    __filterDoubles_none    = None
+    __filterDoubles_best    = None
+    __filterDoubles_average = None
+
     __plotButtonX = None
     __plotButtonY = None
     __plot2DButton = None
@@ -860,6 +864,19 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__minORmean_mean = gtk.RadioButton(self.__minORmean_min,"Mean")
         minORmeanBox.pack_start(self.__minORmean_mean)        
         enableBox.pack_start(minORmeanBox, padding=5)
+
+        enableBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+
+        filterDoublesBox = gtk.VBox(homogeneous=True)
+        self.__filterDoubles_none    = gtk.RadioButton(None, "No filter")
+        self.__filterDoubles_none.set_active(True)
+        filterDoublesBox.pack_start(self.__filterDoubles_none)
+        self.__filterDoubles_best    = gtk.RadioButton(self.__filterDoubles_none, "Use lowest field")
+        filterDoublesBox.pack_start(self.__filterDoubles_best)
+        self.__filterDoubles_average = gtk.RadioButton(self.__filterDoubles_none, "Use average field")
+        filterDoublesBox.pack_start(self.__filterDoubles_average)
+        enableBox.pack_start(filterDoublesBox, padding=5)
+
         self.baseWidget.pack_start(enableBox, padding=5, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
@@ -868,7 +885,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__plotButtonX = gtk.Button("Show _plot (X)")
         if not self.plotObject.dataExtractor.lockdown:
             self.__plotButtonX.set_sensitive(False)
-        self.__plotButtonX.connect("clicked", self.event_button_plot, None)
+        self.__plotButtonX.connect("clicked", self.event_button_plot, "X")
         plotBox.pack_start(self.__plotButtonX, padding=5, expand=False)
         self.__plotButtonY = gtk.Button("Show _plot (Y)")
         if not self.plotObject.dataExtractor.lockdown:
@@ -936,8 +953,46 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         self.plotObject.updateSettingsDict()
         self.plotObject.dataExtractor.write()
-    
+
+    def dedup2D(self,x,y,t, minORmean="min"):
+        assert minORmean == "min" or minORmean == "mean" or minORmean =="max"
+        # print minORmean
+
+        #Deduplicate
+        Xdedup = []
+        Ydedup = []
+        Tdedup = []
+        for i in xrange(len(x)):
+            j = 0
+            while j < len(Xdedup):
+                if x[i] == Xdedup[j] and y[i] == Ydedup[j]:
+                    break
+                j += 1
+            if j == len(Xdedup):
+                #Didn't find (X,Y)
+                Xdedup.append(x[i])
+                Ydedup.append(y[i])
+                Tdedup.append([t[i],])
+                # print "Adding new:", x[i], y[i], t[i]
+            else:
+                assert Xdedup[j] == x[i]
+                assert Ydedup[j] == y[i]
+                # print "complimenting: ", Xdedup[j], x[i], Ydedup[j], y[i], t[i]
+                Tdedup[j].append(t[i])
+
+        for i in xrange(len(Tdedup)):
+            # print Xdedup[i], Ydedup[i], Tdedup[i],
+            if minORmean=="min":
+                Tdedup[i] = np.min(Tdedup[i])
+            if minORmean=="max":
+                Tdedup[i] = np.max(Tdedup[i])                
+            elif minORmean=="mean":
+                Tdedup[i] = np.mean(Tdedup[i])
+        # print Tdedup[i]
+        return(Xdedup, Ydedup, Tdedup)
+
     def event_button_plot(self, widget, data):
+        assert data == "X" or data == "Y"
         self.saveToPlot()
         try:
             import matplotlib.pyplot as plt
@@ -950,7 +1005,13 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         assert Y == Y_2
 
         if data=="Y":
+            Xtmp=X
             X=Y
+            Y=Xtmp
+
+            Xtmp=X_2
+            X_2=Y_2
+            Y_2 = Xtmp
         
         enableE  = self.__enable_E.get_active()
         enableSC = self.__enable_SC.get_active()
@@ -967,6 +1028,29 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         doOptimistic  = self.__optimistic_optimistic.get_active()  or self.__optimistic_both.get_active()
         doPessimistic = self.__optimistic_pessimistic.get_active() or self.__optimistic_both.get_active()
         
+
+        if self.__filterDoubles_best.get_active():
+            (X_E,Y_E,tE)  = self.dedup2D(X,Y,tE,  "max")
+            (X_SC,Y_SC,tSC) = self.dedup2D(X,Y,tSC, "max")
+            (X_PC,Y_PC,tPC) = self.dedup2D(X,Y,tPC, "max")
+
+            (X_E_2,Y_E_2,tE_2)  = self.dedup2D(X_2,Y_2,tE_2,  "max")
+            (X_SC_2,Y_SC_2,tSC_2) = self.dedup2D(X_2,Y_2,tSC_2, "max")
+            (X_PC_2,Y_PC_2,tPC_2) = self.dedup2D(X_2,Y_2,tPC_2, "max")
+        elif self.__filterDoubles_average.get_active():
+            (X_E,Y_E,tE)  = self.dedup2D(X,Y,tE,  "mean")
+            (X_SC,Y_SC,tSC) = self.dedup2D(X,Y,tSC, "mean")
+            (X_PC,Y_PC,tPC) = self.dedup2D(X,Y,tPC, "mean")
+
+            (X_E_2,Y_E_2,tE_2)  = self.dedup2D(X_2,Y_2,tE_2,  "mean")
+            (X_SC_2,Y_SC_2,tSC_2) = self.dedup2D(X_2,Y_2,tSC_2, "mean")
+            (X_PC_2,Y_PC_2,tPC_2) = self.dedup2D(X_2,Y_2,tPC_2, "mean")
+        else:
+            X_E = X_SC = X_PC = X
+            X_E_2 = X_SC_2 = X_PC_2 = X_2
+            Y_E = Y_SC = Y_PC = Y
+            Y_E_2 = Y_SC_2 = Y_PC_2 = Y_2
+
         def dedupX(X, t, minORmean="min"):
             Xret = []
             tret = []
@@ -991,6 +1075,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         tAll = []
 
         def plotData(X,t, MARKER, LABEL, COLOR, XAll, tAll, minORmean="min"):
+            print len(X)
             if LABEL:
                 plt.plot(X, t,  MARKER, label=LABEL, color=COLOR)
             else:
@@ -1009,28 +1094,28 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
 
         if enableE:
             if doOptimistic and doPessimistic:
-                plotData(X,tE, '+', "E", "blue", XAll, tAll, minORmean)
-                plotData(X,tE_2, '*', None, "blue", XAll, tAll, minORmean)
+                plotData(X_E,tE, '+', "E", "blue", XAll, tAll, minORmean)
+                plotData(X_E_2,tE_2, '*', None, "blue", XAll, tAll, minORmean)
             elif doOptimistic:
-                plotData(X,tE_2, '*', "E", "blue", XAll, tAll, minORmean)
+                plotData(X_E_2,tE_2, '*', "E", "blue", XAll, tAll, minORmean)
             elif doPessimistic:
-                plotData(X,tE, '+', "E", "blue", XAll, tAll, minORmean)
+                plotData(X_E,tE, '+', "E", "blue", XAll, tAll, minORmean)
         if enableSC:
             if doOptimistic and doPessimistic:
-                plotData(X,tSC, '+', "SC", "green", XAll, tAll, minORmean)
-                plotData(X,tSC_2, '*', None, "green", XAll, tAll, minORmean)
+                plotData(X_SC,tSC, '+', "SC", "green", XAll, tAll, minORmean)
+                plotData(X_SC_2,tSC_2, '*', None, "green", XAll, tAll, minORmean)
             elif doOptimistic:
-                plotData(X,tSC_2, '*', "SC", "green", XAll, tAll, minORmean)
+                plotData(X_SC_2,tSC_2, '*', "SC", "green", XAll, tAll, minORmean)
             elif doPessimistic:
-                plotData(X,tSC, '+', "SC", "green", XAll, tAll, minORmean)
+                plotData(X_SC,tSC, '+', "SC", "green", XAll, tAll, minORmean)
         if enablePC:
             if doOptimistic and doPessimistic:
-                plotData(X,tPC, '+', "PC", "red", XAll, tAll, minORmean)
-                plotData(X,tPC_2, '*', None, "red", XAll, tAll, minORmean)
+                plotData(X_PC,tPC, '+', "PC", "red", XAll, tAll, minORmean)
+                plotData(X_PC_2,tPC_2, '*', None, "red", XAll, tAll, minORmean)
             elif doOptimistic:
-                plotData(X,tPC_2, '*', "PC", "red", XAll, tAll, minORmean)
+                plotData(X_PC,tPC_2, '*', "PC", "red", XAll, tAll, minORmean)
             elif doPessimistic:
-                plotData(X,tPC, '+', "PC", "red", XAll, tAll, minORmean)
+                plotData(X_PC,tPC, '+', "PC", "red", XAll, tAll, minORmean)
 
             # plt.plot(X, tPC, '+', label="PC", color="red")
             # (Xmin,tmin) = dedupX(X,tPC)
@@ -1078,7 +1163,8 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             mDia.run()
             mDia.destroy()
             return
-            
+        
+        #Assume that optimistic always more optimistic than pessimistic
         (X,Y, tE, tSC, tPC) = self.plotObject.getData(doOptimistic)
         
         enableE  = self.__enable_E.get_active()
@@ -1092,46 +1178,75 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             mDia.run()
             mDia.destroy()
             return
-
-
+        
+        dataFilter = None
+        if self.__filterDoubles_none.get_active():
+            dataFilter = None
+        elif self.__filterDoubles_best.get_active():
+            dataFilter = "best"
+        elif self.__filterDoubles_average.get_active():
+            dataFilter = "average"
+            
 
         #Merge data
         x = []
         y = []
         t = []
         if enableE:
-            x += list(X)
-            y += list(Y)
-            t += list(tE)
+            if dataFilter == "best":
+                (X2,Y2,tE2) = self.dedup2D(X,Y,tE,"max")
+            elif dataFilter == "average":
+                (X2,Y2,tE2) = self.dedup2D(X,Y,tE,"mean")
+            else:
+                X2 = X; Y2=Y; tE2 = tE
+
+            x += list(X2)
+            y += list(Y2)
+            t += list(tE2)
         if enableSC:
-            x += list(X)
-            y += list(Y)
-            t += list(tSC)
+            if dataFilter == "best":
+                (X2,Y2,tSC2) = self.dedup2D(X,Y,tSC,"max")
+            elif dataFilter == "average":
+                (X2,Y2,tSC2) = self.dedup2D(X,Y,tSC,"mean")
+            else:
+                X2 = X; Y2=Y; tSC2 = tSC
+            x += list(X2)
+            y += list(Y2)
+            t += list(tSC2)
         if enablePC:
-            x += list(X)
-            y += list(Y)
-            t += list(tPC)
+            if dataFilter == "best":
+                (X2,Y2,tPC2) = self.dedup2D(X,Y,tPC,"max")
+            elif dataFilter == "average":
+                (X2,Y2,tPC2) = self.dedup2D(X,Y,tPC,"mean")
+            else:
+                X2 = X; Y2=Y; tPC2 = tPC
+            x += list(X2)
+            y += list(Y2)
+            t += list(tPC2)
+
         assert len(x) == len(y) and len(x) == len(t)
         
-        #Deduplicate
-        Xdedup = []
-        Ydedup = []
-        Tdedup = []
-        for i in xrange(len(x)):
-            j = 0
-            while j < len(Xdedup):
-                if x[i] == Xdedup[j] and y[i] == Ydedup[j]:
-                    break
-                j += 1
-            if j == len(Xdedup):
-                #Didn't find (X,Y)
-                Xdedup.append(x[i])
-                Ydedup.append(y[i])
-                Tdedup.append(t[i])
-            else:
-                #Found (X,Y). Is this better minimum?
-                if t[i] < Tdedup[j]:
-                    Tdedup[j] = t[i]
+        # #Deduplicate
+        # Xdedup = []
+        # Ydedup = []
+        # Tdedup = []
+        # for i in xrange(len(x)):
+        #     j = 0
+        #     while j < len(Xdedup):
+        #         if x[i] == Xdedup[j] and y[i] == Ydedup[j]:
+        #             break
+        #         j += 1
+        #     if j == len(Xdedup):
+        #         #Didn't find (X,Y)
+        #         Xdedup.append(x[i])
+        #         Ydedup.append(y[i])
+        #         Tdedup.append(t[i])
+        #     else:
+        #         #Found (X,Y). Is this better minimum?
+        #         if t[i] < Tdedup[j]:
+        #             Tdedup[j] = t[i]
+
+        (Xdedup, Ydedup, Tdedup) = self.dedup2D(x,y,t)
         
         #Plot
         triang = tri.Triangulation(Xdedup, Ydedup)

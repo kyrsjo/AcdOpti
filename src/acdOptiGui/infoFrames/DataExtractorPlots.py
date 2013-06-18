@@ -691,6 +691,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __optimistic_both        = None
     __optimistic_pessimistic = None
     
+    __minORmean_min  = None
+    __minORmean_mean = None
+    
     __plotButtonX = None
     __plotButtonY = None
     __plot2DButton = None
@@ -825,6 +828,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
         
         enableBox = gtk.HBox(homogeneous=True)
+
         self.__enable_E = gtk.CheckButton(label="Enable _E")
         self.__enable_E.set_active(True)
         enableBox.pack_start(self.__enable_E, padding=5)
@@ -834,6 +838,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__enable_PC = gtk.CheckButton(label="Enable _P/C")
         self.__enable_PC.set_active(True)
         enableBox.pack_start(self.__enable_PC, padding=5)
+        
+        enableBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+
         optimisticBox = gtk.VBox(homogeneous=True)
         self.__optimistic_optimistic  = gtk.RadioButton(None,"Optimistic")
         optimisticBox.pack_start(self.__optimistic_optimistic)
@@ -843,6 +850,16 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         self.__optimistic_pessimistic = gtk.RadioButton(self.__optimistic_optimistic,"Pessimistic")
         optimisticBox.pack_start(self.__optimistic_pessimistic)
         enableBox.pack_start(optimisticBox,padding=5);
+
+        enableBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+
+        minORmeanBox = gtk.VBox(homogeneous=True)
+        self.__minORmean_min  = gtk.RadioButton(None,"Min")
+        self.__minORmean_min.set_active(True)
+        minORmeanBox.pack_start(self.__minORmean_min)
+        self.__minORmean_mean = gtk.RadioButton(self.__minORmean_min,"Mean")
+        minORmeanBox.pack_start(self.__minORmean_mean)        
+        enableBox.pack_start(minORmeanBox, padding=5)
         self.baseWidget.pack_start(enableBox, padding=5, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
@@ -973,40 +990,47 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         XAll = []
         tAll = []
 
-        def plotData(X,t, MARKER, LABEL, COLOR, XAll, tAll):
+        def plotData(X,t, MARKER, LABEL, COLOR, XAll, tAll, minORmean="min"):
             if LABEL:
                 plt.plot(X, t,  MARKER, label=LABEL, color=COLOR)
             else:
                 plt.plot(X, t,  MARKER, color=COLOR)
-            (Xmin,tmin) = dedupX(X,t)
+            (Xmin,tmin) = dedupX(X,t, minORmean)
             plt.plot(Xmin, tmin, "--", color=COLOR)
             XAll += X
             tAll += t
 
+        minORmean=None
+        if self.__minORmean_min.get_active():
+            minORmean="min"
+        else:
+            assert self.__minORmean_mean.get_active()
+            minORmean="mean"
+
         if enableE:
             if doOptimistic and doPessimistic:
-                plotData(X,tE, '+', "E", "blue", XAll, tAll)
-                plotData(X,tE_2, '*', None, "blue", XAll, tAll)
+                plotData(X,tE, '+', "E", "blue", XAll, tAll, minORmean)
+                plotData(X,tE_2, '*', None, "blue", XAll, tAll, minORmean)
             elif doOptimistic:
-                plotData(X,tE_2, '*', "E", "blue", XAll, tAll)
+                plotData(X,tE_2, '*', "E", "blue", XAll, tAll, minORmean)
             elif doPessimistic:
-                plotData(X,tE, '+', "E", "blue", XAll, tAll)
+                plotData(X,tE, '+', "E", "blue", XAll, tAll, minORmean)
         if enableSC:
             if doOptimistic and doPessimistic:
-                plotData(X,tSC, '+', "SC", "green", XAll, tAll)
-                plotData(X,tSC_2, '*', None, "green", XAll, tAll)
+                plotData(X,tSC, '+', "SC", "green", XAll, tAll, minORmean)
+                plotData(X,tSC_2, '*', None, "green", XAll, tAll, minORmean)
             elif doOptimistic:
-                plotData(X,tSC_2, '*', "SC", "green", XAll, tAll)
+                plotData(X,tSC_2, '*', "SC", "green", XAll, tAll, minORmean)
             elif doPessimistic:
-                plotData(X,tSC, '+', "SC", "green", XAll, tAll)
+                plotData(X,tSC, '+', "SC", "green", XAll, tAll, minORmean)
         if enablePC:
             if doOptimistic and doPessimistic:
-                plotData(X,tPC, '+', "PC", "red", XAll, tAll)
-                plotData(X,tPC_2, '*', None, "red", XAll, tAll)
+                plotData(X,tPC, '+', "PC", "red", XAll, tAll, minORmean)
+                plotData(X,tPC_2, '*', None, "red", XAll, tAll, minORmean)
             elif doOptimistic:
-                plotData(X,tPC_2, '*', "PC", "red", XAll, tAll)
+                plotData(X,tPC_2, '*', "PC", "red", XAll, tAll, minORmean)
             elif doPessimistic:
-                plotData(X,tPC, '+', "PC", "red", XAll, tAll)
+                plotData(X,tPC, '+', "PC", "red", XAll, tAll, minORmean)
 
             # plt.plot(X, tPC, '+', label="PC", color="red")
             # (Xmin,tmin) = dedupX(X,tPC)

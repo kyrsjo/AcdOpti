@@ -831,21 +831,25 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
         
-        enableBox = gtk.HBox(homogeneous=True)
-
+        setupBox = gtk.HBox(homogeneous=False)
+        
+        enableBox = gtk.VBox(homogeneous=True)
+        enableBox.pack_start(gtk.Label("Show which fields?"))
         self.__enable_E = gtk.CheckButton(label="Enable _E")
         self.__enable_E.set_active(True)
-        enableBox.pack_start(self.__enable_E, padding=5)
+        enableBox.pack_start(self.__enable_E)
         self.__enable_SC = gtk.CheckButton(label="Enable _SC")
         self.__enable_SC.set_active(True)
-        enableBox.pack_start(self.__enable_SC, padding=5)
+        enableBox.pack_start(self.__enable_SC)
         self.__enable_PC = gtk.CheckButton(label="Enable _P/C")
         self.__enable_PC.set_active(True)
-        enableBox.pack_start(self.__enable_PC, padding=5)
-        
-        enableBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+        enableBox.pack_start(self.__enable_PC)
+        setupBox.pack_start(enableBox, padding=5)
+
+        setupBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
 
         optimisticBox = gtk.VBox(homogeneous=True)
+        optimisticBox.pack_start(gtk.Label("Select scaling constants:"))
         self.__optimistic_optimistic  = gtk.RadioButton(None,"Optimistic")
         optimisticBox.pack_start(self.__optimistic_optimistic)
         self.__optimistic_both        = gtk.RadioButton(self.__optimistic_optimistic,"Both")
@@ -853,21 +857,23 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         optimisticBox.pack_start(self.__optimistic_both)        
         self.__optimistic_pessimistic = gtk.RadioButton(self.__optimistic_optimistic,"Pessimistic")
         optimisticBox.pack_start(self.__optimistic_pessimistic)
-        enableBox.pack_start(optimisticBox,padding=5);
+        setupBox.pack_start(optimisticBox,padding=0);
 
-        enableBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+        setupBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
 
         minORmeanBox = gtk.VBox(homogeneous=True)
+        minORmeanBox.pack_start(gtk.Label("Draw lines where?"))
         self.__minORmean_min  = gtk.RadioButton(None,"Min")
         self.__minORmean_min.set_active(True)
         minORmeanBox.pack_start(self.__minORmean_min)
         self.__minORmean_mean = gtk.RadioButton(self.__minORmean_min,"Mean")
         minORmeanBox.pack_start(self.__minORmean_mean)        
-        enableBox.pack_start(minORmeanBox, padding=5)
+        setupBox.pack_start(minORmeanBox, padding=0)
 
-        enableBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+        setupBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
 
         filterDoublesBox = gtk.VBox(homogeneous=True)
+        filterDoublesBox.pack_start(gtk.Label("Pre-filter data points with same (X,Y)?"))
         self.__filterDoubles_none    = gtk.RadioButton(None, "No filter")
         self.__filterDoubles_none.set_active(True)
         filterDoublesBox.pack_start(self.__filterDoubles_none)
@@ -875,9 +881,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         filterDoublesBox.pack_start(self.__filterDoubles_best)
         self.__filterDoubles_average = gtk.RadioButton(self.__filterDoubles_none, "Use average field")
         filterDoublesBox.pack_start(self.__filterDoubles_average)
-        enableBox.pack_start(filterDoublesBox, padding=5)
+        setupBox.pack_start(filterDoublesBox, padding=5)
 
-        self.baseWidget.pack_start(enableBox, padding=5, expand=False)
+        self.baseWidget.pack_start(setupBox, padding=5, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
         
@@ -1075,7 +1081,6 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         tAll = []
 
         def plotData(X,t, MARKER, LABEL, COLOR, XAll, tAll, minORmean="min"):
-            print len(X)
             if LABEL:
                 plt.plot(X, t,  MARKER, label=LABEL, color=COLOR)
             else:

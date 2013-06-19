@@ -33,18 +33,7 @@ useAlternateCheckOutput = False
 ## For old Python (SLC 6 / python 2.6)
 if "check_output" not in dir( subprocess ):
     useAlternateCheckOutput = True;
-def alternateCheckOutput(cmdline):
-    "Call a given commandline, return the output data. Used for compatability if subprocess.check_output() doesn't exist"
-    import tempfile
-    (tmpf, tmpfn) = tempfile.mkstemp()
-    print "Created temp file '" + tmpfn + "'"
-    subprocess.call(cmdline, shell=True, stdout=tmpf)
-    os.close(tmpf)
-    tmpf = open(tmpfn, 'r')
-    ret = tmpf.read()
-    tmpf.close()
-    os.remove(tmpfn)
-    return ret
+from AcdOptiCommandWrapper import alternateCheckOutput
     
     
 

@@ -46,5 +46,7 @@ class AcdOptiSettings:
             #return "/usr/bin/paraview"
             #return "/opt/ParaView-3.14.1-Linux-64bit/bin/paraview"
             return "paraview"
+        elif key == "terminalcommand":
+            return "gnome-terminal"
         else:
             raise AcdOptiException_settings_notFound

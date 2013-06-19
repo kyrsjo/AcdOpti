@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #
-# Copyright 2011 Kyrre Ness Sjøbæk
+# Copyright 2011, 2013 Kyrre Ness Sjøbæk
 # This file is part of AcdOpti.
 #
 #    AcdOpti is free software: you can redistribute it and/or modify
@@ -35,6 +35,9 @@ from acdOpti.AcdOptiExceptions import AcdOptiException_solverSetup_createFail,\
                                       AcdOptiException_solverSetup_createFail_nameTaken,\
                                       AcdOptiException_runConfig_stageError
 
+import acdOpti.AcdOptiCommandWrapper as AcdOptiCommandWrapper
+from acdOpti.AcdOptiSettings import AcdOptiSettings
+
 import os
 
 class RunConfig(InfoFrameComponent):
@@ -64,7 +67,8 @@ class RunConfig(InfoFrameComponent):
     
     __stageOrLockdownButton = None
     __runCancelButton = None
-    
+
+    __openTerminalButton = None
     __addAnalysisButton = None
     
     def __init__(self, frameManager, runConfig):
@@ -148,6 +152,10 @@ class RunConfig(InfoFrameComponent):
         self.baseWidget.pack_start(self.__runCancelButton, expand=False)
 
         self.baseWidget.pack_start(gtk.HSeparator(), expand=False, padding=10)
+        
+        self.__openTerminalButton = gtk.Button("Open _terminal")
+        self.__openTerminalButton.connect("clicked", self.event_button_openterminal, None)
+        self.baseWidget.pack_start(self.__openTerminalButton, expand=False)
         
         self.__addAnalysisButton = gtk.Button("_Add analysis")
         self.__addAnalysisButton.connect("clicked", self.event_button_addAnalysis, None)
@@ -392,3 +400,8 @@ class RunConfig(InfoFrameComponent):
                 mDia.run()
                 mDia.destroy()
             self.updateDisplay()
+    
+    def event_button_openterminal(self, widget, data=None):
+        print "RunConfig::event_button_openterminal"
+        terminalcommand = AcdOptiSettings().getSetting("terminalcommand")
+        AcdOptiCommandWrapper.runProgramInFolder(terminalcommand, self.runConfig.folder)

@@ -392,7 +392,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         print "statusLine='" + statusline + "', statusChar='" + statusChar + "'"
         if statusChar == "Q":
             return "remote::queued"
-        elif statusChar == "R" or statusChar == "E": #E: Exiting after having run
+        elif statusChar == "R" or statusChar == "E" or statusChar == "T": #E: Exiting after having run, T: transfer
             return "remote::running"
         elif statusChar == "C":
             self.remoteJobID = None

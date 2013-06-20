@@ -356,6 +356,12 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
                 self.remoteJobID = None
                 self.write()
                 return
+            elif "errno=15096" in ssh_stderr_str:
+                #Something went wrong with TORQUE on the server - but the job is very much dead...
+                print "Torque problem, but job is dead. (see output)"
+                self.remoteJobID = None
+                self.write()
+                return
             raise AcdOptiException_optiRunner_remoteProblem("Problem during cancel, see output")
         
         self.write()
@@ -377,7 +383,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
         #Parse the status output:
         if len(ssh_stderr_str):
-            if "Unknown Job Id " + self.remoteJobID in ssh_stderr_str:
+            if "Unknown Job Id Error " + self.remoteJobID in ssh_stderr_str:
                 self.remoteJobID = None
                 self.write()
                 return "remote::finished"

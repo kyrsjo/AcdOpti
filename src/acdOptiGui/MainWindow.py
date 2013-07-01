@@ -225,7 +225,7 @@ class MainWindow():
         self.__VBox3.pack_start(self.__runAnaButton,expand=False)
         
         expandBox = gtk.HBox(homogeneous=True)
-        self.__expandSelectedButton = gtk.Button("Expand selected")
+        self.__expandSelectedButton = gtk.Button("E_xpand selected")
         self.__expandSelectedButton.connect("clicked", self.event_button_expandSelected, None)
         expandBox.pack_start(self.__expandSelectedButton)
         self.__expandTreeButton = gtk.Button("Expand _tree")

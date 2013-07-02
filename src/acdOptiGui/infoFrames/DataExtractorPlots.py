@@ -590,6 +590,8 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
 
         plt.xlabel(self.plotObject.varX)
         plt.ylabel(self.plotObject.varY)
+
+        plt.title("DataExtractorPlot3D, instName = " + self.plotObject.instName + ", data='" + str(data) + "'")
         
         xRange = abs(max(X)-min(X))
         yRange = abs(max(Y)-min(Y))
@@ -1262,7 +1264,8 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
 
         plt.xlabel(self.plotObject.varX)
         plt.ylabel(self.plotObject.varY)
-        
+        plt.title("instName = " + self.plotObject.instName)
+
         plt.show()
         
         gtk.main()

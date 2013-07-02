@@ -703,9 +703,12 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __plotButtonX = None
     __plotButtonY = None
 
-    __plot3DButton = None
+    __plotTripcontourfButton = None
     __numContoursEntry = None
-    
+
+    __plot3DpointCloudButton = None
+    __plot3DtrisurfButton = None
+
     __closeButton = None
     
     
@@ -906,14 +909,27 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         contoursBox = gtk.HBox(homogeneous=True)
         self.__plotTripcontourfButton = gtk.Button("Show tricontourf plot")
-        if not self.plotObject.dataExtractor.lockdown:
-            self.__plotTripcontourfButton.set_sensitive(False)
         self.__plotTripcontourfButton.connect("clicked", self.event_button_plotTripcontourf, None)
         contoursBox.pack_start(self.__plotTripcontourfButton,padding=5, expand=False)
         self.__numContoursEntry = gtk.Entry()
         self.__numContoursEntry.set_text("10")
         contoursBox.pack_start(self.__numContoursEntry,padding=5, expand=True)
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__plotTripcontourfButton.set_sensitive(False)
+            self.__numCountoursEntry.set_sensitive(False)
         self.baseWidget.pack_start(contoursBox, padding=5, expand=False)
+        
+        treeDeeBox = gtk.HBox(homogeneous=True)
+        self.__plot3DpointCloudButton = gtk.Button("Plot 3D point cloud")
+        self.__plot3DpointCloudButton.connect("clicked", self.event_button_3DpointCloud, None)
+        treeDeeBox.pack_start(self.__plot3DpointCloudButton, padding=5, expand=True)
+        self.__plot3DtrisurfButton = gtk.Button("Plot 3D trisurf")
+        self.__plot3DtrisurfButton.connect("clicked", self.event_button_3DpointCloud, "trisurf")
+        treeDeeBox.pack_start(self.__plot3DtrisurfButton, padding=5, expand=True)
+        if not self.plotObject.dataExtractor.lockdown:
+            self.__plot3DpointCloudButton.set_sensitive(False)
+            self.__plot3DtrisurfButton.set_sensitive(False)
+        self.baseWidget.pack_start(treeDeeBox, padding=5, expand=False)
         
         self.__closeButton = gtk.Button("_Close plot view")
         self.__closeButton.connect("clicked", self.event_button_close, None)
@@ -1253,6 +1269,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
 
         assert len(x) == len(y) and len(x) == len(t)
 
+        #Standard assumption: "min"
         (Xdedup, Ydedup, Tdedup) = self.dedup2D(x,y,t)
         
         #Plot
@@ -1269,7 +1286,111 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         plt.show()
         
         gtk.main()
+    
+    def event_button_3DpointCloud(self,widget,data):
+        print "DataExtractorPlots_ScaleOptim::event_button_3DpointCloud(data='"+str(data)+"')"
+        assert data==None or data=="trisurf"
+        self.saveToPlot()
+        try:
+            import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D
+        except ImportError:
+            print "Could not import matplotlib.pyplot, aborting plot. You should still be able to doExport()!"
+            return
+
+        (X,Y, tE, tSC, tPC) = self.plotObject.getData()
+        (X_2,Y_2, tE_2, tSC_2, tPC_2) = self.plotObject.getData(True)
+        assert X == X_2
+        assert Y == Y_2
         
+        enableE  = self.__enable_E.get_active()
+        enableSC = self.__enable_SC.get_active()
+        enablePC = self.__enable_PC.get_active()
+        if not (enableE or enableSC or enablePC):
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Nothing enabled, not plotting" )
+            mDia.run()
+            mDia.destroy()
+            return
+
+        doOptimistic  = self.__optimistic_optimistic.get_active()  or self.__optimistic_both.get_active()
+        doPessimistic = self.__optimistic_pessimistic.get_active() or self.__optimistic_both.get_active()
+        
+        if self.__filterDoubles_best.get_active():
+            (X_E,Y_E,tE)  = self.dedup2D(X,Y,tE,  "max")
+            (X_SC,Y_SC,tSC) = self.dedup2D(X,Y,tSC, "max")
+            (X_PC,Y_PC,tPC) = self.dedup2D(X,Y,tPC, "max")
+
+            (X_E_2,Y_E_2,tE_2)  = self.dedup2D(X_2,Y_2,tE_2,  "max")
+            (X_SC_2,Y_SC_2,tSC_2) = self.dedup2D(X_2,Y_2,tSC_2, "max")
+            (X_PC_2,Y_PC_2,tPC_2) = self.dedup2D(X_2,Y_2,tPC_2, "max")
+        elif self.__filterDoubles_average.get_active():
+            (X_E,Y_E,tE)  = self.dedup2D(X,Y,tE,  "mean")
+            (X_SC,Y_SC,tSC) = self.dedup2D(X,Y,tSC, "mean")
+            (X_PC,Y_PC,tPC) = self.dedup2D(X,Y,tPC, "mean")
+
+            (X_E_2,Y_E_2,tE_2)  = self.dedup2D(X_2,Y_2,tE_2,  "mean")
+            (X_SC_2,Y_SC_2,tSC_2) = self.dedup2D(X_2,Y_2,tSC_2, "mean")
+            (X_PC_2,Y_PC_2,tPC_2) = self.dedup2D(X_2,Y_2,tPC_2, "mean")
+        else:
+            if data=="trisurf":
+                mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                         gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                         "When plotting whith trisurf, must enable deduplification!" )
+                mDia.run()
+                mDia.destroy()
+                return
+            X_E = X_SC = X_PC = X
+            X_E_2 = X_SC_2 = X_PC_2 = X_2
+            Y_E = Y_SC = Y_PC = Y
+            Y_E_2 = Y_SC_2 = Y_PC_2 = Y_2
+
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        
+        if doPessimistic:
+            if enableE:
+                if data=="trisurf":
+                    ax.plot_trisurf(X_E,Y_E,tE,color="blue")
+                else:
+                    ax.scatter(X_E, Y_E, tE, c='b', marker='+')
+            if enableSC:
+                if data=="trisurf":
+                    ax.plot_trisurf(X_SC, Y_SC, tSC, color='green')
+                else:
+                    ax.scatter(X_SC, Y_SC, tSC, c='green', marker='+')
+            if enablePC:
+                if data=="trisurf":
+                    ax.plot_trisurf(X_PC, Y_PC, tPC, color='red')
+                else:
+                    ax.scatter(X_PC, Y_PC, tPC, c='red', marker='+')
+        if doOptimistic:
+            if enableE:
+                if data=="trisurf":
+                    ax.plot_trisurf(X_E_2,Y_E_2,tE_2,color="blue")
+                else:
+                    ax.scatter(X_E_2, Y_E_2, tE_2, c='b', marker='*')
+            if enableSC:
+                if data=="trisurf":
+                    ax.plot_trisurf(X_SC_2, Y_SC_2, tSC_2, color='green')
+                else:
+                    ax.scatter(X_SC_2, Y_SC_2, tSC_2, c='green', marker='*')
+            if enablePC:
+                if data=="trisurf":
+                    ax.plot_trisurf(X_PC_2, Y_PC_2, tPC_2, color='red')
+                else:
+                    ax.scatter(X_PC_2, Y_PC_2, tPC_2, c='red', marker='*')
+        
+        ax.set_xlabel(self.plotObject.varX)
+        ax.set_ylabel(self.plotObject.varY)
+        ax.set_zlabel("Time * G^6")
+        
+        plt.show()
+
+        gtk.main()
         
     def event_button_close(self,widget,data):
         self.saveToPlot()

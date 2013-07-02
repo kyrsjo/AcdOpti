@@ -700,7 +700,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
 
     __plotButtonX = None
     __plotButtonY = None
+
     __plot3DButton = None
+    __numContoursEntry = None
     
     __closeButton = None
     
@@ -900,11 +902,16 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         plotBox.pack_start(self.__plotButtonY, padding=5, expand=False)
         self.baseWidget.pack_start(plotBox, padding=5, expand=False)
         
-        self.__plot3DButton = gtk.Button("Show tricontourf plot")
+        contoursBox = gtk.HBox(homogeneous=True)
+        self.__plotTripcontourfButton = gtk.Button("Show tricontourf plot")
         if not self.plotObject.dataExtractor.lockdown:
-            self.__plot3DButton.set_sensitive(False)
-        self.__plot3DButton.connect("clicked", self.event_button_plot3D, None)
-        self.baseWidget.pack_start(self.__plot3DButton, padding=5, expand=False)
+            self.__plotTripcontourfButton.set_sensitive(False)
+        self.__plotTripcontourfButton.connect("clicked", self.event_button_plotTripcontourf, None)
+        contoursBox.pack_start(self.__plotTripcontourfButton,padding=5, expand=False)
+        self.__numContoursEntry = gtk.Entry()
+        self.__numContoursEntry.set_text("10")
+        contoursBox.pack_start(self.__numContoursEntry,padding=5, expand=True)
+        self.baseWidget.pack_start(contoursBox, padding=5, expand=False)
         
         self.__closeButton = gtk.Button("_Close plot view")
         self.__closeButton.connect("clicked", self.event_button_close, None)
@@ -1148,7 +1155,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         gtk.main()
     
-    def event_button_plot3D(self,widget,data):
+    def event_button_plotTripcontourf(self,widget,data):
         self.saveToPlot()
         try:
             import matplotlib.pyplot as plt
@@ -1169,6 +1176,19 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             mDia.destroy()
             return
         
+        try:
+            numContours = int(self.__numContoursEntry.get_text())
+        except ValueError:
+            mDia = gtk.MessageDialog(self.getBaseWindow(),
+                                     gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                                     gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                     "Number of countours '" + self.__numContoursEntry.get_text() + "' is not a valid integer." )
+            mDia.run()
+            mDia.destroy()
+            return
+            
+            
+
         #Assume that optimistic always more optimistic than pessimistic
         (X,Y, tE, tSC, tPC) = self.plotObject.getData(doOptimistic)
         
@@ -1235,9 +1255,11 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         #Plot
         triang = tri.Triangulation(Xdedup, Ydedup)
-        plt.tricontourf(triang,Tdedup)
+        plt.tricontourf(triang,Tdedup, numContours)
         plt.colorbar()
-        
+
+        plt.plot(Xdedup, Ydedup, 'r+')
+
         plt.xlabel(self.plotObject.varX)
         plt.ylabel(self.plotObject.varY)
         

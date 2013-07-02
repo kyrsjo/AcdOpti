@@ -700,7 +700,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
 
     __plotButtonX = None
     __plotButtonY = None
-    __plot2DButton = None
+    __plot3DButton = None
     
     __closeButton = None
     
@@ -900,11 +900,11 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         plotBox.pack_start(self.__plotButtonY, padding=5, expand=False)
         self.baseWidget.pack_start(plotBox, padding=5, expand=False)
         
-        self.__plot2DButton = gtk.Button("Show _2D plot")
+        self.__plot3DButton = gtk.Button("Show tricontourf plot")
         if not self.plotObject.dataExtractor.lockdown:
-            self.__plot2DButton.set_sensitive(False)
-        self.__plot2DButton.connect("clicked", self.event_button_plot2D, None)
-        self.baseWidget.pack_start(self.__plot2DButton, padding=5, expand=False)
+            self.__plot3DButton.set_sensitive(False)
+        self.__plot3DButton.connect("clicked", self.event_button_plot3D, None)
+        self.baseWidget.pack_start(self.__plot3DButton, padding=5, expand=False)
         
         self.__closeButton = gtk.Button("_Close plot view")
         self.__closeButton.connect("clicked", self.event_button_close, None)
@@ -1148,7 +1148,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         gtk.main()
     
-    def event_button_plot2D(self,widget,data):
+    def event_button_plot3D(self,widget,data):
         self.saveToPlot()
         try:
             import matplotlib.pyplot as plt
@@ -1230,26 +1230,6 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             t += list(tPC2)
 
         assert len(x) == len(y) and len(x) == len(t)
-        
-        # #Deduplicate
-        # Xdedup = []
-        # Ydedup = []
-        # Tdedup = []
-        # for i in xrange(len(x)):
-        #     j = 0
-        #     while j < len(Xdedup):
-        #         if x[i] == Xdedup[j] and y[i] == Ydedup[j]:
-        #             break
-        #         j += 1
-        #     if j == len(Xdedup):
-        #         #Didn't find (X,Y)
-        #         Xdedup.append(x[i])
-        #         Ydedup.append(y[i])
-        #         Tdedup.append(t[i])
-        #     else:
-        #         #Found (X,Y). Is this better minimum?
-        #         if t[i] < Tdedup[j]:
-        #             Tdedup[j] = t[i]
 
         (Xdedup, Ydedup, Tdedup) = self.dedup2D(x,y,t)
         

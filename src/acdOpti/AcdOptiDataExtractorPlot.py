@@ -353,11 +353,13 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
             
             settingsDict.pushBack("constE",   "220") #(MV/m)**6 * 200 ns, will be taken to the power 6
             settingsDict.pushBack("constE_2", "250") #(MV/m)**6 * 200 ns, will be taken to the power 6
-            settingsDict.pushBack("varNormE", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].Emax_norm[0]")
+            settingsDict.pushBack("varNormE", DataDict())
+            settingsDict["varNormE"].pushBack("var", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].Emax_norm[0]")
             
             settingsDict.pushBack("constSC",   "4.0") #(MW/mm**2)**3 * 200 ns, will be taken to the power 3
             settingsDict.pushBack("constSC_2", "5.0") #(MW/mm**2)**3 * 200 ns, will be taken to the power 3
-            settingsDict.pushBack("varNormSC", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].SCmax_norm[0]")
+            settingsDict.pushBack("varNormSC", DataDict())
+            settingsDict["varNormSC"].pushBack("var", "ANA.RFpost_local.maxFieldsOnSurface[0].surf[0].mode[0].SCmax_norm[0]")
             
             settingsDict.pushBack("constPC",   "2.3") #(MW/mm)**3 * 200 ns, will be taken to the power 3
             settingsDict.pushBack("constPC_2", "2.9") #(MW/mm)**3 * 200 ns, will be taken to the power 3
@@ -374,6 +376,24 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
                 settingsDict.pushBack("constE_2",  "250") #(MV/m)**6 * 200 ns, will be taken to the power 6
                 settingsDict.pushBack("constSC_2", "5.0") #(MW/mm**2)**3 * 200 ns, will be taken to the power 3
                 settingsDict.pushBack("constPC_2", "2.9") #(MW/mm)**3 * 200 ns, will be taken to the power 3
+            
+            if type(settingsDict["varNormE"]) == str:
+                assert type(settingsDict["varNormSC"]) == str
+                print "Changing varNormE and varNormSC to a DataDict"
+                print settingsDict
+                
+                oldVarNormE = settingsDict["varNormE"]
+                newVarNormE = DataDict()
+                newVarNormE.pushBack("var", oldVarNormE)
+                settingsDict.delItem("varNormE")
+                settingsDict.pushBack("varNormE", newVarNormE)
+                
+                oldVarNormSC = settingsDict["varNormSC"]
+                newVarNormSC = DataDict()
+                newVarNormSC.pushBack("var", oldVarNormSC)
+                settingsDict.delItem("varNormSC")
+                settingsDict.pushBack("varNormSC", newVarNormSC)
+        
         print settingsDict
         
         super(DataExtractorPlotsScaleOptim,self).__init__(dataExtractor,settingsDict)
@@ -383,11 +403,11 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
         
         self.constE   = settingsDict["constE"]
         self.constE_2 = settingsDict["constE_2"]
-        self.varNormE = settingsDict["varNormE"]
+        self.varNormE = settingsDict["varNormE"].vals
         
         self.constSC     = settingsDict["constSC"]
         self.constSC_2   = settingsDict["constSC_2"]
-        self.varNormSC   = settingsDict["varNormSC"]
+        self.varNormSC   = settingsDict["varNormSC"].vals
 
         self.constPC      = settingsDict["constPC"]
         self.constPC_2    = settingsDict["constPC_2"]
@@ -404,8 +424,10 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
         assert self.dataExtractor.lockdown
         assert self.varX         in self.dataExtractor.keyNames
         assert self.varY         in self.dataExtractor.keyNames
-        assert self.varNormE     in self.dataExtractor.keyNames
-        assert self.varNormSC    in self.dataExtractor.keyNames
+        for var in self.varNormE:
+            assert var in self.dataExtractor.keyNames
+        for var in self.varNormSC:
+            assert var in self.dataExtractor.keyNames
         assert self.varFrequency in self.dataExtractor.keyNames
         assert self.varRQ        in self.dataExtractor.keyNames
         assert self.varVg        in self.dataExtractor.keyNames
@@ -440,11 +462,19 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
             try:
                 x = float(row[self.varX])
                 y = float(row[self.varY])
-
-                maxE = float(row[self.varNormE])
+                
+                maxE = 0.0
+                for var in self.varNormE:
+                    maxE_this = float(row[var])
+                    if maxE_this > maxE:
+                        maxE = maxE_this
                 t_E = constE_scaled/maxE**6
                 
-                maxSC = float(row[self.varNormSC])
+                maxSC = 0.0
+                for var in self.varNormSC:
+                    maxSC_this = float(row[var])
+                    if maxSC_this > maxSC:
+                        maxSC = maxSC_this
                 t_SC  = constSC_scaled/maxSC**3
                 
                 radius = float(row[self.varRadius]) # mm
@@ -474,11 +504,15 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
         
         self.settingsDict["constE"]    = self.constE
         self.settingsDict["constE_2"]  = self.constE_2
-        self.settingsDict["varNormE"]  = self.varNormE
+        self.settingsDict["varNormE"].clear()
+        for var in self.varNormE:
+            self.settingsDict["varNormE"].pushBack("var",var)
         
         self.settingsDict["constSC"]   = self.constSC
         self.settingsDict["constSC_2"] = self.constSC_2
-        self.settingsDict["varNormSC"] = self.varNormSC
+        self.settingsDict["varNormSC"].clear()
+        for var in self.varNormSC:
+            self.settingsDict["varNormSC"].pushBack("var",var)
 
         self.settingsDict["constPC"]      = self.constPC
         self.settingsDict["constPC_2"]    = self.constPC_2

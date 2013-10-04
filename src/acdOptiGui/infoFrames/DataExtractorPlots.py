@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #
-# Copyright 2012 Kyrre Ness Sjøbæk
+# Copyright 2012, 2013 Kyrre Ness Sjøbæk
 # This file is part of AcdOpti.
 #
 #    AcdOpti is free software: you can redistribute it and/or modify
@@ -752,7 +752,11 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         varNormEbox = gtk.HBox()
         varNormEbox.pack_start(gtk.Label("varNormE:"), padding=5,expand=False)
         self.__varNormE_entry = gtk.Entry()
-        self.__varNormE_entry.set_text(self.plotObject.varNormE)
+        varNormE_entry_text = ""
+        for v in self.plotObject.varNormE:
+            varNormE_entry_text += v + ", "
+        varNormE_entry_text = varNormE_entry_text[:-2]
+        self.__varNormE_entry.set_text(varNormE_entry_text)
         varNormEbox.pack_start(self.__varNormE_entry, padding=5, expand=True)
         self.baseWidget.pack_start(varNormEbox, padding=5, expand=False)
         
@@ -773,7 +777,11 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         varNormSCbox = gtk.HBox()
         varNormSCbox.pack_start(gtk.Label("varNormSC:"), padding=5,expand=False)
         self.__varNormSC_entry = gtk.Entry()
-        self.__varNormSC_entry.set_text(self.plotObject.varNormSC)
+        varNormSC_entry_text = ""
+        for v in self.plotObject.varNormSC:
+            varNormSC_entry_text += v + ", "
+        varNormSC_entry_text = varNormSC_entry_text[:-2]
+        self.__varNormSC_entry.set_text(varNormSC_entry_text)
         varNormSCbox.pack_start(self.__varNormSC_entry, padding=5, expand=True)
         self.baseWidget.pack_start(varNormSCbox, padding=5, expand=False)
         
@@ -916,7 +924,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         contoursBox.pack_start(self.__numContoursEntry,padding=5, expand=True)
         if not self.plotObject.dataExtractor.lockdown:
             self.__plotTripcontourfButton.set_sensitive(False)
-            self.__numCountoursEntry.set_sensitive(False)
+            self.__numContoursEntry.set_sensitive(False)
         self.baseWidget.pack_start(contoursBox, padding=5, expand=False)
         
         treeDeeBox = gtk.HBox(homogeneous=True)
@@ -943,11 +951,41 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         constE       = self.__constE_entry.get_text().strip()
         constE_2     = self.__constE_2_entry.get_text().strip()
-        varNormE     = self.__varNormE_entry.get_text().strip()
+        #varNormE     = self.__varNormE_entry.get_text().strip()
+        varNormE_entry_text = self.__varNormE_entry.get_text()
+        varNormE_entry_text = varNormE_entry_text.split(",")
+        varNormE = []
+        varNormE_BAD = False
+        for k in varNormE_entry_text:
+            k2 = k.strip()
+            if " " in k2:
+                print "varNormE element contained space, skipping '" + k2 + "'"
+                varNormE_BAD = True;
+                continue
+            elif k2 == "":
+                print "varNormE element is empty string, skipping."
+                varNormE_BAD = True;
+                continue
+            varNormE.append(k2)
         
         constSC      = self.__constSC_entry.get_text().strip()
         constSC_2    = self.__constSC_2_entry.get_text().strip()
-        varNormSC    = self.__varNormSC_entry.get_text().strip()
+        #varNormSC    = self.__varNormSC_entry.get_text().strip()
+        varNormSC_entry_text = self.__varNormSC_entry.get_text()
+        varNormSC_entry_text = varNormSC_entry_text.split(",")
+        varNormSC = []
+        varNormSC_BAD = False
+        for k in varNormSC_entry_text:
+            k2 = k.strip()
+            if " " in k2:
+                print "varNormSC element contained space, skipping '" + k2 + "'"
+                varNormSC_BAD = True;
+                continue
+            elif k2 == "":
+                print "varNormSC element is empty string, skipping."
+                varNormSC_BAD = True;
+                continue
+            varNormSC.append(k2)
         
         constPC      = self.__constPC_entry.get_text().strip()
         constPC_2    = self.__constPC_2_entry.get_text().strip()
@@ -956,8 +994,8 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         varVg        = self.__varVg_entry.get_text().strip()
         varRadius    = self.__varRadius_entry.get_text().strip()
         
-        if " " in varX or " " in varY or " " in constE or " " in constPC_2 or " " in varNormE \
-            or " " in constSC or " " in constSC_2 or " " in varNormSC \
+        if " " in varX or " " in varY or " " in constE or " " in constPC_2 or varNormE_BAD \
+            or " " in constSC or " " in constSC_2 or varNormSC_BAD \
             or " " in constPC or " " in constPC_2 or " " in varFrequency \
             or " " in varRQ or " " in varVg or " " in varRadius :
             mDia = gtk.MessageDialog(self.getBaseWindow(),

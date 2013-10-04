@@ -1418,4 +1418,66 @@ options
          }
       }
    }
+   field2SurfsIntersect
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+	 {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         surfaceID
+         {
+            type = int
+            must = True
+            single = True
+            default = 6
+         }
+         surfID2
+         {
+            type = int
+            must = True
+            single = True
+            default = 1
+	 }
+      }
+   }
+   fieldSurfRotPlaneIntersect
+   {
+      type = dict
+      must = True
+      single = False
+      children
+      {
+         ionoff
+	 {
+            type = bool
+            must = True
+            single = True
+            boolType = int
+            default = 0
+         }
+         surfaceID
+         {
+            type = int
+            must = True
+            single = True
+            default = 6
+         }
+         rotAngle
+         {
+            type = float
+            must = True
+            single = True
+            default = 45.0
+         }
+      }
+   }
 }

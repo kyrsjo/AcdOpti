@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #
-# Copyright 2011 Kyrre Ness Sjøbæk
+# Copyright 2011, 2013 Kyrre Ness Sjøbæk
 # This file is part of AcdOpti.
 #
 #    AcdOpti is free software: you can redistribute it and/or modify
@@ -25,6 +25,7 @@ from acdOpti.AcdOptiExceptions import AcdOptiException_analysis,\
 
 import re
 redigits = r'-?\d+.\d+e[+-]\d+'
+redigits2 = r'-?\d+.\d+'
 
 class RFpostParser():
     """
@@ -65,6 +66,8 @@ class RFpostParser():
         retDict.pushBack("maxFieldsOnSurface", self.ParseMaxFieldsOnSurface(sectionNamesList, sectionList,retDict)) #This depends on RoverQ's results, accessed through retDict
         retDict.pushBack("powerThroughSurface", self.ParsePowerThorughSurface(sectionNamesList, sectionList))
         retDict.pushBack("fieldSurfPlaneIntersect", self.ParseFieldSurfPlaneIntersect(sectionNamesList, sectionList, retDict)) #Depends on RoverQ
+        retDict.pushBack("field2SurfsIntersect", self.ParseField2SurfsIntersect(sectionNamesList, sectionList, retDict)) #Depends on RoverQ
+        retDict.pushBack("fieldSurfRotPlaneIntersect", self.ParseFieldSurfRotPlaneIntersect(sectionNamesList, sectionList, retDict)) #Depends on RoverQ
         
         return retDict
 
@@ -250,6 +253,103 @@ class RFpostParser():
             retDict.pushBack("surf", secDict)
             
         return retDict
+
+    def ParseField2SurfsIntersect(self,sectionNamesList,sectionList, retDataROQ=None):
+        """
+        Parses 'Field2SurfsIntersect' sections, returns a DataDict with one entry (another dataDict) for each section found.
+        Dependent on output from RoverQ analysis for normalization, which it searches for through "retData". Skipped if not found.
+        """
+        
+        ptsSects =  self.__findMySections(sectionNamesList, sectionList, "field2SurfsIntersect")
+        
+        retDict = DataDict()
+        
+        for sec in ptsSects:
+            secDict = DataDict()
+            
+            secDict.pushBack("surfaceID1", re.match(r"surfaceID1\s*:\s*(\d+)",sec[1].strip()).group(1))
+            secDict.pushBack("surfaceID2", re.match(r"surfaceID2\s*:\s*(\d+)",sec[2].strip()).group(1))
+            modID = re.match(r"ModeID\s*:\s*(\d+)",sec[3].strip()).group(1); secDict.pushBack("ModeID", modID)
+            
+            Ematch = re.match(r"maxE\s*:\s*(" + redigits + r")\s*\(V/m\)\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)",sec[4].strip())
+            Emax = Ematch.group(1); secDict.pushBack("Emax", Emax)
+            Hmatch = re.match(r"maxH\s*:\s*(" + redigits + r")\s*\(A/m\)\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)",sec[5].strip())
+            Hmax = Hmatch.group(1); secDict.pushBack("Hmax", Hmax)
+            SCmatch = re.match(r"maxSC\s*:\s*(" + redigits + r")\s*\(VA/m\^2\)\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)\s*\(assumed mu_r = 1\)",sec[6].strip())
+            SCmax = SCmatch.group(1); secDict.pushBack("SCmax", SCmax)
+            
+            if retDataROQ != None:
+                try:
+                    RoQ = retDataROQ["RoverQ"]
+                    Ez_ave = None
+                    for mode in RoQ.getVals("mode"):
+                        if int(mode["ModeID"]) == int(modID):
+                            assert Ez_ave == None
+                            Ez_ave = float(mode["Ez_ave"])
+                    if Ez_ave != None:
+                        secDict.pushBack("Ez_ave", str(Ez_ave))
+                        secDict.pushBack("Emax_norm", str(float(Emax)/Ez_ave))
+                        secDict.pushBack("Hmax_norm", str(float(Hmax)/Ez_ave))
+                        secDict.pushBack("SCmax_norm", str(float(SCmax)/Ez_ave/Ez_ave))
+                    else:
+                        print "Didn't find Ez_ave"
+                    
+                except AcdOptiException_dataDict_getValsSingle:
+                    print "No normalization found, skipping"
+                
+            
+            retDict.pushBack("surf", secDict)
+            
+        return retDict
+
+    def ParseFieldSurfRotPlaneIntersect(self,sectionNamesList,sectionList, retDataROQ=None):
+        """
+        Parses 'FieldSurfRotPlaneIntersect' sections, returns a DataDict with one entry (another dataDict) for each section found.
+        Dependent on output from RoverQ analysis for normalization, which it searches for through "retData". Skipped if not found.
+        """
+        
+        ptsSects =  self.__findMySections(sectionNamesList, sectionList, "fieldSurfRotPlaneIntersect")
+        
+        retDict = DataDict()
+        
+        for sec in ptsSects:
+            secDict = DataDict()
+            
+            secDict.pushBack("surfaceID", re.match(r"surfaceID\s*:\s*(\d+)",sec[1].strip()).group(1))
+            modID = re.match(r"ModeID\s*:\s*(\d+)",sec[2].strip()).group(1); secDict.pushBack("ModeID", modID)
+            secDict.pushBack("rotAngle", re.match(r"rotAngle\s*:\s*("+redigits2+r")\s*\[deg\]",sec[3].strip()).group(1))
+            
+            Ematch = re.match(r"maxE\s*:\s*(" + redigits + r")\s*\(V/m\)\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)",sec[4].strip())
+            Emax = Ematch.group(1); secDict.pushBack("Emax", Emax)
+            Hmatch = re.match(r"maxH\s*:\s*(" + redigits + r")\s*\(A/m\)\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)",sec[5].strip())
+            Hmax = Hmatch.group(1); secDict.pushBack("Hmax", Hmax)
+            SCmatch = re.match(r"maxSC\s*:\s*(" + redigits + r")\s*\(VA/m\^2\)\s*at\s*\(\s*(" + redigits + ")\s*,\s*(" + redigits + r")\s*,\s*(" + redigits + ")\s*\)\s*\(assumed mu_r = 1\)",sec[6].strip())
+            SCmax = SCmatch.group(1); secDict.pushBack("SCmax", SCmax)
+            
+            if retDataROQ != None:
+                try:
+                    RoQ = retDataROQ["RoverQ"]
+                    Ez_ave = None
+                    for mode in RoQ.getVals("mode"):
+                        if int(mode["ModeID"]) == int(modID):
+                            assert Ez_ave == None
+                            Ez_ave = float(mode["Ez_ave"])
+                    if Ez_ave != None:
+                        secDict.pushBack("Ez_ave", str(Ez_ave))
+                        secDict.pushBack("Emax_norm", str(float(Emax)/Ez_ave))
+                        secDict.pushBack("Hmax_norm", str(float(Hmax)/Ez_ave))
+                        secDict.pushBack("SCmax_norm", str(float(SCmax)/Ez_ave/Ez_ave))
+                    else:
+                        print "Didn't find Ez_ave"
+                    
+                except AcdOptiException_dataDict_getValsSingle:
+                    print "No normalization found, skipping"
+                
+            
+            retDict.pushBack("surf", secDict)
+            
+        return retDict
+
         
 class RFpostException(AcdOptiException_analysis):
     pass

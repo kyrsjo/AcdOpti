@@ -301,8 +301,8 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         else:
             print "Already gone."
         
-        #client.close()
         sftp.close()
+        client.close()
         
     def run(self):
         #Make connection...
@@ -424,7 +424,7 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
 
         #Make connection
         client = self.__connectSSH()
-        sftp = client.open_sftp()
+        #sftp = client.open_sftp()
         
         #Tar the data
         print "Zipping..."
@@ -441,14 +441,16 @@ class AcdOptiRunner_Hopper(AcdOptiRunner):
         
         #Download the tarball
         self.speedSSH.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile))
-        #sftp.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile))
+        #sftp.get(remoteScratch + remoteFile, os.path.join(finishedLocalPath, remoteFile)) #TOO SLOW over transatlantic link...
         
+        #sftp.close()
         #client.close()
-        sftp.close()
         
         #Unzip the downloaded solution tar.gz
         archive = tarfile.open(os.path.join(finishedLocalPath, remoteFile), "r:gz")
         archive.extractall(path=finishedLocalPath)
+        
+        
         
         return os.path.join(finishedLocalPath, self.runConfig.stageName) #Duplicated code in runConfig::init()!
         

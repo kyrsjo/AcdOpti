@@ -484,7 +484,7 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
                 omega = 2*np.pi*float(row[self.varFrequency]) # s^-1
                 RQnorm = float(row[self.varRQ])*1e3     # Ohm/m (its Ohm/mm in R/Q parser) 
                 
-                t_PC = 1e-9*constPC_scaled * (circ*omega*RQnorm/vg)**3
+                t_PC = 1e+9*constPC_scaled * (circ*omega*RQnorm/vg)**3
                 
                 X.append(x)
                 Y.append(y)

@@ -205,12 +205,15 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         
         return (X,Y,Z)
     
-    def deduplicate(self,X,Y,Z):
+    def deduplicate(self,X,Y,Z,mode="mean"):
         """
-        Deduplicate by finding all unique pairs (x,y), for each such pair set Z = average Z over all pair occurences
+        Deduplicate by finding all unique pairs (x,y), for each such pair set Z = average Z over all pair occurences,
+        or find min or max value
         """
         assert len(X) == len(Y) and len(Y) == len(Z)
-        
+
+        assert mode=="mean" or mode=="max" or mode=="min"
+
         #Dedup'ed variables
         x = []
         y = []
@@ -232,14 +235,26 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
                 y.append(Y[i])
         
         #Average over z 
-        for j in xrange(len(x)):
+        for j in xrange(len(x)): #Loop over unique (x,y) -> z
             n.append(0)
-            z.append(0.0)
-            for i in xrange(len(X)):
+
+            if mode == "mean":
+                z.append(0.0)
+            else:
+                z.append(None)
+
+            for i in xrange(len(X)): #Loop over all (X,Y,Z))
                 if comparePair(X[i],Y[i],x[j],y[j]):
                     n[-1] += 1
-                    z[-1] += Z[i]
-            z[-1] /= float(n[-1])
+                    if mode == "mean":
+                        z[-1] += Z[i]
+                    elif mode == "min" and (z[-1] == None or z[-1] > Z[i]):
+                        z[-1] = Z[i]
+                    elif mode == "max" and (z[-1] == None or z[-1] < Z[i]):
+                        z[-1] = Z[i]
+            
+            if mode == "mean":
+                z[-1] /= float(n[-1])
         
         return(x,y,z,n)
     

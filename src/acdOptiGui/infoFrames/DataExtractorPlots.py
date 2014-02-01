@@ -261,6 +261,11 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     
     __plotLimitEntry = None
     __plotLimitCheck = None
+    __plotLimitPruneCheck = None
+
+    __dedupButton_max  = None
+    __dedupButton_mean = None
+    __dedupButton_min  = None
 
     __plotDelunayButton = None
     __plotDelunayColorsButton = None
@@ -363,9 +368,27 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         else:
             self.__plotLimitCheck.set_active(False);
         plotLimitBox.pack_start(self.__plotLimitCheck, padding=5, expand=False)
-        self.baseWidget.pack_start(plotLimitBox, padding=5, expand=False);
+        self.__plotLimitPruneCheck = gtk.CheckButton(label="Prune")
+        self.__plotLimitPruneCheck.set_active(False);
+        plotLimitBox.pack_start(self.__plotLimitPruneCheck, padding=5, expand=False)
         
-    
+        plotLimitBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+        
+        dedupBox = gtk.VBox()
+        dedupLabel = gtk.Label("Dedup")
+        dedupLabel.set_angle(90)
+        plotLimitBox.pack_start(dedupLabel,expand=False)
+        self.__dedupButton_max  = gtk.RadioButton(None,"Max")
+        dedupBox.pack_start(self.__dedupButton_max)
+        self.__dedupButton_mean = gtk.RadioButton(self.__dedupButton_max,"Mean")
+        dedupBox.pack_start(self.__dedupButton_mean)
+        self.__dedupButton_mean.set_active(True)
+        self.__dedupButton_min  = gtk.RadioButton(self.__dedupButton_max,"Min")
+        dedupBox.pack_start(self.__dedupButton_min)
+        plotLimitBox.pack_start(dedupBox,padding=5,expand=False)
+
+        self.baseWidget.pack_start(plotLimitBox, padding=5, expand=False);    
+
         self.__plotDelunayButton = gtk.Button("Show Delunay triangulation of points")
         if not self.plotObject.dataExtractor.lockdown:
             self.__plotDelunayButton.set_sensitive(False)
@@ -483,7 +506,7 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
                 limit = float(self.__plotLimitEntry.get_text())
             except ValueError:
                 limit = None
-        if self.__plotLimitCheck.get_active():
+        if self.__plotLimitCheck.get_active() and self.__plotLimitPruneCheck.get_active():
             (X,Y,Z) = self.plotObject.getBelowLimit(limit)
         else:
             (X,Y,Z) = self.plotObject.getData()
@@ -535,7 +558,7 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
                 limit = float(self.__plotLimitEntry.get_text())
             except ValueError:
                 limit = None
-        if self.__plotLimitCheck.get_active():
+        if self.__plotLimitCheck.get_active() and self.__plotLimitPruneCheck.get_active():
             (X,Y,Z) = self.plotObject.getBelowLimit(limit)
         else:
             (X,Y,Z) = self.plotObject.getData()
@@ -544,7 +567,12 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         # print "Y:", Y
         # print "Z:", Z
         # print "Deduplicating..."
-        (X,Y,Z,N) = self.plotObject.deduplicate(X,Y,Z)
+        dedupMode = "mean"
+        if self.__dedupButton_max.get_active():
+            dedupMode = "max"
+        elif self.__dedupButton_min.get_active():
+            dedupMode = "min"            
+        (X,Y,Z,N) = self.plotObject.deduplicate(X,Y,Z, dedupMode)
         # print "X:", X
         # print "Y:", Y
         # print "Z:", Z
@@ -578,7 +606,10 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
             except ValueError:
                 print "numContours invalid, use 10 countours"
                 nc = 10
-            plt.tricontourf(triang,Z, nc)
+            if limit != None and not self.__plotLimitPruneCheck.get_active() and limit < max(Z):
+                plt.tricontourf(triang,Z, np.linspace(min(Z),limit,nc), vmax=limit, extend='max')
+            else:
+                plt.tricontourf(triang,Z, nc)
             plt.colorbar()
         else:
             plt.tripcolor(triang, Z, shading='gouraud')
@@ -616,7 +647,7 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
                 limit = float(self.__plotLimitEntry.get_text())
             except ValueError:
                 limit = None
-        if self.__plotLimitCheck.get_active():
+        if limit != None and self.__plotLimitPruneCheck.get_active():
             (X,Y,Z) = self.plotObject.getBelowLimit(limit)
         else:
             (X,Y,Z) = self.plotObject.getData()
@@ -628,6 +659,8 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         fig = plt.figure()
         ax = fig.gca(projection='3d')
         ax.scatter(X, Y, Z)
+        if limit != None and not self.__plotLimitPruneCheck.get_active() and limit > min(Z):
+            ax.set_zlim(min(Z), limit+0.1*abs(limit-min(Z)))
         
         if data == "Fit":
             print "Ploting the fit..."

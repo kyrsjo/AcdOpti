@@ -434,8 +434,11 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
     def doExport(self,fname):
         raise NotImplementedError
         
-    def getData(self,scalingFactor2=False):
-        "Use scalingFactor2 to get the second set of (optimistic) scaling factors"
+    def getData(self,scalingFactor2=False, gradientRepresentation=False):
+        """
+        Set scalingFactor2=True to get the second set of (optimistic) scaling factors,
+        set gradientRepresentation=True to return in units of MV/m @ 200 ns
+        """
         assert self.dataExtractor.lockdown
         assert self.varX         in self.dataExtractor.keyNames
         assert self.varY         in self.dataExtractor.keyNames
@@ -464,11 +467,11 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
         except ValueError:
             print "Warning in DataExtractorPlotsScaleOptim::getData(): Could not convert a constant"
             return ([],[], [],[],[])
-        
+
         X = []
         Y = []
         
-        #Units: (MV/m)^6 * ns
+        #Units: (MV/m)^6 * ns (if gradientRepresentation=False)
         tE = []
         tSC = []
         tPC = []
@@ -511,6 +514,11 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
             except ValueError:
                 print "Warning in DataExtractorPlotScaleOptim::getData(): Could not convert value in row", rcount, "to float, skipping!"
         
+        if gradientRepresentation:
+            tE = map(lambda t: (t/200.0)**(1.0/6.0),tE)
+            tSC = map(lambda t: (t/200.0)**(1.0/6.0), tSC)
+            tPC = map(lambda t: (t/200.0)**(1.0/6.0), tPC)
+            
         return (X,Y,tE,tSC,tPC)
     
     def updateSettingsDict(self):

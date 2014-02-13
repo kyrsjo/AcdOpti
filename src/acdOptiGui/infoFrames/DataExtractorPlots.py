@@ -733,6 +733,8 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
     __filterDoubles_best    = None
     __filterDoubles_average = None
 
+    __enable_gradientRepresentation = None
+
     __plotButtonX = None
     __plotButtonY = None
 
@@ -931,6 +933,13 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         filterDoublesBox.pack_start(self.__filterDoubles_average)
         setupBox.pack_start(filterDoublesBox, padding=5)
 
+        plotSetupBox = gtk.VBox(homogeneous=True)
+        plotSetupBox.pack_start(gtk.Label("Plot setup"))
+        self.__enable_gradientRepresentation = gtk.CheckButton(label="Gradient representation")
+        self.__enable_gradientRepresentation.set_active(False)
+        plotSetupBox.pack_start(self.__enable_gradientRepresentation)
+        setupBox.pack_start(plotSetupBox,padding=0)
+
         self.baseWidget.pack_start(setupBox, padding=5, expand=False)
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
@@ -1101,8 +1110,8 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         except ImportError:
             print "Could not import matplotlib.pyplot, aborting plot. You should still be able to doExport()!"
             return
-        (X,Y, tE, tSC, tPC) = self.plotObject.getData()
-        (X_2,Y_2, tE_2, tSC_2, tPC_2) = self.plotObject.getData(True)
+        (X,Y, tE, tSC, tPC) = self.plotObject.getData(scalingFactor2=False, gradientRepresentation=self.__enable_gradientRepresentation.get_active())
+        (X_2,Y_2, tE_2, tSC_2, tPC_2) = self.plotObject.getData(scalingFactor2=True, gradientRepresentation=self.__enable_gradientRepresentation.get_active())
         assert X == X_2
         assert Y == Y_2
 
@@ -1226,11 +1235,15 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         (Xmin,tmin) = dedupX(XAll,tAll)
         plt.plot(Xmin,tmin, "--", color="black", label="Minimum")
         
-        
-        plt.xlabel(self.plotObject.varX)
+        if data=="X":
+            plt.xlabel(self.plotObject.varX)
         if data=="Y":
             plt.xlabel(self.plotObject.varY)
-        plt.ylabel("Time * G^6 [(MV/m)^6 * ns]")
+        
+        if self.__enable_gradientRepresentation.get_active():
+            plt.ylabel(r"Max gradient $\left[\left(\frac{\mathrm{MV}}{\mathrm{m}}\right)\right]$ @ 200 ns")
+        else:
+            plt.ylabel("Time * G^6 [(MV/m)^6 * ns]")
         
         xRange = abs(max(X)-min(X))
         #ymax = max(max(tE),max(tSC),max(tPC))
@@ -1279,7 +1292,7 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             
 
         #Assume that optimistic always more optimistic than pessimistic
-        (X,Y, tE, tSC, tPC) = self.plotObject.getData(doOptimistic)
+        (X,Y, tE, tSC, tPC) = self.plotObject.getData(scalingFactor2=doOptimistic,gradientRepresentation=self.__enable_gradientRepresentation.get_active())
         
         enableE  = self.__enable_E.get_active()
         enableSC = self.__enable_SC.get_active()
@@ -1352,7 +1365,9 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
 
         plt.xlabel(self.plotObject.varX)
         plt.ylabel(self.plotObject.varY)
-        plt.title("instName = " + self.plotObject.instName)
+        #plt.title("instName = " + self.plotObject.instName)
+
+        plt.subplots_adjust(right=1.0)
 
         plt.show()
         
@@ -1369,8 +1384,8 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
             print "Could not import matplotlib.pyplot, aborting plot. You should still be able to doExport()!"
             return
 
-        (X,Y, tE, tSC, tPC) = self.plotObject.getData()
-        (X_2,Y_2, tE_2, tSC_2, tPC_2) = self.plotObject.getData(True)
+        (X,Y, tE, tSC, tPC) = self.plotObject.getData(scalingFactor2=False,gradientRepresentation=self.__enable_gradientRepresentation.get_active())
+        (X_2,Y_2, tE_2, tSC_2, tPC_2) = self.plotObject.getData(scalingFactor2=True,gradientRepresentation=self.__enable_gradientRepresentation.get_active())
         assert X == X_2
         assert Y == Y_2
         
@@ -1457,7 +1472,12 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         
         ax.set_xlabel(self.plotObject.varX)
         ax.set_ylabel(self.plotObject.varY)
-        ax.set_zlabel("Time * G^6")
+        if self.__enable_gradientRepresentation.get_active():
+            ax.set_zlabel(r"Max gradient $\left[\left(\frac{\mathrm{MV}}{\mathrm{m}}\right)\right]$ @ 200 ns")
+        else:
+            ax.set_zlabel("Time * G^6")
+        
+        plt.subplots_adjust(left=0.0,right=1.0,top=1.0,bottom=0.0)
         
         plt.show()
 

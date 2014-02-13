@@ -160,6 +160,12 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         self.varX = settingsDict["varX"]
         self.varY = settingsDict["varY"]
         self.varZ = settingsDict["varZ"]
+        if type(self.varZ) == str:
+            print "DataExtractorPlot3D: Converting varZ..."
+            oldVarZ = self.varZ
+            self.varZ = DataDict()
+            self.varZ.pushBack("var", oldVarZ)
+
         try:
             self.limit = settingsDict["limit"]
             self.useLimit = settingsDict["useLimit"]
@@ -183,25 +189,28 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         assert self.dataExtractor.lockdown
         assert self.varX in self.dataExtractor.keyNames
         assert self.varY in self.dataExtractor.keyNames
-        assert self.varZ in self.dataExtractor.keyNames
+        #assert self.varZ in self.dataExtractor.keyNames
+        for k in self.varZ.vals:
+            assert k in self.dataExtractor.keyNames
         
         X = []
         Y = []
         Z = []
         
         for (row, rcount) in zip(self.dataExtractor.dataExtracted, xrange(len(self.dataExtractor.dataExtracted))):
-            try:
-                x = float(row[self.varX])
-                y = float(row[self.varY])
-                z = float(row[self.varZ])
-                
-                X.append(x)
-                Y.append(y)
-                Z.append(z)
-            except KeyError:
-                pass
-            except ValueError:
-                print "Warning in DataExtractorPlot2D::getData(): Could not convert value in row", rcount, "to float, skipping!"
+            for zk in self.varZ.vals:
+                try:
+                    x = float(row[self.varX])
+                    y = float(row[self.varY])
+                    z = float(row[zk])
+                    
+                    X.append(x)
+                    Y.append(y)
+                    Z.append(z)
+                except KeyError:
+                    pass
+                except ValueError:
+                    print "Warning in DataExtractorPlot2D::getData(): Could not convert value in row", rcount, "to float, skipping!"
         
         return (X,Y,Z)
     

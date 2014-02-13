@@ -305,7 +305,13 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         varZbox = gtk.HBox()
         varZbox.pack_start(gtk.Label("Z variable:"), padding=5,expand=False)
         self.__varZentry = gtk.Entry()
-        self.__varZentry.set_text(self.plotObject.varZ)
+        ZentryTxt = ""
+        for v in self.plotObject.varZ.vals:
+            print v
+            ZentryTxt += v + ", "
+        ZentryTxt = ZentryTxt[:-2]
+        print "ZentryTxt", ZentryTxt
+        self.__varZentry.set_text(ZentryTxt)
         varZbox.pack_start(self.__varZentry, padding=5, expand=True)
         self.baseWidget.pack_start(varZbox, padding=5, expand=False)
         
@@ -443,21 +449,37 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     def saveToPlot(self):
         x = self.__varXentry.get_text().strip()
         y = self.__varYentry.get_text().strip()
-        z = self.__varZentry.get_text().strip()
+        #z = self.__varZentry.get_text().strip()
+        zEntryTxt = self.__varZentry.get_text().split(",")
+        z = []
+        zEntryBAD = False
+        for k in zEntryTxt:
+            k2 = k.strip()
+            if " " in k2:
+                print "zEntry element contained space, skipping '" + k2 + "'"
+                zEntryBAD = True
+                continue
+            z.append(k2)
+
         l = self.__plotLimitEntry.get_text().strip()
         nc = self.__numContoursEntry.get_text().strip()
-        if " " in x or " " in y or " " in z or " " in l or " " in nc:
+        if " " in x or " " in y or zEntryBAD or " " in l or " " in nc:
             mDia = gtk.MessageDialog(self.getBaseWindow(),
                                      gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                                      gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                     "Space in X, Y, or Z variable, or plotLimit/numContours -- not saving to plot." )
+                                     "Space in X, Y, or Z variable(s), or plotLimit/numContours -- not saving to plot." )
             mDia.run()
             mDia.destroy()
             return
 
         self.plotObject.varX = x
         self.plotObject.varY = y
-        self.plotObject.varZ = z
+
+        #self.plotObject.varZ = z
+        self.plotObject.varZ = DataDict()
+        for k in z:
+            self.plotObject.varZ.pushBack("var", k)
+
         self.plotObject.limit = l
         self.plotObject.numContours = nc
         

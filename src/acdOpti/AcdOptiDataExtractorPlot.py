@@ -137,7 +137,9 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
     useLimit = None
 
     numContours = None
-
+    
+    extractionMode = None
+    
     def __init__(self, dataExtractor, settingsDictOrInstName):
         assert settingsDictOrInstName != None
         settingsDict = None
@@ -181,6 +183,12 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
             settingsDict.pushBack("numContours", "");
             self.numContours = ""
 
+        try:
+            self.extractionMode = settingsDict["extractionMode"]
+        except AcdOptiException_dataDict_getValsSingle:
+            settingsDict.pushBack("extractionMode", "all");
+            self.extractionMode = "all"
+
     def doExport(self,fname):
         (X, Y, Z) = self.getData()
         raise NotImplementedError
@@ -193,24 +201,49 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         for k in self.varZ.vals:
             assert k in self.dataExtractor.keyNames
         
+        assert self.extractionMode=="all" or self.extractionMode=="min" \
+            or self.extractionMode=="max" or self.extractionMode=="mean"
+
         X = []
         Y = []
         Z = []
         
         for (row, rcount) in zip(self.dataExtractor.dataExtracted, xrange(len(self.dataExtractor.dataExtracted))):
+            try:
+                x = float(row[self.varX])
+                y = float(row[self.varY])
+            except KeyError:
+                continue
+            
+            z = []
             for zk in self.varZ.vals:
                 try:
-                    x = float(row[self.varX])
-                    y = float(row[self.varY])
-                    z = float(row[zk])
-                    
-                    X.append(x)
-                    Y.append(y)
-                    Z.append(z)
+                    z.append( float(row[zk]) )
                 except KeyError:
                     pass
                 except ValueError:
                     print "Warning in DataExtractorPlot2D::getData(): Could not convert value in row", rcount, "to float, skipping!"
+            
+            print "x=",x,"y=",y,"z=",z
+            if len(z) == 0:
+                continue
+            
+            if self.extractionMode == "all":
+                X += [x,]*len(z)
+                Y += [y,]*len(z)
+                Z += z
+            elif self.extractionMode == "mean":
+                X.append(x)
+                Y.append(y)
+                Z.append(np.mean(z))
+            elif self.extractionMode == "min":
+                X.append(x)
+                Y.append(y)
+                Z.append(np.min(z))
+            elif self.extractionMode == "max":
+                X.append(x)
+                Y.append(y)
+                Z.append(np.max(z))
         
         return (X,Y,Z)
     
@@ -341,6 +374,8 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         self.settingsDict["useLimit"] = self.useLimit
         
         self.settingsDict["numContours"] = self.numContours
+        
+        self.settingsDict["extractionMode"] = self.extractionMode
 
 class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
     
@@ -418,7 +453,7 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
                 settingsDict.delItem("varNormSC")
                 settingsDict.pushBack("varNormSC", newVarNormSC)
         
-        print settingsDict
+        # print settingsDict
         
         super(DataExtractorPlotsScaleOptim,self).__init__(dataExtractor,settingsDict)
         
@@ -495,7 +530,7 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
                     maxE_this = float(row[var])
                     if maxE_this > maxE:
                         maxE = maxE_this
-                t_E = constE_scaled/maxE**6
+                t_E = constE_scaled/maxE**6 #(MV/m)^6 * ns
                 
                 maxSC = 0.0
                 for var in self.varNormSC:
@@ -511,7 +546,8 @@ class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
                 omega = 2*np.pi*float(row[self.varFrequency]) # s^-1
                 RQnorm = float(row[self.varRQ])*1e3     # Ohm/m (its Ohm/mm in R/Q parser) 
                 
-                t_PC = 1e+9*constPC_scaled * (circ*omega*RQnorm/vg)**3
+                t_PC  = constPC_scaled * (circ*omega*RQnorm/vg)**3 #10^-9 * (MV/m)^6 * ns
+                t_PC *= 1e-9 # (MV/m)^6 * ns
                 
                 X.append(x)
                 Y.append(y)

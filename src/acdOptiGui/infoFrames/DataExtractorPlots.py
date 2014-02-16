@@ -263,6 +263,11 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     __plotLimitCheck = None
     __plotLimitPruneCheck = None
 
+    __extractionModeButton_all  = None
+    __extractionModeButton_mean = None
+    __extractionModeButton_min  = None
+    __extractionModeButton_max  = None
+    
     __dedupButton_max  = None
     __dedupButton_mean = None
     __dedupButton_min  = None
@@ -379,7 +384,31 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         plotLimitBox.pack_start(self.__plotLimitPruneCheck, padding=5, expand=False)
         
         plotLimitBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
-        
+
+        extractionModeBox = gtk.VBox()
+        extractionModeLabel = gtk.Label("ExtractionMode")
+        extractionModeLabel.set_angle(90)
+        plotLimitBox.pack_start(extractionModeLabel,expand=False)
+        self.__extractionModeButton_all = gtk.RadioButton(None,"All")
+        extractionModeBox.pack_start(self.__extractionModeButton_all)
+        self.__extractionModeButton_mean = gtk.RadioButton(self.__extractionModeButton_all,"Mean")
+        extractionModeBox.pack_start(self.__extractionModeButton_mean)
+        self.__extractionModeButton_min = gtk.RadioButton(self.__extractionModeButton_all,"Min")
+        extractionModeBox.pack_start(self.__extractionModeButton_min)
+        self.__extractionModeButton_max = gtk.RadioButton(self.__extractionModeButton_all,"Max")
+        extractionModeBox.pack_start(self.__extractionModeButton_max)
+        if self.plotObject.extractionMode=="all":
+            self.__extractionModeButton_all.set_active(True)
+        elif self.plotObject.extractionMode=="mean":
+            self.__extractionModeButton_mean.set_active(True)
+        elif self.plotObject.extractionMode=="min":
+            self.__extractionModeButton_min.set_active(True)
+        elif self.plotObject.extractionMode=="max":
+            self.__extractionModeButton_max.set_active(True)
+        plotLimitBox.pack_start(extractionModeBox,padding=5,expand=False)
+
+        plotLimitBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+
         dedupBox = gtk.VBox()
         dedupLabel = gtk.Label("Dedup")
         dedupLabel.set_angle(90)
@@ -488,9 +517,18 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         else:
             self.plotObject.useLimit = "False"
 
+        if self.__extractionModeButton_all.get_active():
+           self.plotObject.extractionMode = "all"
+        elif self.__extractionModeButton_mean.get_active():
+           self.plotObject.extractionMode = "mean"
+        elif self.__extractionModeButton_min.get_active():
+            self.plotObject.extractionMode = "min"
+        elif self.__extractionModeButton_max.get_active():
+            self.plotObject.extractionMode = "max"
+
         self.plotObject.updateSettingsDict()
         self.plotObject.dataExtractor.write()
-    
+
     def event_button_fitPlane(self,widget,data):
         (model, ndof, R2) = self.plotObject.fitPlane()
         self.model = model

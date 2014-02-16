@@ -139,6 +139,8 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
     numContours = None
     
     extractionMode = None
+
+    ZmultFactor = None
     
     def __init__(self, dataExtractor, settingsDictOrInstName):
         assert settingsDictOrInstName != None
@@ -189,6 +191,12 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
             settingsDict.pushBack("extractionMode", "all");
             self.extractionMode = "all"
 
+        try:
+            self.ZmultFactor = settingsDict["ZmultFactor"]
+        except AcdOptiException_dataDict_getValsSingle:
+            settingsDict.pushBack("ZmultFactor", "1.0")
+            self.ZmultFactor = "1.0"
+
     def doExport(self,fname):
         (X, Y, Z) = self.getData()
         raise NotImplementedError
@@ -224,7 +232,7 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
                 except ValueError:
                     print "Warning in DataExtractorPlot2D::getData(): Could not convert value in row", rcount, "to float, skipping!"
             
-            print "x=",x,"y=",y,"z=",z
+            #print "x=",x,"y=",y,"z=",z
             if len(z) == 0:
                 continue
             
@@ -245,6 +253,11 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
                 Y.append(y)
                 Z.append(np.max(z))
         
+        ZmultFactor = float(self.ZmultFactor) #input checking is present
+        if ZmultFactor != 1.0:
+            print "Multiplying with ZmultFactor =", ZmultFactor
+            Z = map(lambda z: z*ZmultFactor, Z)
+
         return (X,Y,Z)
     
     def deduplicate(self,X,Y,Z,mode="mean"):
@@ -376,6 +389,8 @@ class DataExtractorPlot3D(AcdOptiDataExtractorPlot):
         self.settingsDict["numContours"] = self.numContours
         
         self.settingsDict["extractionMode"] = self.extractionMode
+        
+        self.settingsDict["ZmultFactor"] = self.ZmultFactor
 
 class DataExtractorPlotsScaleOptim(AcdOptiDataExtractorPlot):
     

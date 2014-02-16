@@ -262,6 +262,8 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     __plotLimitEntry = None
     __plotLimitCheck = None
     __plotLimitPruneCheck = None
+    
+    __ZmultFactorEntry = None
 
     __extractionModeButton_all  = None
     __extractionModeButton_mean = None
@@ -271,6 +273,11 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
     __dedupButton_max  = None
     __dedupButton_mean = None
     __dedupButton_min  = None
+
+    __plotTitleEntry_title  = None
+    __plotTitleEntry_xlabel = None
+    __plotTitleEntry_ylabel = None
+    __plotTitleEntry_zlabel = None
 
     __plotDelunayButton = None
     __plotDelunayColorsButton = None
@@ -368,6 +375,10 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         
         self.baseWidget.pack_start(gtk.HSeparator(), padding=10, expand=False)
 
+        settingsBox = gtk.HBox()
+        
+        filterScalingBox = gtk.VBox()
+
         plotLimitBox = gtk.HBox()
         plotLimitBox.pack_start(gtk.Label("Plot points below z ="), padding=5, expand=False)
         self.__plotLimitEntry = gtk.Entry()
@@ -382,13 +393,25 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         self.__plotLimitPruneCheck = gtk.CheckButton(label="Prune")
         self.__plotLimitPruneCheck.set_active(False);
         plotLimitBox.pack_start(self.__plotLimitPruneCheck, padding=5, expand=False)
+        filterScalingBox.pack_start(plotLimitBox,padding=5,expand=False)
+
+        filterScalingBox.pack_start(gtk.HSeparator(),padding=5,expand=True)
         
-        plotLimitBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+        ZmultFactorBox = gtk.HBox()
+        ZmultFactorBox.pack_start(gtk.Label("ZmultFactor = "), padding=5,expand=False)
+        self.__ZmultFactorEntry = gtk.Entry()
+        self.__ZmultFactorEntry.set_text(self.plotObject.ZmultFactor)
+        ZmultFactorBox.pack_start(self.__ZmultFactorEntry)
+        filterScalingBox.pack_start(ZmultFactorBox,padding=5,expand=False)
+        
+        settingsBox.pack_start(filterScalingBox,padding=5,expand=True)
+
+        settingsBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
 
         extractionModeBox = gtk.VBox()
         extractionModeLabel = gtk.Label("ExtractionMode")
         extractionModeLabel.set_angle(90)
-        plotLimitBox.pack_start(extractionModeLabel,expand=False)
+        settingsBox.pack_start(extractionModeLabel,expand=False)
         self.__extractionModeButton_all = gtk.RadioButton(None,"All")
         extractionModeBox.pack_start(self.__extractionModeButton_all)
         self.__extractionModeButton_mean = gtk.RadioButton(self.__extractionModeButton_all,"Mean")
@@ -405,14 +428,14 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
             self.__extractionModeButton_min.set_active(True)
         elif self.plotObject.extractionMode=="max":
             self.__extractionModeButton_max.set_active(True)
-        plotLimitBox.pack_start(extractionModeBox,padding=5,expand=False)
+        settingsBox.pack_start(extractionModeBox,padding=5,expand=False)
 
-        plotLimitBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+        settingsBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
 
         dedupBox = gtk.VBox()
         dedupLabel = gtk.Label("Dedup")
         dedupLabel.set_angle(90)
-        plotLimitBox.pack_start(dedupLabel,expand=False)
+        settingsBox.pack_start(dedupLabel,expand=False)
         self.__dedupButton_max  = gtk.RadioButton(None,"Max")
         dedupBox.pack_start(self.__dedupButton_max)
         self.__dedupButton_mean = gtk.RadioButton(self.__dedupButton_max,"Mean")
@@ -420,9 +443,29 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         self.__dedupButton_mean.set_active(True)
         self.__dedupButton_min  = gtk.RadioButton(self.__dedupButton_max,"Min")
         dedupBox.pack_start(self.__dedupButton_min)
-        plotLimitBox.pack_start(dedupBox,padding=5,expand=False)
+        settingsBox.pack_start(dedupBox,padding=5,expand=False)
 
-        self.baseWidget.pack_start(plotLimitBox, padding=5, expand=False);    
+        settingsBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+
+        plotTitleEntryBox  = gtk.Table(4,3,False)
+        plotTitleEntryLabel = gtk.Label("Titles")
+        plotTitleEntryLabel.set_angle(90)
+        plotTitleEntryBox.attach(plotTitleEntryLabel,0,1,0,4)
+        plotTitleEntryBox.attach(gtk.Label("Top:"),1,2,0,1)
+        plotTitleEntryBox.attach(gtk.Label("X:"),1,2,1,2)
+        plotTitleEntryBox.attach(gtk.Label("Y:"),1,2,2,3)
+        plotTitleEntryBox.attach(gtk.Label("Z:"),1,2,3,4)
+        self.__plotTitleEntry_title = gtk.Entry()
+        plotTitleEntryBox.attach(self.__plotTitleEntry_title,2,3,0,1)
+        self.__plotTitleEntry_xlabel = gtk.Entry()
+        plotTitleEntryBox.attach(self.__plotTitleEntry_xlabel,2,3,1,2)
+        self.__plotTitleEntry_ylabel = gtk.Entry()
+        plotTitleEntryBox.attach(self.__plotTitleEntry_ylabel,2,3,2,3)
+        self.__plotTitleEntry_zlabel = gtk.Entry()
+        plotTitleEntryBox.attach(self.__plotTitleEntry_zlabel,2,3,3,4)
+        settingsBox.pack_start(plotTitleEntryBox,padding=5,expand=False)
+
+        self.baseWidget.pack_start(settingsBox, padding=5, expand=False);    
 
         self.__plotDelunayButton = gtk.Button("Show Delunay triangulation of points")
         if not self.plotObject.dataExtractor.lockdown:
@@ -526,6 +569,14 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         elif self.__extractionModeButton_max.get_active():
             self.plotObject.extractionMode = "max"
 
+        try:
+            ZmultFactor = float(self.__ZmultFactorEntry.get_text())
+        except ValueError:
+            print "couldn't parse ZmultFactor='" + self.__ZmultFactorEntry.get_text() + "', assuming 1.0"
+            ZmultFactor = 1.0
+            self.__ZmultFactorEntry.set_text("1.0")
+        self.plotObject.ZmultFactor = self.__ZmultFactorEntry.get_text() #Actually save as string
+
         self.plotObject.updateSettingsDict()
         self.plotObject.dataExtractor.write()
 
@@ -590,10 +641,21 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
             return
         triang = tri.Triangulation(X, Y)
         plt.triplot(triang, 'bo-')
+
+        if self.__plotTitleEntry_title.get_text() != "":
+            plt.title(self.__plotTitleEntry_title.get_text())
+
+        if self.__plotTitleEntry_xlabel.get_text() != "":
+            plt.xlabel(self.__plotTitleEntry_xlabel.get_text())
+        else:
+            plt.xlabel(self.plotObject.varX)
+
+        if self.__plotTitleEntry_ylabel.get_text() != "":
+            plt.ylabel(self.__plotTitleEntry_ylabel.get_text())
+        else:
+            plt.ylabel(self.plotObject.varY)
         
-        plt.xlabel(self.plotObject.varX)
-        plt.ylabel(self.plotObject.varY)
-        
+
         xRange = abs(max(X)-min(X))
         yRange = abs(max(Y)-min(Y))
         plt.axis([min(X)-0.1*xRange, max(X)+0.1*xRange, min(Y)-0.1*yRange, max(Y)+0.1*yRange])
@@ -660,6 +722,8 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
             #ticklabels = map(lambda t: "$10^{"+( "%d"%(abs(t)+ticksMin,) )+"}$", ticks)
             #print "ticklabels =", ticklabels
             #cbar.set_ticklabels(ticklabels)
+            if self.__plotTitleEntry_zlabel.get_text() != "":
+                cbar.ax.set_ylabel(self.__plotTitleEntry_zlabel.get_text())
         elif data == "contour":
             try:
                 nc = int(self.__numContoursEntry.get_text().strip())
@@ -670,19 +734,33 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
                 plt.tricontourf(triang,Z, np.linspace(min(Z),limit,nc), vmax=limit, extend='max')
             else:
                 plt.tricontourf(triang,Z, nc)
-            plt.colorbar()
+            cbar = plt.colorbar()
+            if self.__plotTitleEntry_zlabel.get_text() != "":
+                cbar.ax.set_ylabel(self.__plotTitleEntry_zlabel.get_text())
         else:
             plt.tripcolor(triang, Z, shading='gouraud')
-            plt.colorbar()
+            cbar = plt.colorbar()
+            if self.__plotTitleEntry_zlabel.get_text() != "":
+                cbar.ax.set_ylabel(self.__plotTitleEntry_zlabel.get_text())
 
         (X2,Y2,Z2) = self.plotObject.getData()
         plt.plot(X2,Y2, 'b+')
         plt.plot(X,Y,'r+')
 
-        plt.xlabel(self.plotObject.varX)
-        plt.ylabel(self.plotObject.varY)
+        if self.__plotTitleEntry_title.get_text() != "":
+            plt.title(self.__plotTitleEntry_title.get_text())
+        else:
+            plt.title("DataExtractorPlot3D, instName = " + self.plotObject.instName + ", data='" + str(data) + "'")
 
-        plt.title("DataExtractorPlot3D, instName = " + self.plotObject.instName + ", data='" + str(data) + "'")
+        if self.__plotTitleEntry_xlabel.get_text() != "":
+            plt.xlabel(self.__plotTitleEntry_xlabel.get_text())
+        else:
+            plt.xlabel(self.plotObject.varX)
+
+        if self.__plotTitleEntry_ylabel.get_text() != "":
+            plt.ylabel(self.__plotTitleEntry_ylabel.get_text())
+        else:
+            plt.ylabel(self.plotObject.varY)
         
         xRange = abs(max(X)-min(X))
         yRange = abs(max(Y)-min(Y))
@@ -738,10 +816,26 @@ class DataExtractorPlots_Plot3D(InfoFrameComponent):
         #xRange = abs(max(X)-min(X))
         #yRange = abs(max(Y)-min(Y))
         
-        ax.set_xlabel(self.plotObject.varX)
-        ax.set_ylabel(self.plotObject.varY)
-        ax.set_zlabel(self.plotObject.varZ)
-        
+        if self.__plotTitleEntry_title.get_text() != "":
+            ax.set_title(self.__plotTitleEntry_title.get_text())
+
+        if self.__plotTitleEntry_xlabel.get_text() != "":
+            ax.set_xlabel(self.__plotTitleEntry_xlabel.get_text())
+        else:
+            ax.set_xlabel(self.plotObject.varX)
+
+        if self.__plotTitleEntry_ylabel.get_text() != "":
+            ax.set_ylabel(self.__plotTitleEntry_ylabel.get_text())
+        else:
+            ax.set_ylabel(self.plotObject.varY)
+
+        if self.__plotTitleEntry_zlabel.get_text() != "":
+            ax.set_zlabel(self.__plotTitleEntry_zlabel.get_text())
+        else:
+            ax.set_zlabel(self.plotObject.varZ)
+
+        plt.subplots_adjust(left=0.0,right=1.0,top=1.0,bottom=0.0) #3D scatterplots need this
+
         plt.show()
         
         gtk.main()

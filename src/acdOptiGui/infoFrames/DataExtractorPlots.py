@@ -889,6 +889,10 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
 
     __enable_gradientRepresentation = None
 
+    __plotTitleEntry_title  = None
+    __plotTitleEntry_xlabel = None
+    __plotTitleEntry_ylabel = None
+    
     __plotButtonX = None
     __plotButtonY = None
 
@@ -1087,12 +1091,31 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         filterDoublesBox.pack_start(self.__filterDoubles_average)
         setupBox.pack_start(filterDoublesBox, padding=5)
 
-        plotSetupBox = gtk.VBox(homogeneous=True)
-        plotSetupBox.pack_start(gtk.Label("Plot setup"))
+        setupBox.pack_start(gtk.VSeparator(), padding=5, expand=False)
+
+        plotSetupBox = gtk.VBox(homogeneous=False)
+        #plotSetupBox.pack_start(gtk.Label("Plot setup"))
         self.__enable_gradientRepresentation = gtk.CheckButton(label="Gradient representation")
         self.__enable_gradientRepresentation.set_active(False)
+        self.__enable_gradientRepresentation.set_alignment(0.5,0.5)
         plotSetupBox.pack_start(self.__enable_gradientRepresentation)
-        setupBox.pack_start(plotSetupBox,padding=0)
+
+        plotTitleEntryBox  = gtk.Table(3,3,False)
+        plotTitleEntryLabel = gtk.Label("Titles")
+        plotTitleEntryLabel.set_angle(90)
+        plotTitleEntryBox.attach(plotTitleEntryLabel,0,1,0,4)
+        plotTitleEntryBox.attach(gtk.Label("Top:"),1,2,0,1)
+        plotTitleEntryBox.attach(gtk.Label("X:"),1,2,1,2)
+        plotTitleEntryBox.attach(gtk.Label("Y:"),1,2,2,3)
+        self.__plotTitleEntry_title = gtk.Entry()
+        plotTitleEntryBox.attach(self.__plotTitleEntry_title,2,3,0,1)
+        self.__plotTitleEntry_xlabel = gtk.Entry()
+        plotTitleEntryBox.attach(self.__plotTitleEntry_xlabel,2,3,1,2)
+        self.__plotTitleEntry_ylabel = gtk.Entry()
+        plotTitleEntryBox.attach(self.__plotTitleEntry_ylabel,2,3,2,3)
+        plotSetupBox.pack_start(plotTitleEntryBox,padding=5,expand=False)
+
+        setupBox.pack_start(plotSetupBox,padding=5)
 
         self.baseWidget.pack_start(setupBox, padding=5, expand=False)
         
@@ -1390,14 +1413,23 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         plt.plot(Xmin,tmin, "--", color="black", label="Minimum")
         
         if data=="X":
-            plt.xlabel(self.plotObject.varX)
+            if self.__plotTitleEntry_xlabel.get_text() != "":
+                plt.xlabel(self.__plotTitleEntry_xlabel.get_text())
+            else:
+                plt.xlabel(self.plotObject.varX)
         if data=="Y":
-            plt.xlabel(self.plotObject.varY)
+            if self.__plotTitleEntry_ylabel.get_text() != "":
+                plt.xlabel(self.__plotTitleEntry_ylabel.get_text())
+            else:
+                plt.xlabel(self.plotObject.varY)
         
         if self.__enable_gradientRepresentation.get_active():
             plt.ylabel(r"Max gradient $\left[\left(\frac{\mathrm{MV}}{\mathrm{m}}\right)\right]$ @ 200 ns")
         else:
             plt.ylabel("Time * G^6 [(MV/m)^6 * ns]")
+        
+        if self.__plotTitleEntry_title.get_text() != "":
+            plt.title(self.__plotTitleEntry_title.get_text())
         
         xRange = abs(max(X)-min(X))
         #ymax = max(max(tE),max(tSC),max(tPC))
@@ -1513,12 +1545,27 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
         #Plot
         triang = tri.Triangulation(Xdedup, Ydedup)
         plt.tricontourf(triang,Tdedup, numContours)
-        plt.colorbar()
+        cbar = plt.colorbar()
+        if self.__enable_gradientRepresentation.get_active():
+            cbar.ax.set_ylabel(r"Max gradient $\left[\left(\frac{\mathrm{MV}}{\mathrm{m}}\right)\right]$ @ 200 ns")
+        else:
+            cbar.ax.set_ylabel("Time * G^6")
+        
 
         plt.plot(Xdedup, Ydedup, 'r+')
+             
+        if self.__plotTitleEntry_xlabel.get_text() != "":
+            plt.xlabel(self.__plotTitleEntry_xlabel.get_text())
+        else:
+            plt.xlabel(self.plotObject.varX)
+        
+        if self.__plotTitleEntry_ylabel.get_text() != "":
+            plt.ylabel(self.__plotTitleEntry_ylabel.get_text())
+        else:
+            plt.ylabel(self.plotObject.varY)
 
-        plt.xlabel(self.plotObject.varX)
-        plt.ylabel(self.plotObject.varY)
+        if self.__plotTitleEntry_title.get_text() != "":
+            plt.title(self.__plotTitleEntry_title.get_text())
         #plt.title("instName = " + self.plotObject.instName)
 
         plt.subplots_adjust(right=1.0)
@@ -1624,13 +1671,24 @@ class DataExtractorPlots_ScaleOptim(InfoFrameComponent):
                 else:
                     ax.scatter(X_PC_2, Y_PC_2, tPC_2, c='red', marker='*')
         
-        ax.set_xlabel(self.plotObject.varX)
-        ax.set_ylabel(self.plotObject.varY)
+        if self.__plotTitleEntry_xlabel.get_text() != "":
+            ax.set_xlabel(self.__plotTitleEntry_xlabel.get_text())
+        else:
+            ax.set_xlabel(self.plotObject.varX)
+
+        if self.__plotTitleEntry_ylabel.get_text() != "":
+            ax.set_ylabel(self.__plotTitleEntry_ylabel.get_text())
+        else:
+            ax.set_ylabel(self.plotObject.varY)
+
         if self.__enable_gradientRepresentation.get_active():
             ax.set_zlabel(r"Max gradient $\left[\left(\frac{\mathrm{MV}}{\mathrm{m}}\right)\right]$ @ 200 ns")
         else:
             ax.set_zlabel("Time * G^6")
         
+        if self.__plotTitleEntry_title.get_text() != "":
+            ax.set_title(self.__plotTitleEntry_title.get_text())
+
         plt.subplots_adjust(left=0.0,right=1.0,top=1.0,bottom=0.0)
         
         plt.show()

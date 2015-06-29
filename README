@@ -1,8 +1,5 @@
-This project intends to create a framework and a GUI for
-controlling Ace3P[1] jobs - including geometry/mesh generation from template
-CUBIT[2] scripts, managing all the input/output files, controlling remote jobs
-on HPC resources such as hopper2[3] at NERSC, and running analysis and plots
-on the solutions.
+This project is a framework and a GUI for controlling Ace3P [1] jobs -- including geometry/mesh generation from template CUBIT [2] scripts, managing all the input/output files, controlling remote jobs on HPC resources such as hopper2[3] at NERSC, and running analysis and plots on the solutions.
+The program and it's use is described in [5] and [6].
 
 To use the code, you need
  (1) Password-less SSH access to Hopper2
@@ -18,3 +15,5 @@ References:
 [2]: http://cubit.sandia.gov/
 [3]: http://www.nersc.gov/users/computational-systems/hopper/
 [4]: http://www.gnu.org/copyleft/gpl.html
+[5]: K.Sjobak, E.Adli and A.Grudiev: SURFACE FIELD OPTIMIZATION OF ACCELERATING STRUCTURES FOR CLIC USING ACE3P ON REMOTE COMPUTING FACILITY, IPAC'15. https://accelconf.web.cern.ch/accelconf/IPAC2013/papers/mopwo011.pdf
+[6]: K.Sjobak, A.Grudiev and E.Adli: Design of waveguide damped cells for 12 GHz high gradient accelerating structures, CLIC note 1026, 2014. http://cds.cern.ch/record/1712945
